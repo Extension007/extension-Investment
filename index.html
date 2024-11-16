@@ -1,76 +1,115 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EXTO Ecosistem</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EXTO Ecosystem</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <h1>EXTO Ecosistem</h1>
-            <p>Extension Investment - Инновации в криптоиндустрии</p>
-        </div>
-    </header>
+  <!-- Главный экран -->
+  <section id="hero">
+    <div class="container">
+      <h1 data-aos="fade-down">EXTO Ecosystem</h1>
+      <p data-aos="fade-up">Ваш проводник в мир криптоинвестиций</p>
+      <a href="#about" class="button" data-aos="zoom-in">Узнать больше</a>
+    </div>
+  </section>
 
-    <nav class="navigation">
-        <div class="container">
-            <ul>
-                <li><a href="#about">О проекте</a></li>
-                <li><a href="#features">Особенности</a></li>
-                <li><a href="#team">Команда</a></li>
-                <li><a href="#roadmap">Дорожная карта</a></li>
-                <li><a href="#contact">Контакты</a></li>
-            </ul>
+  <!-- О проекте -->
+  <section id="about">
+    <div class="container">
+      <h2 data-aos="fade-up">О проекте</h2>
+      <p data-aos="fade-up">EXTO Ecosystem – это инновационная платформа, упрощающая инвестирование в криптоиндустрию.</p>
+      <div class="features">
+        <div class="feature" data-aos="flip-left">
+          <i class="fas fa-lightbulb"></i>
+          <h3>Инновации</h3>
+          <p>Передовые технологии для ваших инвестиций.</p>
         </div>
-    </nav>
+        <div class="feature" data-aos="flip-left">
+          <i class="fas fa-shield-alt"></i>
+          <h3>Надежность</h3>
+          <p>Прозрачные механизмы и защита средств.</p>
+        </div>
+        <div class="feature" data-aos="flip-left">
+          <i class="fas fa-hand-holding-usd"></i>
+          <h3>Доступность</h3>
+          <p>Инструменты для всех уровней пользователей.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <section id="about" class="section">
-        <div class="container">
-            <h2>О проекте</h2>
-            <p>EXTO Ecosistem — это инновационный инвестиционный фонд, сосредоточенный на развитии криптопроектов.</p>
+  <!-- Направления -->
+  <section id="features">
+    <div class="container">
+      <h2 data-aos="fade-up">Наши направления</h2>
+      <div class="cards">
+        <div class="card" data-aos="fade-up">
+          <i class="fas fa-chart-line"></i>
+          <h3>Инвестиционные фонды</h3>
+          <p>Надежное управление вашими активами.</p>
         </div>
-    </section>
+        <div class="card" data-aos="fade-up">
+          <i class="fas fa-coins"></i>
+          <h3>Токенизация</h3>
+          <p>Создание и поддержка цифровых активов.</p>
+        </div>
+        <div class="card" data-aos="fade-up">
+          <i class="fas fa-search-dollar"></i>
+          <h3>Аналитика</h3>
+          <p>Доступ к мощным инструментам анализа.</p>
+        </div>
+        <div class="card" data-aos="fade-up">
+          <i class="fas fa-graduation-cap"></i>
+          <h3>Образование</h3>
+          <p>Курсы для начинающих и профессионалов.</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <section id="features" class="section">
-        <div class="container">
-            <h2>Особенности</h2>
-            <ul>
-                <li>Инновационные инвестиционные решения</li>
-                <li>Фокус на устойчивом развитии</li>
-                <li>Прозрачность для инвесторов</li>
-            </ul>
+  <!-- Команда -->
+  <section id="team">
+    <div class="container">
+      <h2 data-aos="fade-up">Наша команда</h2>
+      <div class="team-members">
+        <div class="member" data-aos="flip-up">
+          <img src="team1.jpg" alt="Иван Иванов">
+          <h3>Иван Иванов</h3>
+          <p>Генеральный директор</p>
         </div>
-    </section>
+        <div class="member" data-aos="flip-up">
+          <img src="team2.jpg" alt="Анна Смирнова">
+          <h3>Анна Смирнова</h3>
+          <p>Технический директор</p>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <section id="team" class="section">
-        <div class="container">
-            <h2>Команда</h2>
-            <p>Наша команда включает профессионалов в области блокчейна, аналитики и управления проектами.</p>
-        </div>
-    </section>
+  <!-- Контакты -->
+  <section id="contacts">
+    <div class="container">
+      <h2 data-aos="fade-up">Контакты</h2>
+      <form action="#" data-aos="fade-up">
+        <input type="email" placeholder="Ваш email">
+        <textarea placeholder="Ваше сообщение"></textarea>
+        <button type="submit">Отправить</button>
+      </form>
+      <div class="socials" data-aos="fade-up">
+        <a href="#"><i class="fab fa-telegram"></i> Telegram</a>
+        <a href="#"><i class="fab fa-linkedin"></i> LinkedIn</a>
+        <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
+      </div>
+    </div>
+  </section>
 
-    <section id="roadmap" class="section">
-        <div class="container">
-            <h2>Дорожная карта</h2>
-            <p>Мы находимся на этапе разработки и привлечения стратегических инвесторов.</p>
-        </div>
-    </section>
-
-    <section id="contact" class="section">
-        <div class="container">
-            <h2>Контакты</h2>
-            <p>Для вопросов пишите нам: <a href="mailto:info@exto.com">info@exto.com</a></p>
-            <a class="button" href="https://example.com" target="_blank">Узнать больше</a>
-        </div>
-    </section>
-
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2024 EXTO Ecosistem. Все права защищены.</p>
-        </div>
-    </footer>
-    <script src="script.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script>
+    AOS.init();
+  </script>
 </body>
 </html>
