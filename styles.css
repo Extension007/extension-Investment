@@ -120,3 +120,26 @@ footer p {
         font-size: 1.5rem;
     }
 }
+.language-selector {
+    position: absolute;
+    top: 10px;
+    left: 20px;
+    z-index: 1000;
+}
+
+.stylish-language-selector select {
+    background: linear-gradient(45deg, #00ffcc, #0077ff);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.stylish-language-selector select:hover {
+    transform: scale(1.1);
+    background: linear-gradient(45deg, #0077ff, #00ffcc);
+}
+
