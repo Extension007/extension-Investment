@@ -48,6 +48,9 @@ nav ul li a:hover {
     justify-content: center;
     gap: 15px;
     margin-top: 20px;
+    position: absolute;
+    top: 20px;
+    right: 20px;
 }
 
 .social-icon {
