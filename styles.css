@@ -180,90 +180,20 @@ body {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Более выраженная тень */
 }
 
-/* Иконки в стиле iOS 17 */
-.socials a i {
-  font-size: 2.5rem; /* Размер иконки */
-  color: #ff0000; /* Цвет иконки для YouTube */
-}
-
-/* Удаление текста около иконок (если был текст) */
+/* Удаление текста около иконок */
 .socials a span {
   display: none;
 }
 
+/* Используем стандартные иконки для соцсетей */
+.socials a i {
+  font-size: 2.5rem; /* Размер иконки */
+}
+
+.socials .youtube i {
+  color: #ff0000; /* Красный цвет для YouTube */
+}
+
 /* Мобильная оптимизация (для экранов до 768px) */
 @media (max-width: 768px) {
-  #hero h1 {
-    font-size: 3rem;
-  }
-
-  #hero p {
-    font-size: 1.2rem;
-  }
-
-  #hero .button {
-    font-size: 1rem;
-    padding: 10px 20px;
-  }
-
-  .features {
-    flex-direction: column;
-  }
-
-  .feature {
-    flex: 1 1 100%;
-    max-width: 100%;
-  }
-
-  .cards {
-    grid-template-columns: 1fr;
-  }
-
-  .team-members {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  #contacts form {
-    padding: 10px;
-  }
-
-  #contacts form input,
-  #contacts form textarea {
-    font-size: 0.9rem;
-    padding: 10px;
-  }
-
-  #contacts form button {
-    font-size: 0.9rem;
-    padding: 10px 20px;
-  }
-
-  .socials a {
-    font-size: 1.2rem;
-  }
-}
-
-/* Мобильная оптимизация для очень маленьких экранов (до 480px) */
-@media (max-width: 480px) {
-  #hero h1 {
-    font-size: 2.5rem;
-  }
-
-  #hero p {
-    font-size: 1rem;
-  }
-
-  #hero .button {
-    font-size: 0.9rem;
-    padding: 8px 16px;
-  }
-
-  .feature i {
-    font-size: 40px;
-  }
-
-  .socials a {
-    font-size: 1rem;
-  }
-}
+ 
