@@ -1,26 +1,173 @@
+/* Основные стили */
+body {
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
+}
+
 /* Главный экран */
 #hero {
-  background: linear-gradient(135deg, #1f1f1f, #00d1ff);
+  background: linear-gradient(135deg, #007cf0, #00d1ff);
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   text-align: center;
+  color: #fff;
+}
+
+#hero h1 {
+  font-size: 4rem;
+  margin-bottom: 20px;
+}
+
+#hero p {
+  font-size: 1.5rem;
+  margin-bottom: 30px;
+}
+
+#hero .button {
+  padding: 15px 30px;
+  background: #008ccc;
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
 
 #hero .button:hover {
-  background: #008ccc;
+  background: #005fa3;
 }
 
 /* О проекте */
-.features i {
-  font-size: 40px;
+#about {
+  background: #fff;
+  padding: 50px 20px;
+}
+
+#about h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+.features {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+
+.feature {
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  width: 30%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.feature i {
+  font-size: 50px;
   color: #00d1ff;
+  margin-bottom: 10px;
+}
+
+/* Карточки */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: #fff;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card i {
+  font-size: 40px;
+  color: #007cf0;
 }
 
 /* Команда */
-.team-members img {
-  width: 100px;
-  height: 100px;
+.team-members {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+}
+
+.member {
+  text-align: center;
+}
+
+.member img {
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Контакты */
+#contacts form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+#contacts form input,
+#contacts form textarea {
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+#contacts form button {
+  padding: 15px;
+  background: #007cf0;
+  color: #fff;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+#contacts form button:hover {
+  background: #005fa3;
+}
+
+.socials a {
+  margin: 0 10px;
+  color: #007cf0;
+  font-size: 1.5rem;
+  transition: color 0.3s ease;
+}
+
+.socials a:hover {
+  color: #005fa3;
 }
