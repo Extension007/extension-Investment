@@ -171,3 +171,58 @@ body {
 .socials a:hover {
   color: #005fa3;
 }
+/* Основные стили */
+/* ... существующий код ... */
+
+/* Мобильная оптимизация */
+@media (max-width: 768px) {
+  #hero h1 {
+    font-size: 3rem;
+  }
+
+  #hero p {
+    font-size: 1.2rem;
+  }
+
+  #hero .button {
+    font-size: 1rem;
+    padding: 10px 20px;
+  }
+
+  .features {
+    flex-direction: column;
+  }
+
+  .feature {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+  }
+
+  .team-members {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  #contacts form {
+    padding: 10px;
+  }
+
+  #contacts form input,
+  #contacts form textarea {
+    font-size: 0.9rem;
+    padding: 10px;
+  }
+
+  #contacts form button {
+    font-size: 0.9rem;
+    padding: 10px 20px;
+  }
+
+  .socials a {
+    font-size: 1.2rem;
+  }
+}
