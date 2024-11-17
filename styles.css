@@ -1,188 +1,135 @@
-/* Основные стили */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
 body {
-  font-family: 'Poppins', sans-serif;
-  margin: 0;
-  padding: 0;
-  background: #e0e0e0; /* светло-серый фон */
-  color: #333;
-  line-height: 1.6;
+    font-family: Arial, sans-serif;
+    background-color: #1f1f1f;
+    color: #fff;
+    line-height: 1.6;
 }
 
-/* Главный экран */
-#hero {
-  background: linear-gradient(135deg, #007cf0, #00d1ff);
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  color: #fff;
+header {
+    background-color: #141414;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-#hero h1 {
-  font-size: 4rem;
-  margin-bottom: 20px;
+header h1 {
+    font-size: 2rem;
 }
 
-#hero p {
-  font-size: 1.5rem;
-  margin-bottom: 30px;
+nav ul {
+    list-style: none;
+    display: flex;
 }
 
-#hero .button {
-  padding: 15px 30px;
-  background: #008ccc;
-  color: #fff;
-  border: none;
-  border-radius: 30px;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: background 0.3s ease;
+nav ul li {
+    margin-left: 20px;
 }
 
-#hero .button:hover {
-  background: #005fa3;
+nav ul li a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.1rem;
+    transition: color 0.3s;
 }
 
-/* О проекте */
-#about {
-  background: #fff;
-  padding: 50px 20px;
+nav ul li a:hover {
+    color: #d4af37;
 }
 
-#about h2 {
-  text-align: center;
-  font-size: 2.5rem;
-  margin-bottom: 20px;
+main {
+    padding: 40px 20px;
 }
 
-.features {
-  display: flex;
-  justify-content: center;
-  gap: 30px;
+section {
+    margin-bottom: 40px;
 }
 
-.feature {
-  background: #f9f9f9;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  width: 30%;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+section h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
 }
 
-.feature:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+section p {
+    font-size: 1.2rem;
 }
 
-.feature i {
-  font-size: 50px;
-  color: #00d1ff;
-  margin-bottom: 10px;
+ul {
+    list-style: none;
+    padding-left: 20px;
 }
 
-/* Социальные иконки */
-.socials a {
-  margin: 0 10px;
-  color: #007cf0;
-  font-size: 2.5rem;
-  display: inline-block;
-  background-color: #ffffff;
-  padding: 15px;
-  border-radius: 50%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.3s, transform 0.3s;
+ul li {
+    margin-bottom: 10px;
 }
 
-.socials a:hover {
-  background-color: #f0f0f5;
-  transform: scale(1.1);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+.social-links {
+    display: flex;
+    gap: 15px;
 }
 
-.socials a i {
-  font-size: 2.5rem;
+.social-btn {
+    width: 40px;
+    height: 40px;
+    background-color: #444;
+    border-radius: 50%;
+    display: inline-block;
+    background-size: cover;
+    background-position: center;
 }
 
-.socials .youtube i {
-  color: #ff0000;
+.social-btn.telegram {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/8/82/Telegram_logo_2019.png');
 }
 
-/* Мобильная оптимизация (для экранов до 768px) */
+.social-btn.youtube {
+    background-image: url('https://upload.wikimedia.org/wikipedia/commons/a/a4/YouTube_icon_%282013-2017%29.png');
+}
+
+.social-btn.twitter {
+    background-image: url('https://upload.wikimedia.org/wikipedia/en/6/60/Twitter_Logo_2012.png');
+}
+
+footer {
+    background-color: #141414;
+    color: #aaa;
+    text-align: center;
+    padding: 10px;
+    margin-top: 40px;
+}
+
 @media (max-width: 768px) {
-  #hero h1 {
-    font-size: 3rem;
-  }
+    nav ul {
+        flex-direction: column;
+        text-align: center;
+    }
 
-  #hero p {
-    font-size: 1.2rem;
-  }
-
-  #hero .button {
-    font-size: 1rem;
-    padding: 10px 20px;
-  }
-
-  .features {
-    flex-direction: column;
-  }
-
-  .feature {
-    flex: 1 1 100%;
-    max-width: 100%;
-  }
-
-  .cards {
-    grid-template-columns: 1fr;
-  }
-
-  .team-members {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  #contacts form {
-    padding: 10px;
-  }
-
-  #contacts form input,
-  #contacts form textarea {
-    font-size: 0.9rem;
-    padding: 10px;
-  }
-
-  #contacts form button {
-    font-size: 0.9rem;
-    padding: 10px 20px;
-  }
-
-  .socials a {
-    font-size: 1.2rem;
-  }
+    .social-links {
+        justify-content: center;
+    }
 }
 
-/* Мобильная оптимизация для очень маленьких экранов (до 480px) */
 @media (max-width: 480px) {
-  #hero h1 {
-    font-size: 2.5rem;
-  }
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
-  #hero p {
-    font-size: 1rem;
-  }
+    nav ul {
+        padding-left: 0;
+    }
 
-  #hero .button {
-    font-size: 0.9rem;
-    padding: 8px 16px;
-  }
+    section h2 {
+        font-size: 1.5rem;
+    }
 
-  .feature i {
-    font-size: 40px;
-  }
-
-  .socials a {
-    font-size: 1rem;
-  }
+    section p {
+        font-size: 1rem;
+    }
 }
