@@ -171,10 +171,8 @@ body {
 .socials a:hover {
   color: #005fa3;
 }
-/* Основные стили */
-/* ... существующий код ... */
 
-/* Мобильная оптимизация */
+/* Мобильная оптимизация (для экранов до 768px) */
 @media (max-width: 768px) {
   #hero h1 {
     font-size: 3rem;
@@ -224,5 +222,29 @@ body {
 
   .socials a {
     font-size: 1.2rem;
+  }
+}
+
+/* Мобильная оптимизация для очень маленьких экранов (до 480px) */
+@media (max-width: 480px) {
+  #hero h1 {
+    font-size: 2.5rem;
+  }
+
+  #hero p {
+    font-size: 1rem;
+  }
+
+  #hero .button {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+
+  .feature i {
+    font-size: 40px;
+  }
+
+  .socials a {
+    font-size: 1rem;
   }
 }
