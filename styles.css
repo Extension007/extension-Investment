@@ -3,7 +3,7 @@ body {
   font-family: 'Poppins', sans-serif;
   margin: 0;
   padding: 0;
-  background: #f5f5f5;
+  background: #e0e0e0; /* светло-серый фон */
   color: #333;
   line-height: 1.6;
 }
@@ -83,115 +83,31 @@ body {
   margin-bottom: 10px;
 }
 
-/* Карточки */
-.cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-}
-
-.card {
-  background: #fff;
-  padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-.card i {
-  font-size: 40px;
-  color: #007cf0;
-}
-
-/* Команда */
-.team-members {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-}
-
-.member {
-  text-align: center;
-}
-
-.member img {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Контакты */
-#contacts form {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  width: 100%;
-  max-width: 500px;
-  margin: 0 auto;
-}
-
-#contacts form input,
-#contacts form textarea {
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  font-size: 1rem;
-}
-
-#contacts form button {
-  padding: 15px;
-  background: #007cf0;
-  color: #fff;
-  border: none;
-  border-radius: 30px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-#contacts form button:hover {
-  background: #005fa3;
-}
-
 /* Социальные иконки */
 .socials a {
   margin: 0 10px;
   color: #007cf0;
-  font-size: 2.5rem; /* Размер иконки */
+  font-size: 2.5rem;
   display: inline-block;
-  background-color: #ffffff; /* Светлый фон */
+  background-color: #ffffff;
   padding: 15px;
-  border-radius: 50%; /* Округлая форма */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Легкая тень */
+  border-radius: 50%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transition: background-color 0.3s, transform 0.3s;
 }
 
 .socials a:hover {
-  background-color: #f0f0f5; /* Светло-серый фон при наведении */
-  transform: scale(1.1); /* Легкое увеличение */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Более выраженная тень */
+  background-color: #f0f0f5;
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
-/* Удаление текста около иконок */
-.socials a span {
-  display: none;
-}
-
-/* Используем стандартные иконки для соцсетей */
 .socials a i {
-  font-size: 2.5rem; /* Размер иконки */
+  font-size: 2.5rem;
 }
 
 .socials .youtube i {
-  color: #ff0000; /* Красный цвет для YouTube */
+  color: #ff0000;
 }
 
 /* Мобильная оптимизация (для экранов до 768px) */
