@@ -70,6 +70,7 @@ const translations = {
 function changeLanguage() {
     const lang = document.getElementById('language').value;
 
+    // Обновление текста всех элементов страницы
     document.getElementById('title').innerText = translations[lang].title;
     document.getElementById('section1-title').innerText = translations[lang]['section1-title'];
     document.getElementById('section2-title').innerText = translations[lang]['section2-title'];
@@ -77,7 +78,7 @@ function changeLanguage() {
     document.getElementById('section4-title').innerText = translations[lang]['section4-title'];
     document.getElementById('section5-title').innerText = translations[lang]['section5-title'];
     document.getElementById('section6-title').innerText = translations[lang]['section6-title'];
-    
+
     document.getElementById('section1-header').innerText = translations[lang]['section1-header'];
     document.getElementById('section1-text').innerText = translations[lang]['section1-text'];
     document.getElementById('section2-header').innerText = translations[lang]['section2-header'];
@@ -85,4 +86,11 @@ function changeLanguage() {
     document.getElementById('section3-header').innerText = translations[lang]['section3-header'];
     document.getElementById('section3-text').innerText = translations[lang]['section3-text'];
     document.getElementById('section4-header').innerText = translations[lang]['section4-header'];
-    document
+    document.getElementById('section4-text').innerText = translations[lang]['section4-text'];
+    document.getElementById('section5-header').innerText = translations[lang]['section5-header'];
+    document.getElementById('section5-text').innerText = translations[lang]['section5-text'];
+    document.getElementById('section6-header').innerText = translations[lang]['section6-header'];
+    document.getElementById('section6-text').innerText = translations[lang]['section6-text'];
+
+    document.getElementById('footer').innerText = translations[lang].footer;
+}
