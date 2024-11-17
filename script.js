@@ -45,52 +45,58 @@ const translations = {
     },
     "zh": {
         "title": "EXTO 生态系统",
-        "section1-title": "第1部分",
-        "section2-title": "第2部分",
-        "section3-title": "第3部分",
-        "section4-title": "第4部分",
-        "section5-title": "第5部分",
-        "section6-title": "第6部分",
-        "section1-header": "第1部分",
-        "section1-text": "第1部分的内容",
-        "section2-header": "第2部分",
-        "section2-text": "第2部分的内容",
-        "section3-header": "第3部分",
-        "section3-text": "第3部分的内容",
-        "section4-header": "第4部分",
-        "section4-text": "第4部分的内容",
-        "section5-header": "第5部分",
-        "section5-text": "第5部分的内容",
-        "section6-header": "第6部分",
-        "section6-text": "第6部分的内容",
+        "section1-title": "第一部分",
+        "section2-title": "第二部分",
+        "section3-title": "第三部分",
+        "section4-title": "第四部分",
+        "section5-title": "第五部分",
+        "section6-title": "第六部分",
+        "section1-header": "第一部分",
+        "section1-text": "第一部分的内容",
+        "section2-header": "第二部分",
+        "section2-text": "第二部分的内容",
+        "section3-header": "第三部分",
+        "section3-text": "第三部分的内容",
+        "section4-header": "第四部分",
+        "section4-text": "第四部分的内容",
+        "section5-header": "第五部分",
+        "section5-text": "第五部分的内容",
+        "section6-header": "第六部分",
+        "section6-text": "第六部分的内容",
         "footer": "© 2024 EXTO 生态系统"
     }
 };
 
 function changeLanguage() {
     const lang = document.getElementById('language').value;
+    console.log('Selected language:', lang);  // Проверка, что язык выбран
 
-    // Обновление текста всех элементов страницы
-    document.getElementById('title').innerText = translations[lang].title;
-    document.getElementById('section1-title').innerText = translations[lang]['section1-title'];
-    document.getElementById('section2-title').innerText = translations[lang]['section2-title'];
-    document.getElementById('section3-title').innerText = translations[lang]['section3-title'];
-    document.getElementById('section4-title').innerText = translations[lang]['section4-title'];
-    document.getElementById('section5-title').innerText = translations[lang]['section5-title'];
-    document.getElementById('section6-title').innerText = translations[lang]['section6-title'];
+    try {
+        document.getElementById('title').innerText = translations[lang].title;
+        document.getElementById('section1-title').innerText = translations[lang]['section1-title'];
+        document.getElementById('section2-title').innerText = translations[lang]['section2-title'];
+        document.getElementById('section3-title').innerText = translations[lang]['section3-title'];
+        document.getElementById('section4-title').innerText = translations[lang]['section4-title'];
+        document.getElementById('section5-title').innerText = translations[lang]['section5-title'];
+        document.getElementById('section6-title').innerText = translations[lang]['section6-title'];
 
-    document.getElementById('section1-header').innerText = translations[lang]['section1-header'];
-    document.getElementById('section1-text').innerText = translations[lang]['section1-text'];
-    document.getElementById('section2-header').innerText = translations[lang]['section2-header'];
-    document.getElementById('section2-text').innerText = translations[lang]['section2-text'];
-    document.getElementById('section3-header').innerText = translations[lang]['section3-header'];
-    document.getElementById('section3-text').innerText = translations[lang]['section3-text'];
-    document.getElementById('section4-header').innerText = translations[lang]['section4-header'];
-    document.getElementById('section4-text').innerText = translations[lang]['section4-text'];
-    document.getElementById('section5-header').innerText = translations[lang]['section5-header'];
-    document.getElementById('section5-text').innerText = translations[lang]['section5-text'];
-    document.getElementById('section6-header').innerText = translations[lang]['section6-header'];
-    document.getElementById('section6-text').innerText = translations[lang]['section6-text'];
+        document.getElementById('section1-header').innerText = translations[lang]['section1-header'];
+        document.getElementById('section1-text').innerText = translations[lang]['section1-text'];
+        document.getElementById('section2-header').innerText = translations[lang]['section2-header'];
+        document.getElementById('section2-text').innerText = translations[lang]['section2-text'];
+        document.getElementById('section3-header').innerText = translations[lang]['section3-header'];
+        document.getElementById('section3-text').innerText = translations[lang]['section3-text'];
+        document.getElementById('section4-header').innerText = translations[lang]['section4-header'];
+        document.getElementById('section4-text').innerText = translations[lang]['section4-text'];
+        document.getElementById('section5-header').innerText = translations[lang]['section5-header'];
+        document.getElementById('section5-text').innerText = translations[lang]['section5-text'];
+        document.getElementById('section6-header').innerText = translations[lang]['section6-header'];
+        document.getElementById('section6-text').innerText = translations[lang]['section6-text'];
 
-    document.getElementById('footer').innerText = translations[lang].footer;
+        document.getElementById('footer').innerText = translations[lang].footer;
+
+        console.log('Content updated for language:', lang);  // Проверка успешного обновления контента
+    } catch (e) {
+        console.error('Error updating language:', e);
+    }
 }
