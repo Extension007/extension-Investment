@@ -6,63 +6,73 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>EXTO Ecosystem</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Вставляем шрифт для иконок (Font Awesome) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <header>
+        <div class="language-selector">
+            <select id="language" onchange="changeLanguage()">
+                <option value="ru">Русский</option>
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+            </select>
+        </div>
+        
         <div class="social-links">
             <a href="#" target="_blank" class="social-icon"><i class="fab fa-telegram-plane"></i></a>
             <a href="#" target="_blank" class="social-icon"><i class="fab fa-youtube"></i></a>
             <a href="#" target="_blank" class="social-icon"><i class="fab fa-twitter"></i></a>
         </div>
+        
         <div class="container">
-            <h1>EXTO Ecosystem</h1>
+            <h1 id="title">EXTO Ecosystem</h1>
             <nav>
                 <ul>
-                    <li><a href="#section1">Раздел 1</a></li>
-                    <li><a href="#section2">Раздел 2</a></li>
-                    <li><a href="#section3">Раздел 3</a></li>
-                    <li><a href="#section4">Раздел 4</a></li>
-                    <li><a href="#section5">Раздел 5</a></li>
-                    <li><a href="#section6">Раздел 6</a></li>
+                    <li><a href="#section1" id="section1-title">Раздел 1</a></li>
+                    <li><a href="#section2" id="section2-title">Раздел 2</a></li>
+                    <li><a href="#section3" id="section3-title">Раздел 3</a></li>
+                    <li><a href="#section4" id="section4-title">Раздел 4</a></li>
+                    <li><a href="#section5" id="section5-title">Раздел 5</a></li>
+                    <li><a href="#section6" id="section6-title">Раздел 6</a></li>
                 </ul>
             </nav>
         </div>
     </header>
 
     <section id="section1" class="section">
-        <h2>Раздел 1</h2>
-        <p>Контент для раздела 1</p>
+        <h2 id="section1-header">Раздел 1</h2>
+        <p id="section1-text">Контент для раздела 1</p>
     </section>
 
     <section id="section2" class="section">
-        <h2>Раздел 2</h2>
-        <p>Контент для раздела 2</p>
+        <h2 id="section2-header">Раздел 2</h2>
+        <p id="section2-text">Контент для раздела 2</p>
     </section>
 
     <section id="section3" class="section">
-        <h2>Раздел 3</h2>
-        <p>Контент для раздела 3</p>
+        <h2 id="section3-header">Раздел 3</h2>
+        <p id="section3-text">Контент для раздела 3</p>
     </section>
 
     <section id="section4" class="section">
-        <h2>Раздел 4</h2>
-        <p>Контент для раздела 4</p>
+        <h2 id="section4-header">Раздел 4</h2>
+        <p id="section4-text">Контент для раздела 4</p>
     </section>
 
     <section id="section5" class="section">
-        <h2>Раздел 5</h2>
-        <p>Контент для раздела 5</p>
+        <h2 id="section5-header">Раздел 5</h2>
+        <p id="section5-text">Контент для раздела 5</p>
     </section>
 
     <section id="section6" class="section">
-        <h2>Раздел 6</h2>
-        <p>Контент для раздела 6</p>
+        <h2 id="section6-header">Раздел 6</h2>
+        <p id="section6-text">Контент для раздела 6</p>
     </section>
 
     <footer>
-        <p>&copy; 2024 EXTO Ecosystem</p>
+        <p id="footer">© 2024 EXTO Ecosystem</p>
     </footer>
+
+    <script src="script.js"></script>
 </body>
 </html>
