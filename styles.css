@@ -120,6 +120,7 @@ footer p {
         font-size: 1.5rem;
     }
 }
+
 .language-selector {
     position: absolute;
     top: 10px;
@@ -142,4 +143,3 @@ footer p {
     transform: scale(1.1);
     background: linear-gradient(45deg, #0077ff, #00ffcc);
 }
-
