@@ -1,4 +1,3 @@
-/* Общие стили */
 * {
     margin: 0;
     padding: 0;
@@ -12,6 +11,14 @@ body {
     overflow-x: hidden;
 }
 
+.header-with-logo {
+    position: relative;
+    background: url('EXTO_optimized.png') no-repeat center top;
+    background-size: contain;
+    padding-top: 250px; /* Пространство для логотипа */
+    margin-bottom: 50px;
+}
+
 .container {
     width: 90%;
     margin: 0 auto;
@@ -21,7 +28,7 @@ body {
 h1 {
     font-size: 3rem;
     text-align: center;
-    margin-top: 50px;
+    margin-top: 20px;
 }
 
 nav ul {
@@ -44,51 +51,27 @@ nav ul li a:hover {
     color: #00ffcc;
 }
 
-/* Стили логотипа */
-.logo-container {
+.social-links {
     display: flex;
     justify-content: center;
-    align-items: center;
-    margin: 0 auto;
-    width: 250px;
-    height: 250px;
-    perspective: 1000px; /* Для 3D эффекта */
+    gap: 15px;
+    margin-top: 20px;
+    position: absolute;
+    top: 10px;
+    right: 20px;
 }
 
-.rotating-logo {
-    width: 100%;
-    height: 100%;
-    animation: spin 5s linear infinite, shine 2s linear infinite;
-    transform-origin: center;
+.social-icon {
+    color: white;
+    font-size: 2rem;
+    transition: transform 0.3s ease;
 }
 
-/* Анимация вращения */
-@keyframes spin {
-    0% {
-        transform: rotateX(0deg) rotateY(0deg);
-    }
-    50% {
-        transform: rotateX(180deg) rotateY(180deg);
-    }
-    100% {
-        transform: rotateX(360deg) rotateY(360deg);
-    }
+.social-icon:hover {
+    transform: scale(1.2);
+    color: #00ffcc;
 }
 
-/* Эффект блеска */
-@keyframes shine {
-    0% {
-        filter: brightness(1);
-    }
-    50% {
-        filter: brightness(1.5);
-    }
-    100% {
-        filter: brightness(1);
-    }
-}
-
-/* Другие секции */
 .section {
     background: #222;
     margin: 50px 0;
@@ -120,7 +103,6 @@ footer p {
     margin-top: 20px;
 }
 
-/* Адаптивный дизайн */
 @media (max-width: 768px) {
     h1 {
         font-size: 2.5rem;
@@ -131,6 +113,10 @@ footer p {
     }
 
     nav ul li a {
+        font-size: 1.5rem;
+    }
+
+    .social-icon {
         font-size: 1.5rem;
     }
 }
