@@ -1,3 +1,4 @@
+/* Общие стили */
 * {
     margin: 0;
     padding: 0;
@@ -103,43 +104,32 @@ footer p {
     margin-top: 20px;
 }
 
-@media (max-width: 768px) {
-    h1 {
-        font-size: 2.5rem;
-    }
+.roadmap {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-direction: column;
+}
 
-    nav ul {
-        flex-direction: column;
-    }
-
-    nav ul li a {
-        font-size: 1.5rem;
-    }
-
-    .social-icon {
-        font-size: 1.5rem;
-    }
+.roadmap-content ul {
+    list-style-type: decimal;
+    margin-left: 20px;
+    text-align: left;
+    font-size: 1rem;
 }
 
 .language-selector {
     position: absolute;
     top: 10px;
     left: 20px;
-    z-index: 1000;
 }
 
-.stylish-language-selector select {
-    background: linear-gradient(45deg, #00ffcc, #0077ff);
+.language-selector select {
+    background: #444;
     color: white;
     border: none;
     border-radius: 5px;
     padding: 5px 10px;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.stylish-language-selector select:hover {
-    transform: scale(1.1);
-    background: linear-gradient(45deg, #0077ff, #00ffcc);
 }
