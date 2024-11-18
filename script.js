@@ -52,6 +52,14 @@ const translations = {
 function changeLanguage() {
     const lang = document.getElementById('language').value;
 
+    if (!translations[lang]) {
+        console.error(`Language ${lang} not found.`);
+        return;
+    }
+
+    // Обновление языка в HTML
+    document.documentElement.lang = lang;
+
     try {
         // Обновление текстов секций
         document.getElementById('title').innerText = translations[lang].title;
