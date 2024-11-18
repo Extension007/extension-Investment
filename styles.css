@@ -1,5 +1,4 @@
-
-* {
+* { 
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -8,7 +7,7 @@
 body {
     font-family: Arial, sans-serif;
     background: linear-gradient(45deg, #111, #333);
-    color: rgb(255, 255, 255);
+    color: #fff;
     overflow-x: hidden;
 }
 
@@ -24,6 +23,16 @@ body {
     width: 90%;
     margin: 0 auto;
     max-width: 1200px;
+}
+
+.header-email {
+    text-align: center;
+    font-size: 1rem;
+    margin-top: 10px;
+    color: #fff; /* Изменен цвет на белый */
+    position: absolute;
+    top: 80px; /* Опустили на 5 пикселей */
+    right: 20px;
 }
 
 h1 {
@@ -55,7 +64,7 @@ nav ul li a:hover {
 .social-links {
     display: flex;
     justify-content: center;
-    gap: 15px;
+    gap: 50px; /* Увеличено расстояние между иконками на 20 пикселей */
     margin-top: 20px;
     position: absolute;
     top: 10px;
@@ -63,7 +72,7 @@ nav ul li a:hover {
 }
 
 .social-icon {
-    color: white;
+    color: #fff;
     font-size: 2rem;
     transition: transform 0.3s ease;
 }
@@ -101,11 +110,16 @@ footer {
     text-align: center;
     margin-top: 50px;
     font-size: 1.2rem;
-    color: #bbb;
+    color: #fff; /* Измените цвет на белый для лучшей видимости */
 }
 
-footer p {
-    margin-top: 20px;
+footer a {
+    color: #00ffcc; /* Задайте цвет для ссылки, чтобы она выделялась */
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
 }
 
 @media (max-width: 768px) {
@@ -128,8 +142,8 @@ footer p {
 
 .language-selector {
     position: absolute;
-    top: 10px;
-    left: 20px;
+    top: 30px; /* Смещаем вниз на 20 пикселей */
+    left: 30px; /* Смещаем вправо на 10 пикселей */
     z-index: 1000;
 }
 
