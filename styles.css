@@ -15,7 +15,7 @@ body {
     position: relative;
     background: url('EXTO_optimized.png') no-repeat center top;
     background-size: contain;
-    padding-top: 250px; /* Пространство для логотипа */
+    padding-top: 200px; /* Пространство для логотипа */
     margin-bottom: 50px;
 }
 
