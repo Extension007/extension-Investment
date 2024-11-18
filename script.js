@@ -2,7 +2,17 @@ const translations = {
     "ru": {
         "title": "EXTO Ecosystem",
         "section1-title": "Введение",
-        "section1-text": "Введение",
+        "section1-text": `Добро пожаловать в EXTO — ваш пропуск в мир уникальных возможностей и долгосрочных инвестиций!
+Почему EXTO?
+Ранний доступ: Участвуйте в предпродаже и приобретайте токены EXTO по выгодному курсу 1 TON = 50 000 EXTO.
+Удобство: Покупайте и продавайте EXTO на децентрализованной платформе Ston.Fi в любое время.
+Рост ценности: Инновационный механизм сжигания токенов сокращает их эмиссию, повышая дефицитность и стоимость.
+Сценарии участия:
+- Инвестируйте на ранних этапах и фиксируйте выгоду.
+- Зарабатывайте поинты, взаимодействуя с нашим веб-приложением.
+- Объедините оба подхода и получите бонусы, включая коллекционный NFT.
+EXTO — это больше, чем токен. Это экосистема, которая уже сейчас задаёт новый стандарт криптоинвестиций.
+Присоединяйтесь к EXTO сегодня и станьте частью инновационного проекта с огромным потенциалом!`,
         "section2-title": "Токеномика",
         "section2-text": "Токеномика",
         "section3-title": "Дорожная карта",
@@ -40,7 +50,17 @@ const translations = {
     "en": {
         "title": "EXTO Ecosystem",
         "section1-title": "Introduction",
-        "section1-text": "Introduction",
+        "section1-text": `Welcome to EXTO — your gateway to a world of unique opportunities and long-term investments!
+Why EXTO?
+Early Access: Participate in the presale and purchase EXTO tokens at a favorable rate of 1 TON = 50,000 EXTO.
+Convenience: Buy and sell EXTO anytime on the decentralized platform Ston.Fi.
+Value Growth: An innovative token-burning mechanism reduces emissions, increasing scarcity and value.
+Participation Scenarios:
+- Invest early and lock in your benefits.
+- Earn points by interacting with our web application.
+- Combine both approaches and receive bonuses, including collectible NFTs.
+EXTO is more than a token. It’s an ecosystem setting a new standard in crypto investments today.
+Join EXTO today and become part of an innovative project with immense potential!`,
         "section2-title": "Tokenomics",
         "section2-text": "Tokenomics",
         "section3-title": "Roadmap",
@@ -78,7 +98,17 @@ const translations = {
     "zh": {
         "title": "EXTO 生态系统",
         "section1-title": "介绍",
-        "section1-text": "介绍",
+        "section1-text": `欢迎来到 EXTO — 您通往独特机遇和长期投资世界的门户！
+为什么选择 EXTO？
+抢先体验：参加预售，以优惠汇率 1 TON = 50,000 EXTO 获取代币。
+便利性：随时通过去中心化平台 Ston.Fi 买卖 EXTO。
+价值增长：创新的代币销毁机制减少发行量，提高稀缺性和价值。
+参与方式：
+- 早期投资并锁定收益。
+- 通过与我们的网站应用互动赚取积分。
+- 结合这两种方式，获得包括收藏级 NFT 在内的奖励。
+EXTO 不仅仅是一个代币。它是一个生态系统，为加密投资设定了新的标准。
+立即加入 EXTO，成为具有巨大潜力的创新项目的一部分！`,
         "section2-title": "代币经济学",
         "section2-text": "代币经济学",
         "section3-title": "路线图",
@@ -123,46 +153,39 @@ function changeLanguage() {
         return;
     }
 
-    // Обновление языка в HTML
     document.documentElement.lang = lang;
 
     try {
-        // Обновление текста на странице
         document.getElementById('title').innerText = translations[lang].title;
+
+        document.getElementById('nav-section1-title').innerText = translations[lang]['section1-title'];
+        document.getElementById('nav-section2-title').innerText = translations[lang]['section2-title'];
+        document.getElementById('nav-section3-title').innerText = translations[lang]['section3-title'];
+        document.getElementById('nav-section4-title').innerText = translations[lang]['section4-title'];
+        document.getElementById('nav-section5-title').innerText = translations[lang]['section5-title'];
+        document.getElementById('nav-section6-title').innerText = translations[lang]['section6-title'];
+
         document.getElementById('section1-title').innerText = translations[lang]['section1-title'];
-        document.getElementById('section2-title').innerText = translations[lang]['section2-title'];
-        document.getElementById('section3-title').innerText = translations[lang]['section3-title'];
-        document.getElementById('section4-title').innerText = translations[lang]['section4-title'];
-        document.getElementById('section5-title').innerText = translations[lang]['section5-title'];
-        document.getElementById('section6-title').innerText = translations[lang]['section6-title'];
-
-        document.getElementById('section1-header').innerText = translations[lang]['section1-title'];
-        document.getElementById('section2-header').innerText = translations[lang]['section2-title'];
-        document.getElementById('section3-header').innerText = translations[lang]['section3-title'];
-        document.getElementById('section4-header').innerText = translations[lang]['section4-title'];
-        document.getElementById('section5-header').innerText = translations[lang]['section5-title'];
-        document.getElementById('section6-header').innerText = translations[lang]['section6-title'];
-
-        // Обновление текста секций
         document.getElementById('section1-text').innerText = translations[lang]['section1-text'];
+        document.getElementById('section2-title').innerText = translations[lang]['section2-title'];
         document.getElementById('section2-text').innerText = translations[lang]['section2-text'];
-        
-        // Обновление списка дорожной карты
+
         const roadmap = document.getElementById('roadmap');
         roadmap.innerHTML = translations[lang]['section3-text'].map(item => `<li>${item}</li>`).join('');
 
+        document.getElementById('section4-title').innerText = translations[lang]['section4-title'];
         document.getElementById('section4-text').innerText = translations[lang]['section4-text'];
+        document.getElementById('section5-title').innerText = translations[lang]['section5-title'];
         document.getElementById('section5-text').innerText = translations[lang]['section5-text'];
+        document.getElementById('section6-title').innerText = translations[lang]['section6-title'];
         document.getElementById('section6-text').innerText = translations[lang]['section6-text'];
 
-        // Обновление футера
         document.getElementById('footer').innerText = translations[lang].footer;
     } catch (e) {
         console.error('Ошибка при обновлении языка:', e);
     }
 }
 
-// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', () => {
     changeLanguage();
 });
