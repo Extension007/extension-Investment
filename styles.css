@@ -31,7 +31,7 @@ body {
     margin-top: 10px;
     color: #fff; /* Изменен цвет на белый */
     position: absolute;
-    top: 80px; /* Опустили на 5 пикселей */
+    top: 65px; /* Опустили на 5 пикселей */
     right: 20px;
 }
 
