@@ -31,7 +31,7 @@ body {
     margin-top: 10px;
     color: #fff; /* Изменен цвет на белый */
     position: absolute;
-    top: 65px; /* Опустили на 5 пикселей */
+    top: 80px; /* Опустили на 5 пикселей */
     right: 20px;
 }
 
@@ -64,7 +64,7 @@ nav ul li a:hover {
 .social-links {
     display: flex;
     justify-content: center;
-    gap: 50px; /* Увеличено расстояние между иконками на 20 пикселей */
+    gap: 25px; /* Увеличено расстояние между иконками на 20 пикселей */
     margin-top: 20px;
     position: absolute;
     top: 10px;
