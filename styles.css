@@ -70,7 +70,10 @@ body {
     top: 65px;
     right: 20px;
 }
-
+.header-email:hover {
+    color: #ff3333; /* Цвет текста при наведении */
+    text-shadow: 0 0 10px #ff6666, 0 0 15px #ff6666; /* Подсветка текста при наведении */
+}
 h1 {
     font-size: 3rem;
     text-align: center;
