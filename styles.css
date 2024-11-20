@@ -96,8 +96,8 @@ nav ul li a {
 
 /* Эффект наведения */
 nav ul li a:hover {
-    color: #00ffcc; /* Меняем цвет при наведении */
-    text-shadow: 0 0 5px #00ffcc; /* Легкая подсветка текста */
+    color: #fd0000; /* Меняем цвет при наведении */
+    text-shadow: 0 0 5px #ff0000; /* Легкая подсветка текста */
 }
 
 /* Адаптация для планшетов (экран до 768px) */
@@ -145,14 +145,14 @@ nav ul li a:hover {
 }
 
 .social-icon {
-    color: #fc0000cb;
+    color: #ffffffcb;
     font-size: 2rem;
     transition: transform 0.3s ease;
 }
 
 .social-icon:hover {
     transform: scale(1.2);
-    color: #00ffcc;
+    color: #ff0000;
 }
 
 /* Базовый стиль для секций */
