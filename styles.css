@@ -9,11 +9,11 @@ body {
     font-family: Arial, sans-serif;
     background-color: #111; /* Основной темный цвет */
     background-image: linear-gradient(45deg, #333 25%, transparent 25%, transparent 75%, #333 75%, #333),
-                      linear-gradient(45deg, #333 25%, #111 25%, #111 75%, #333 75%, #333);
+                      linear-gradient(45deg, #333 25%, #a90505 25%, #000000 75%, #191818 75%, #333);
     background-size: 20px 20px; /* Увеличиваем размер клеток */
     background-position: 0 0, 10px 10px; /* Соответственно сдвигаем второй слой */
-    color: #fff;
-    overflow-x: hidden;;
+    color: #ffffff;
+    overflow-x: hidden;
 }
 
 /* Стили для заголовка */
@@ -35,7 +35,7 @@ body {
 /* Неоновый стиль для переключателя языка */
 .language-selector select {
     background: linear-gradient(45deg, #111, #333);
-    color: #fff;
+    color: #ffffff;
     border: 2px solid #ff0000;
     border-radius: 10px;
     padding: 10px 20px;
@@ -379,3 +379,29 @@ nav ul li a:hover {
         line-height: 2;
     }
 }
+
+.stylish-language-selector select {
+    background: linear-gradient(45deg, #1e1e1e, #333) !important; /* Цвет селектора в соответствии с общим стилем */
+    color: #7d7d7d !important;
+    border: 2px solid #ff0000 !important;
+    border-radius: 10px !important;
+    padding: 10px 20px !important;
+    font-size: 0.8rem !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000 !important;
+    transition: all 0.3s ease !important;
+}
+
+.stylish-language-selector select:hover {
+    background: linear-gradient(45deg, #333, #111) !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 0 20px #ff3333, 0 0 30px #ff3333 !important;
+}
+
+.stylish-language-selector select:focus {
+    outline: none !important;
+    box-shadow: 0 0 25px #ff6666, 0 0 35px #ff6666 !important;
+}
+
+
