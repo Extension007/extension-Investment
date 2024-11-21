@@ -2,12 +2,9 @@ const translations = {
     "ru": {
         "title": "EXTO Ecosystem",
         "section1-title": "Введение",
-        "section1-text": `Добро пожаловать в EXTO — ваш пропуск в мир уникальных возможностей и долгосрочных инвестиций!
-Почему EXTO?
-Ранний доступ: Участвуйте в предпродаже и приобретайте токены EXTO по выгодному курсу 1 TON = 50 000 EXTO.
-Удобство: Покупайте и продавайте EXTO на децентрализованной платформе Ston.Fi в любое время.
-Рост ценности: Инновационный механизм сжигания токенов сокращает их эмиссию, повышая дефицитность и стоимость.
-EXTO — это больше, чем токен. Это экосистема, которая уже сейчас задаёт новый стандарт криптоинвестиций.`,
+        "section1-text": `Добро пожаловать в EXTO — инновационную экосистему, объединяющую перспективные технологии и долгосрочные инвестиционные возможности! EXTO предоставляет своим участникам уникальные преимущества: доступ к предпродаже токенов по выгодному курсу, прозрачную токеномику, децентрализованную торговлю и инновационный механизм сжигания, который способствует росту их ценности.
+
+Проект устанавливает новый стандарт в мире криптоинвестиций, предлагая не только финансовые инструменты, но и путь к устойчивому развитию. На втором этапе своего развития EXTO будет реорганизован в инвестиционный фонд, работающий в сфере криптоиндустрии. Это позволит направить средства инвестиционного резерва на поддержку перспективных проектов и дальнейшее расширение экосистемы`,
         "section2-title": "Токеномика",
         "section2-text": "Этот раздел предоставляет информацию о распределении токенов.",
         "section2-table": {
@@ -57,12 +54,9 @@ EXTO — это больше, чем токен. Это экосистема, к
     "en": {
         "title": "EXTO Ecosystem",
         "section1-title": "Introduction",
-        "section1-text": `Welcome to EXTO — your gateway to a world of unique opportunities and long-term investments!
-Why EXTO?
-Early Access: Participate in the presale and purchase EXTO tokens at a favorable rate of 1 TON = 50,000 EXTO.
-Convenience: Buy and sell EXTO anytime on the decentralized platform Ston.Fi.
-Value Growth: An innovative token-burning mechanism reduces emissions, increasing scarcity and value.
-EXTO is more than a token. It’s an ecosystem setting a new standard in crypto investments today.`,
+        "section1-text": `Welcome to EXTO — an innovative ecosystem combining promising technologies and long-term investment opportunities! EXTO offers its participants unique benefits: access to token presales at favorable rates, transparent tokenomics, decentralized trading, and an innovative token-burning mechanism that enhances their value.
+
+The project sets a new standard in the world of crypto investments, offering not only financial tools but also a path to sustainable development. In its second phase, EXTO will be reorganized into an investment fund operating in the crypto industry. This will allow the investment reserve to be used to support promising projects and further expand the ecosystem.`,
         "section2-title": "Tokenomics",
         "section2-text": "This section provides information on token distribution.",
         "section2-table": {
@@ -112,12 +106,9 @@ EXTO is more than a token. It’s an ecosystem setting a new standard in crypto 
     "zh": {
         "title": "EXTO 生态系统",
         "section1-title": "介绍",
-        "section1-text": `欢迎来到 EXTO — 您通往独特机遇和长期投资世界的门户！
-为什么选择 EXTO？
-抢先体验：参加预售，以优惠汇率 1 TON = 50,000 EXTO 获取代币。
-便利性：随时通过去中心化平台 Ston.Fi 买卖 EXTO。
-价值增长：创新的代币销毁机制减少发行量，提高稀缺性和价值。
-EXTO 不仅仅是一个代币。它是一个生态系统，为加密投资设定了新的标准。`,
+        "section1-text": `欢迎来到 EXTO — 一个结合前沿技术和长期投资机会的创新生态系统！EXTO 为其参与者提供独特的优势：以优惠的价格参与代币预售，透明的代币经济学，去中心化交易，以及促进其价值增长的创新销毁机制。
+
+该项目在加密投资领域设立了新的标准，不仅提供金融工具，还提供可持续发展的路径。在第二阶段，EXTO 将重组为一个在加密行业运营的投资基金，这将使投资储备用于支持有前景的项目并进一步扩展生态系统。`,
         "section2-title": "代币经济学",
         "section2-text": "本节提供有关代币分配的信息。",
         "section2-table": {
@@ -132,7 +123,7 @@ EXTO 不仅仅是一个代币。它是一个生态系统，为加密投资设定
                 ["投资储备", "1,000,000,000", "18 个月（DAO 同意后可部分访问）", "36 个月线性归属", "为有前景的项目提供发展资金。"]
             ]
         },
-        "section3-title": "路线图",
+        "section3-title": "路网图",
         "section3-text": [
             "项目创意形成 — 明确主要概念和目标。",
             "网页应用开发 — 创建首个原型和基础功能。。",
@@ -156,7 +147,7 @@ EXTO 不仅仅是一个代币。它是一个生态系统，为加密投资设定
             "投资基金启动 — 成立投资基金以支持进一步发展。",
             "持续创新与新技术采用 — 定期更新并整合新技术。",
         ],
-        "section4-title": "白皮书",
+        "section4-title": "白盘书",
         "section4-text": "即将到来。",
         "section5-title": "合作",
         "section5-text": "即将到来。",
