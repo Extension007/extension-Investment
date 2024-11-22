@@ -98,7 +98,7 @@ The project sets a new standard in the world of crypto investments, offering not
         "section4-title": "White Paper",
         "section4-text": "Coming soon.",
         "section5-title": "Collaborations",
-        "section5-text": "CComing soon.",
+        "section5-text": "Coming soon.",
         "section6-title": "Advertising",
         "section6-text": "Coming soon.",
         "footer": "© 2024 EXTO Ecosystem"
