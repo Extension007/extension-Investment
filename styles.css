@@ -86,6 +86,7 @@ h1 {
     font-size: 3rem;
     text-align: center;
     margin-top: 20px;
+    color: #ffffff;
 }
 
 nav ul {
@@ -221,9 +222,6 @@ nav ul li a:hover {
     max-width: 1000px;
     box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
     transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-#section3 {
-    color: #ffffff;
 }
 
 .section:hover {
