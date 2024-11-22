@@ -58,7 +58,7 @@ body {
 }
 
 .container {
-    width: 90%;
+    width: calc(100% - 20px); /* Учитываем отступы по 10px с каждой стороны */
     margin: 0 auto;
     max-width: 1200px;
 }
@@ -114,11 +114,11 @@ nav ul li a:hover {
 /* Базовый стиль для секций */
 .section {
     background: #1e1e1e;
-    margin: 50px auto;
-    padding: 40px 30px;
+    margin: 50px auto; /* Центрируем секции */
+    padding: 40px 10px; /* Отступы внутри секции по 10px */
     border-radius: 15px;
     position: relative;
-    max-width: 1000px;
+    max-width: calc(100% - 20px); /* Учитываем отступы по 10px с каждой стороны */
     box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
     transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
@@ -147,11 +147,23 @@ nav ul li a:hover {
     color: #ffffff;
 }
 
+/* Универсальные стили для элементов списка в секции 3 */
+#roadmap li {
+    list-style-position: inside;
+    word-wrap: break-word;
+}
+
+/* Устанавливаем белый цвет маркеров списка в секции 3 */
+#roadmap li::marker {
+    color: #ffffff;
+}
+
 /* Адаптация для планшетов */
 @media (max-width: 768px) {
     nav ul {
         flex-direction: column;
         align-items: flex-start;
+        padding-left: 20px; /* Добавляем отступ слева */
     }
 
     nav ul li a {
@@ -160,9 +172,9 @@ nav ul li a:hover {
     }
 
     .section {
-        padding: 30px 20px;
-        margin: 30px 5%;
-        max-width: 90%;
+        padding: 30px 10px;
+        margin: 30px auto; /* Центрируем секции */
+        max-width: calc(100% - 20px); /* Учитываем отступы */
     }
 
     .section h2 {
@@ -179,6 +191,7 @@ nav ul li a:hover {
 @media (max-width: 480px) {
     nav ul {
         gap: 10px;
+        padding-left: 20px; /* Добавляем отступ слева */
     }
 
     nav ul li a {
@@ -187,9 +200,9 @@ nav ul li a:hover {
     }
 
     .section {
-        padding: 20px;
-        margin: 20px 5%;
-        max-width: 90%;
+        padding: 20px 10px;
+        margin: 20px auto; /* Центрируем секции */
+        max-width: calc(100% - 20px); /* Учитываем отступы */
         word-wrap: break-word;
         border-radius: 10px;
     }
@@ -203,19 +216,14 @@ nav ul li a:hover {
         line-height: 1.6;
         color: #ffffff;
     }
-
-    #roadmap li {
-        word-wrap: break-word;
-        list-style-position: inside;
-    }
 }
 
 /* Адаптация для больших экранов */
 @media (min-width: 1200px) {
     .section {
         max-width: 1400px;
-        padding: 50px 40px;
-        margin: 50px auto;
+        padding: 50px 10px;
+        margin: 50px auto; /* Центрируем секции */
     }
 
     .section h2 {
@@ -232,9 +240,9 @@ nav ul li a:hover {
 /* Универсальная адаптация для всех устройств */
 @media (min-width: 480px) and (max-width: 1199px) {
     .section {
-        padding: 40px 30px;
-        margin: 40px 3%;
-        max-width: 95%;
+        padding: 40px 10px;
+        margin: 40px auto; /* Центрируем секции */
+        max-width: calc(100% - 20px); /* Учитываем отступы */
     }
 
     .section h2 {
@@ -328,4 +336,27 @@ nav ul li a:hover {
 .table-wrapper::-webkit-scrollbar-thumb:hover {
     background: #ff3333;
     box-shadow: 0 0 15px #ff6666;
+}
+
+/* Стили для подвала */
+.footer {
+    text-align: center;       /* Центрирует текст */
+    padding: 20px;
+    background-color: transparent; /* Делаем фон прозрачным */
+    color: #ffffff;           /* Устанавливает белый цвет текста */
+}
+
+.footer p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.footer a {
+    color: #ffffff;           /* Устанавливает белый цвет для ссылок */
+    text-decoration: none;
+}
+
+.footer a:hover {
+    color: #ff3333;           /* Цвет ссылки при наведении */
+    text-shadow: 0 0 10px #ff6666, 0 0 15px #ff6666;
 }
