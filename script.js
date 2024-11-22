@@ -6,7 +6,7 @@ const translations = {
 
 Проект устанавливает новый стандарт в мире криптоинвестиций, предлагая не только финансовые инструменты, но и путь к устойчивому развитию. На втором этапе своего развития EXTO будет реорганизован в инвестиционный фонд, работающий в сфере криптоиндустрии. Это позволит направить средства инвестиционного резерва на поддержку перспективных проектов и дальнейшее расширение экосистемы`,
         "section2-title": "Токеномика",
-        "section2-text": "Этот раздел предоставляет информацию о распределении токенов.",
+        "section2-text": "Этот раздел предоставляет информацию о распределении токенов. Всего выпущено 1 000 000 000 000 токенов в ограниченном количестве. Метрики в таблице могут изменяться в зависимости от спроса. По вопросам предпродажи обращайтесь на электронную почту founder@extoecosystem.xyz и следите за новостями на официальных страницах, которые вы найдете в верхнем углу экрана.",
         "section2-table": {
             headers: ["Категория", "Объем токенов", "Локировка", "Вестинг", "Цель"],
             rows: [
@@ -58,7 +58,7 @@ const translations = {
 
 The project sets a new standard in the world of crypto investments, offering not only financial tools but also a path to sustainable development. In its second phase, EXTO will be reorganized into an investment fund operating in the crypto industry. This will allow the investment reserve to be used to support promising projects and further expand the ecosystem.`,
         "section2-title": "Tokenomics",
-        "section2-text": "This section provides information on token distribution.",
+        "section2-text": "This section provides information about token distribution. A total of 1,000,000,000,000 tokens have been issued in a limited supply. The metrics in the table may vary depending on demand. For presale inquiries, please contact founder@extoecosystem.xyz, and stay updated with news on the official pages found in the top corner of the screen.",
         "section2-table": {
             headers: ["Category", "Token Volume", "Lock Period", "Vesting", "Purpose"],
             rows: [
@@ -98,7 +98,7 @@ The project sets a new standard in the world of crypto investments, offering not
         "section4-title": "White Paper",
         "section4-text": "Coming soon.",
         "section5-title": "Collaborations",
-        "section5-text": "Coming soon.",
+        "section5-text": "CComing soon.",
         "section6-title": "Advertising",
         "section6-text": "Coming soon.",
         "footer": "© 2024 EXTO Ecosystem"
@@ -110,7 +110,7 @@ The project sets a new standard in the world of crypto investments, offering not
 
 该项目在加密投资领域设立了新的标准，不仅提供金融工具，还提供可持续发展的路径。在第二阶段，EXTO 将重组为一个在加密行业运营的投资基金，这将使投资储备用于支持有前景的项目并进一步扩展生态系统。`,
         "section2-title": "代币经济学",
-        "section2-text": "本节提供有关代币分配的信息。",
+        "section2-text": "本节提这部分提供了关于代币分配的信息。代币总发行量为1,000,000,000,000，数量有限。表格中的指标可能会根据需求而发生变化。如需了解预售详情，请联系邮箱：founder@extoecosystem.xyz，同时请关注您在屏幕顶部角落找到的官方页面上的最新消息。",
         "section2-table": {
             headers: ["类别", "代币数量", "锁定期", "归属期", "目的"],
             rows: [
