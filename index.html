@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EXTO Ecosystem</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>EXTO Ecosystem</title>
+        <!-- Добавляем favicon -->
+        <link rel="icon" href="/favicon.png" type="image/png">
+        <link rel="stylesheet" href="styles.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    </head>
 <body>
     <header class="header-with-logo">
         <div class="language-selector stylish-language-selector">
-            <select id="language" onchange="changeLanguage()">
+            <select id="language" onchange="changeLanguage()" style="background: linear-gradient(45deg, #1e1e1e, #333); color: #7d7d7d; border: 2px solid #ff0000; border-radius: 10px; padding: 10px 20px; font-size: 0.8rem; font-weight: bold; cursor: pointer; box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000; transition: all 0.3s ease;">
                 <option value="ru">Русский</option>
                 <option value="en">English</option>
                 <option value="zh">中文</option>
