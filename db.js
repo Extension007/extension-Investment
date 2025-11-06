@@ -1,29 +1,27 @@
-const sqlite3 = require("sqlite3").verbose();
+require("dotenv").config();
+const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-const db = new sqlite3.Database("./data/exto.db");
-
-db.serialize(() => {
-  // Таблица товаров
-  db.run(`CREATE TABLE IF NOT EXISTS products (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    description TEXT,
-    price REAL,
-    link TEXT,
-    image_path TEXT
-  )`);
-
-  // Таблица пользователей
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password_hash TEXT
-  )`);
-
-  // Создать администратора по умолчанию
-  const adminPass = bcrypt.hashSync("admin123", 10);
-  db.run("INSERT OR IGNORE INTO users (username, password_hash) VALUES (?, ?)", ["admin", adminPass]);
+// Подключение к MongoDB Atlas
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 });
 
-module.exports = db;
+const db = mongoose.connection;
+db.on("error", console.error.bind(console, "MongoDB connection error:"));
+db.once("open", async () => {
+  console.log("MongoDB connected");
+
+  // Проверка и создание администратора
+  const User = require("./models/User");
+
+  const adminExists = await User.findOne({ username: "admin" });
+  if (!adminExists) {
+    const adminPass = bcrypt.hashSync("admin123", 10);
+    await User.create({ username: "admin", password_hash: adminPass });
+    console.log("Admin user created");
+  }
+});
+
+module.exports = mongoose;
