@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Админка</title>
+</head>
+<body>
+  <h1>Управление товарами</h1>
+  <form method="POST" action="/admin/product" enctype="multipart/form-data">
+    <input type="text" name="name" placeholder="Название" required>
+    <input type="text" name="description" placeholder="Описание">
+    <input type="number" name="price" placeholder="Цена" required>
+    <input type="url" name="link" placeholder="Ссылка" required>
+    <input type="file" name="image" accept="image/*">
+    <button type="submit">Добавить</button>
+  </form>
+
+  <h2>Список товаров</h2>
+  <% products.forEach(p => { %>
+    <div>
+      <strong><%= p.name %></strong> — <%= p.price %> ₸
+      <form method="POST" action="/admin/product/<%= p.id %>/delete" style="display:inline">
+        <button type="submit">Удалить</button>
+      </form>
+      <a href="/admin/product/<%= p.id %>/edit">Редактировать</a>
+    </div>
+  <% }) %>
+</body>
+</html>

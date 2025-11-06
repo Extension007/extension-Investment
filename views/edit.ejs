@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Редактирование товара</title>
+</head>
+<body>
+  <h1>Редактирование товара</h1>
+  <form method="POST" action="/admin/product/<%= product.id %>/edit" enctype="multipart/form-data">
+    <input type="text" name="name" value="<%= product.name %>" required>
+    <input type="text" name="description" value="<%= product.description %>">
+    <input type="number" name="price" value="<%= product.price %>" required>
+    <input type="url" name="link" value="<%= product.link %>" required>
+
+    <% if (product.image_path) { %>
+      <p>Текущая картинка:</p>
+      <img src="<%= product.image_path %>" alt="<%= product.name %>" width="150">
+      <input type="hidden" name="current_image" value="<%= product.image_path %>">
+    <% } %>
+
+    <p>Загрузить новую картинку:</p>
+    <input type="file" name="image" accept="image/*">
+
+    <button type="submit">Сохранить изменения</button>
+  </form>
+</body>
+</html>

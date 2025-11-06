@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>EXTO — Каталог</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="main-header">
+    <div class="logo">EXTO</div>
+    <nav class="nav">
+      <ul>
+        <li><a href="/">Каталог</a></li>
+        <li><a href="#about">О проекте</a></li>
+        <li><a href="#contacts">Контакты</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Основная рамка: каталог товаров -->
+    <section id="catalog" class="section">
+      <h2>Каталог товаров</h2>
+
+      <div class="product-grid">
+        <% if (products && products.length) { %>
+          <% products.forEach(p => { %>
+            <div class="product-card">
+              <!-- Название сверху -->
+              <h3 class="product-title"><%= p.name %></h3>
+
+              <!-- Картинка под названием -->
+              <% if (p.image_path) { %>
+                <img src="<%= p.image_path %>" alt="<%= p.name %>">
+              <% } %>
+
+              <!-- Нижний блок: описание + цена + кнопка прижаты к низу -->
+              <div class="product-bottom">
+                <p class="product-desc"><%= p.description %></p>
+                <span class="price"><%= p.price %> ₸</span>
+                <a class="product-action" href="<%= p.link %>" target="_blank" rel="noopener">Перейти</a>
+              </div>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <p class="empty-state">Пока нет товаров</p>
+        <% } %>
+      </div>
+    </section>
+
+    <!-- Блок "О проекте" (по якорю) -->
+    <section id="about" class="section">
+      <h2>О проекте</h2>
+      <p class="disclaimer">
+        EXTO — это каталог рекомендаций. Мы стремимся к привычному UX, чистой визуальной и стабильной верстке.
+      </p>
+    </section>
+
+    <!-- Блок "Контакты" (по якорю) -->
+    <section id="contacts" class="section">
+      <h2>Контакты</h2>
+      <p class="disclaimer">
+        По вопросам сотрудничества и предложений — пишите нам.
+      </p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2025 EXTO Ecosystem</p>
+  </footer>
+
+  <script src="/script.js"></script>
+</body>
+</html>

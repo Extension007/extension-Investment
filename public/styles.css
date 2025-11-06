@@ -1,0 +1,148 @@
+/* Базовые стили */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+body {
+  font-family: Arial, sans-serif;
+  background-color: #2b2b2b;
+  color: #fff;
+  line-height: 1.45;
+}
+
+/* Шапка */
+.main-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: #111;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 15px 30px;
+  box-shadow: 0 2px 10px rgba(255,0,0,0.5);
+  z-index: 1000;
+}
+.logo { font-size: 1.5rem; color: #ff3333; font-weight: bold; }
+.nav ul { display: flex; gap: 20px; list-style: none; }
+.nav ul li a { color: #fff; text-decoration: none; font-size: 1.05rem; }
+.nav ul li a:hover, .nav ul li a:focus-visible { color: #ff3333; }
+
+/* Секции */
+.section {
+  background: #1e1e1e;
+  margin: 100px auto 50px auto;
+  padding: 40px 20px;
+  border-radius: 15px;
+  max-width: 1400px;
+  width: 96%;
+  box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+}
+.section h2 { text-align: center; margin-bottom: 20px; }
+
+/* Сетка каталога */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+/* Адаптивность */
+@media (max-width: 1200px) { .product-grid { grid-template-columns: repeat(4, 1fr); } }
+@media (max-width: 992px)  { .product-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px)  { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px)  { .product-grid { grid-template-columns: 1fr; } }
+
+/* Карточка товара */
+.product-card {
+  display: flex;
+  flex-direction: column;
+  background: #1a1a1a;
+  border-radius: 12px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 0 8px rgba(255,0,0,0.4);
+  transition: box-shadow 0.25s ease, transform 0.2s ease;
+  min-height: 380px;
+}
+.product-card:hover {
+  box-shadow: 0 0 16px rgba(255,0,0,0.7);
+  transform: translateY(-2px);
+}
+
+/* Название сверху */
+.product-card .product-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+/* Картинка под названием */
+.product-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* Нижний блок прижат к низу */
+.product-card .product-bottom {
+  margin-top: auto; /* весь блок уходит вниз */
+}
+
+/* Описание и цена аккуратно над кнопкой */
+.product-card .product-desc {
+  font-size: 0.95rem;
+  color: #ccc;
+  margin-bottom: 8px;
+}
+
+.product-card .price {
+  color: #ff3333;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+/* Кнопка — прижата к низу карточки и визуально выразительная */
+.product-card .product-action {
+  display: inline-block;
+  background: linear-gradient(45deg, #ff0000, #ff3333);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.product-card .product-action:hover {
+  background: #ff0000;
+  transform: translateY(-2px);
+}
+.product-card .product-action:focus-visible {
+  outline: 2px solid #ff3333;
+  outline-offset: 2px;
+}
+
+/* Пустое состояние */
+.empty-state {
+  text-align: center;
+  color: #ccc;
+  padding: 20px;
+  font-size: 0.95rem;
+}
+
+/* Подвал */
+.footer {
+  text-align: center;
+  padding: 20px;
+  background: #111;
+  color: #fff;
+  box-shadow: 0 -2px 10px rgba(255,0,0,0.5); /* тень сверху, как у шапки */
+}
+
+/* Доптекст */
+.disclaimer {
+  margin-top: 10px;
+  color: #bbb;
+  font-size: 0.95rem;
+}
