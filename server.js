@@ -122,10 +122,5 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), (req, r
   );
 });
 
-// Запуск сервера
-app.listen(PORT, () => {
-  console.log(`Сервер запущен: http://localhost:${PORT}`);
-});
-
 // Экспорт для Vercel
 module.exports = app;
