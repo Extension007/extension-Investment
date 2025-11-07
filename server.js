@@ -1,10 +1,10 @@
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
-const multer = require("multer");
 const bcrypt = require("bcrypt");
 const Product = require("./models/Product");
 const User = require("./models/User");
+const upload = require("./utils/upload"); // ✅ подключаем Cloudinary-хранилище
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,14 +25,8 @@ app.use(session({
 
 // Статика
 app.use(express.static(path.join(__dirname, "public")));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// Настройка загрузки файлов (локально, позже можно заменить на Cloudinary/S3)
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage });
+// ❌ локальная папка uploads больше не нужна
+// app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Middleware для проверки авторизации
 function requireAuth(req, res, next) {
@@ -83,11 +77,12 @@ app.get("/admin", requireAuth, async (req, res) => {
 // Добавление товара
 app.post("/admin/product", requireAuth, upload.single("image"), async (req, res) => {
   const { name, description, price, link } = req.body;
-  const image_path = req.file ? "/uploads/" + req.file.filename : null;
+  const image_path = req.file?.path || null; // ✅ Cloudinary даёт публичный URL
   try {
     await Product.create({ name, description, price, link, image_path });
     res.redirect("/admin");
   } catch (err) {
+    console.error("Ошибка добавления товара:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -116,11 +111,12 @@ app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
 // Обновление товара
 app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (req, res) => {
   const { name, description, price, link, current_image } = req.body;
-  const image_path = req.file ? "/uploads/" + req.file.filename : current_image;
+  const image_path = req.file?.path || current_image; // ✅ новое фото или старое
   try {
     await Product.findByIdAndUpdate(req.params.id, { name, description, price, link, image_path });
     res.redirect("/admin");
   } catch (err) {
+    console.error("Ошибка редактирования товара:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
