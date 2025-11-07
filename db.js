@@ -1,11 +1,11 @@
-require("dotenv").config();
+require("dotenv").config(); // Загружаем переменные окружения из .env
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
-const User = require("./models/User");
+const bcrypt = require("bcryptjs"); // ✅ используем bcryptjs для совместимости с сервером
+const User = require("./models/User"); // Модель пользователя
 
 async function initAdmin() {
   try {
-    // Подключение к MongoDB (только если запускаешь db.js отдельно)
+    // Подключение к MongoDB
     await mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true
@@ -13,25 +13,34 @@ async function initAdmin() {
 
     console.log("✅ MongoDB подключена");
 
-    // Проверка и создание администратора
+    // Проверка: есть ли админ
     const adminExists = await User.findOne({ username: "admin" });
+
     if (!adminExists) {
+      // Генерация хэша для пароля admin123
       const adminPass = bcrypt.hashSync("admin123", 10);
-      await User.create({ username: "admin", password_hash: adminPass });
-      console.log("👤 Admin user created");
+      console.log("🔑 Сгенерированный хэш:", adminPass);
+
+      // Создание пользователя
+      await User.create({
+        username: "admin",
+        password_hash: adminPass
+      });
+
+      console.log("👤 Пользователь admin создан");
     } else {
-      console.log("👤 Admin уже существует");
+      console.log("ℹ️ Пользователь admin уже существует");
     }
 
-    // Закрываем соединение после выполнения
+    // Закрытие соединения
     await mongoose.connection.close();
     console.log("🔌 Соединение закрыто");
   } catch (err) {
-    console.error("❌ Ошибка инициализации администратора:", err);
+    console.error("❌ Ошибка при создании администратора:", err);
   }
 }
 
-// Запуск только при прямом вызове
+// Запуск напрямую: node db.js
 if (require.main === module) {
   initAdmin();
 }
