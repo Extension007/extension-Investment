@@ -31,39 +31,38 @@ app.use(session({
   saveUninitialized: false
 }));
 
-// Статика (открыта для всех)
+// Статика
 app.use(express.static(path.join(__dirname, "public")));
 
-// Явные маршруты для favicon (чтобы не было 401/404)
+// favicon
 app.get("/favicon.ico", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "favicon.ico"));
 });
-
 app.get("/favicon.png", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "favicon.png"));
 });
 
-// Middleware для проверки авторизации
+// Middleware авторизации
 function requireAuth(req, res, next) {
   if (req.session.user) return next();
   res.redirect("/admin/login");
 }
 
-// Главная страница каталога
+// Главная страница
 app.get("/", async (req, res) => {
   try {
     const products = await Product.find().sort({ _id: -1 });
     res.render("index", { products, page: 1, totalPages: 1 });
   } catch (err) {
+    console.error("❌ Ошибка получения товаров:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
 
-// Вход администратора
+// Вход
 app.get("/admin/login", (req, res) => {
   res.render("login", { error: null });
 });
-
 app.post("/admin/login", async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -75,16 +74,18 @@ app.post("/admin/login", async (req, res) => {
       res.render("login", { error: "Неверный логин или пароль" });
     }
   } catch (err) {
+    console.error("❌ Ошибка входа:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
 
-// Админ-панель
+// Админка
 app.get("/admin", requireAuth, async (req, res) => {
   try {
     const products = await Product.find().sort({ _id: -1 });
     res.render("admin", { products });
   } catch (err) {
+    console.error("❌ Ошибка получения товаров (админ):", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -92,47 +93,59 @@ app.get("/admin", requireAuth, async (req, res) => {
 // Добавление товара
 app.post("/admin/product", requireAuth, upload.single("image"), async (req, res) => {
   const { name, description, price, link } = req.body;
-  const image_path = req.file?.path || null;
+  const image_url = req.file?.path || null;
+
+  console.log("📦 Данные формы (create):", { name, description, price, link });
+  console.log("🖼️ Файл (create):", req.file);
+
   try {
-    await Product.create({ name, description, price, link, image_path });
+    await Product.create({ name, description, price, link, image_url });
     res.redirect("/admin");
   } catch (err) {
-    console.error("Ошибка добавления товара:", err);
-    res.status(500).send("Ошибка базы данных");
+    console.error("❌ Ошибка добавления товара:", err);
+    res.status(500).send("Ошибка загрузки изображения или базы данных");
   }
 });
 
-// Удаление товара
+// Удаление
 app.post("/admin/product/:id/delete", requireAuth, async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
     res.redirect("/admin");
   } catch (err) {
+    console.error("❌ Ошибка удаления товара:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
 
-// Форма редактирования товара
+// Редактирование
 app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
     if (!product) return res.redirect("/admin");
     res.render("edit", { product });
   } catch (err) {
+    console.error("❌ Ошибка получения товара для редактирования:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
-
-// Обновление товара
 app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (req, res) => {
   const { name, description, price, link, current_image } = req.body;
-  const image_path = req.file?.path || current_image;
+  const image_url = req.file?.path || current_image || null;
+
+  console.log("📦 Данные формы (update):", { name, description, price, link, current_image });
+  console.log("🖼️ Файл (update):", req.file);
+
   try {
-    await Product.findByIdAndUpdate(req.params.id, { name, description, price, link, image_path });
+    await Product.findByIdAndUpdate(
+      req.params.id,
+      { name, description, price, link, image_url },
+      { runValidators: true }
+    );
     res.redirect("/admin");
   } catch (err) {
-    console.error("Ошибка редактирования товара:", err);
-    res.status(500).send("Ошибка базы данных");
+    console.error("❌ Ошибка редактирования товара:", err);
+    res.status(500).send("Ошибка загрузки изображения или базы данных");
   }
 });
 

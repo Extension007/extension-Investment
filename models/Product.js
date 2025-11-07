@@ -1,27 +1,11 @@
-const mongoose = require("../db");
+const mongoose = require("mongoose");
 
-// Определяем схему товара
 const productSchema = new mongoose.Schema({
-  name: { 
-    type: String, 
-    required: true // название обязательно
-  },
-  description: { 
-    type: String 
-  },
-  price: { 
-    type: Number, 
-    required: true // цена обязательна
-  },
-  link: { 
-    type: String // ссылка на товар или магазин
-  },
-  image_path: { 
-    type: String // путь или URL изображения
-  }
-}, { 
-  timestamps: true // автоматически добавляет createdAt и updatedAt
-});
+  name: { type: String, required: true, trim: true },
+  description: { type: String, default: "" },
+  price: { type: Number, required: true },
+  link: { type: String, trim: true },
+  image_url: { type: String, default: null }
+}, { timestamps: true });
 
-// Создаём модель на основе схемы
 module.exports = mongoose.model("Product", productSchema);

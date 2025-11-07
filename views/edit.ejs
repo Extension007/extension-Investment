@@ -6,22 +6,28 @@
 </head>
 <body>
   <h1>Редактирование товара</h1>
-  <form method="POST" action="/admin/product/<%= product.id %>/edit" enctype="multipart/form-data">
-    <input type="text" name="name" value="<%= product.name %>" required>
-    <input type="text" name="description" value="<%= product.description %>">
-    <input type="number" name="price" value="<%= product.price %>" required>
-    <input type="url" name="link" value="<%= product.link %>" required>
 
-    <% if (product.image_path) { %>
-      <p>Текущая картинка:</p>
-      <img src="<%= product.image_path %>" alt="<%= product.name %>" width="150">
-      <input type="hidden" name="current_image" value="<%= product.image_path %>">
+  <form method="POST" action="/admin/product/<%= product._id %>/edit" enctype="multipart/form-data">
+    <input type="text" name="name" value="<%= product.name %>" placeholder="Название" required>
+    <input type="text" name="description" value="<%= product.description %>" placeholder="Описание">
+    <input type="number" name="price" value="<%= product.price %>" placeholder="Цена" required>
+    <input type="url" name="link" value="<%= product.link %>" placeholder="Ссылка" required>
+
+    <% if (product.image_url) { %>
+      <div>
+        <p>Текущее изображение:</p>
+        <img src="<%= product.image_url %>" alt="<%= product.name %>" style="max-width: 160px; height: auto;">
+      </div>
+      <!-- скрытое поле для передачи текущего изображения -->
+      <input type="hidden" name="current_image" value="<%= product.image_url %>">
     <% } %>
 
-    <p>Загрузить новую картинку:</p>
+    <p>Загрузить новое изображение (необязательно):</p>
     <input type="file" name="image" accept="image/*">
 
     <button type="submit">Сохранить изменения</button>
   </form>
+
+  <p><a href="/admin">Назад к админке</a></p>
 </body>
 </html>
