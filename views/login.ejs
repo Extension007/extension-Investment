@@ -3,14 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <title>Вход — Админка</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    form {
+      width: 300px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    input {
+      padding: 8px;
+      font-size: 14px;
+    }
+    button {
+      padding: 10px;
+      background: #333;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #555;
+    }
+    .error {
+      color: red;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
   <h2>Вход администратора</h2>
+
   <form method="POST" action="/admin/login">
     <input type="text" name="username" placeholder="Логин" required>
     <input type="password" name="password" placeholder="Пароль" required>
     <button type="submit">Войти</button>
   </form>
-  <% if (error) { %><p style="color:red"><%= error %></p><% } %>
+
+  <% if (error) { %>
+    <p class="error"><%= error %></p>
+  <% } %>
 </body>
 </html>
