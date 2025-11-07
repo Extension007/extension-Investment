@@ -3,6 +3,7 @@ const path = require("path");
 const session = require("express-session");
 const bcrypt = require("bcrypt");
 const mongoose = require("mongoose");
+const MongoStore = require("connect-mongo"); // ✅ добавлено
 const Product = require("./models/Product");
 const User = require("./models/User");
 const upload = require("./utils/upload"); // Cloudinary
@@ -24,11 +25,16 @@ app.set("views", path.join(__dirname, "views"));
 // Парсинг форм
 app.use(express.urlencoded({ extended: true }));
 
-// Сессии
+// Сессии (хранение в MongoDB вместо памяти)
 app.use(session({
   secret: "exto-secret",
   resave: false,
-  saveUninitialized: false
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI,
+    collectionName: "sessions"
+  }),
+  cookie: { maxAge: 1000 * 60 * 60 } // 1 час
 }));
 
 // Статика
