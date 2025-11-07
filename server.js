@@ -31,8 +31,17 @@ app.use(session({
   saveUninitialized: false
 }));
 
-// Статика
+// Статика (открыта для всех)
 app.use(express.static(path.join(__dirname, "public")));
+
+// Явные маршруты для favicon (чтобы не было 401/404)
+app.get("/favicon.ico", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "favicon.ico"));
+});
+
+app.get("/favicon.png", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "favicon.png"));
+});
 
 // Middleware для проверки авторизации
 function requireAuth(req, res, next) {
