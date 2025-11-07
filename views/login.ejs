@@ -36,6 +36,15 @@
       margin-top: 10px;
       text-align: center;
     }
+    .debug {
+      margin-top: 20px;
+      padding: 10px;
+      background: #f4f4f4;
+      border: 1px solid #ccc;
+      width: 300px;
+      font-size: 12px;
+      color: #333;
+    }
   </style>
 </head>
 <body>
@@ -49,6 +58,13 @@
 
   <% if (error) { %>
     <p class="error"><%= error %></p>
+  <% } %>
+
+  <% if (debug) { %>
+    <div class="debug">
+      <strong>Отладка:</strong><br>
+      <pre><%= JSON.stringify(debug, null, 2) %></pre>
+    </div>
   <% } %>
 </body>
 </html>

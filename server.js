@@ -1,12 +1,12 @@
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs"); // ✅ используем bcryptjs для стабильности
 const mongoose = require("mongoose");
-const MongoStore = require("connect-mongo"); // ✅ добавлено
+const MongoStore = require("connect-mongo");
 const Product = require("./models/Product");
 const User = require("./models/User");
-const upload = require("./utils/upload"); // Cloudinary
+const upload = require("./utils/upload");
 
 const app = express();
 
@@ -25,7 +25,7 @@ app.set("views", path.join(__dirname, "views"));
 // Парсинг форм
 app.use(express.urlencoded({ extended: true }));
 
-// Сессии (хранение в MongoDB вместо памяти)
+// Сессии (MongoDB)
 app.use(session({
   secret: "exto-secret",
   resave: false,
@@ -67,18 +67,37 @@ app.get("/", async (req, res) => {
 
 // Вход
 app.get("/admin/login", (req, res) => {
-  res.render("login", { error: null });
+  res.render("login", { error: null, debug: null });
 });
+
 app.post("/admin/login", async (req, res) => {
   const { username, password } = req.body;
+  console.log("🛂 Получено:", req.body);
+
   try {
     const user = await User.findOne({ username });
-    if (user && bcrypt.compareSync(password, user.password_hash)) {
-      req.session.user = user;
-      res.redirect("/admin");
-    } else {
-      res.render("login", { error: "Неверный логин или пароль" });
+    console.log("🔎 Найден пользователь:", user);
+
+    if (!user) {
+      return res.render("login", { 
+        error: "Неверный логин или пароль", 
+        debug: { body: req.body, user: null }
+      });
     }
+
+    const ok = await bcrypt.compare(password, user.password_hash);
+    console.log("🔐 Сравнение пароля:", ok);
+
+    if (!ok) {
+      return res.render("login", { 
+        error: "Неверный логин или пароль", 
+        debug: { body: req.body, user, compare: false }
+      });
+    }
+
+    req.session.user = { _id: user._id, username: user.username };
+    console.log("✅ Сессия установлена:", req.session.user);
+    res.redirect("/admin");
   } catch (err) {
     console.error("❌ Ошибка входа:", err);
     res.status(500).send("Ошибка базы данных");
@@ -135,6 +154,7 @@ app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
     res.status(500).send("Ошибка базы данных");
   }
 });
+
 app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (req, res) => {
   const { name, description, price, link, current_image } = req.body;
   const image_url = req.file?.path || current_image || null;
