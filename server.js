@@ -23,7 +23,6 @@ app.set("views", path.join(__dirname, "views"));
 
 // Парсинг форм
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
 
 // Сессии
 app.use(session({
@@ -64,22 +63,16 @@ app.get("/", async (req, res) => {
 app.get("/admin/login", (req, res) => {
   res.render("login", { error: null });
 });
-
 app.post("/admin/login", async (req, res) => {
   const { username, password } = req.body;
   try {
     const user = await User.findOne({ username });
-    if (!user) {
-      return res.render("login", { error: "Неверный логин или пароль" });
+    if (user && bcrypt.compareSync(password, user.password_hash)) {
+      req.session.user = user;
+      res.redirect("/admin");
+    } else {
+      res.render("login", { error: "Неверный логин или пароль" });
     }
-
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      return res.render("login", { error: "Неверный логин или пароль" });
-    }
-
-    req.session.user = user;
-    res.redirect("/admin");
   } catch (err) {
     console.error("❌ Ошибка входа:", err);
     res.status(500).send("Ошибка базы данных");
@@ -136,7 +129,6 @@ app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
     res.status(500).send("Ошибка базы данных");
   }
 });
-
 app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (req, res) => {
   const { name, description, price, link, current_image } = req.body;
   const image_url = req.file?.path || current_image || null;
