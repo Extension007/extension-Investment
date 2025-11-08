@@ -125,9 +125,6 @@ app.post("/admin/product", requireAuth, upload.single("image"), async (req, res)
   const { name, description, price, link } = req.body;
   let image_url = null;
 
-  console.log("📦 Данные формы (create):", { name, description, price, link });
-  console.log("🖼️ Файл (create):", req.file);
-
   try {
     if (req.file) {
       image_url = req.file.url || req.file.path; // поддержка обоих вариантов
@@ -172,9 +169,6 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
   const { name, description, price, link, current_image } = req.body;
   let image_url = current_image || null;
 
-  console.log("📦 Данные формы (update):", { name, description, price, link, current_image });
-  console.log("🖼️ Файл (update):", req.file);
-
   try {
     if (req.file) {
       image_url = req.file.url || req.file.path; // поддержка обоих вариантов
@@ -191,6 +185,12 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
     console.error("❌ Ошибка редактирования товара:", err);
     res.status(500).send("Ошибка загрузки изображения или базы данных");
   }
+});
+
+// Глобальный обработчик ошибок
+app.use((err, req, res, next) => {
+  console.error("❌ Глобальная ошибка:", err);
+  res.status(500).send("Внутренняя ошибка сервера");
 });
 
 // Экспорт для Vercel

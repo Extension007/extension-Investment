@@ -14,6 +14,12 @@ const storage = new CloudinaryStorage({
   }
 });
 
-const upload = multer({ storage });
+// Настройка Multer с CloudinaryStorage
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // ограничение размера файла: 5MB
+  }
+});
 
 module.exports = upload;
