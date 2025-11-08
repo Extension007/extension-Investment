@@ -13,12 +13,15 @@
     <input type="number" name="price" value="<%= product.price %>" placeholder="Цена" required>
     <input type="url" name="link" value="<%= product.link %>" placeholder="Ссылка" required>
 
+    <!-- ✅ Новое поле для ссылки на YouTube видео -->
+    <p>Ссылка на YouTube видео:</p>
+    <input type="url" name="video_url" value="<%= product.video_url %>" placeholder="Ссылка на YouTube видео">
+
     <% if (product.image_url) { %>
       <div>
         <p>Текущее изображение:</p>
         <img src="<%= product.image_url %>" alt="<%= product.name %>" style="max-width: 160px; height: auto;">
       </div>
-      <!-- скрытое поле для передачи текущего изображения -->
       <input type="hidden" name="current_image" value="<%= product.image_url %>">
     <% } %>
 

@@ -1,93 +1,129 @@
-// Демонстрационные данные товаров.
-// Замените на свои реальные товары и ссылки.
-const products = [];
-for (let i = 1; i <= 200; i++) {
-  products.push({
-    name: `Товар ${i}`,
-    price: `${Math.floor(Math.random() * 10000)} ₸`,
-    img: `img/product${((i % 3) + 1)}.jpg`, // убедитесь, что такие файлы существуют
-    link: `https://partner-site.com/ref=${i}` // замените на свои реферальные ссылки
+// Логика модального окна для YouTube-видео (работает с серверным рендером EJS)
+// Карточки приходят из админки/базы и рендерятся в index.ejs
+document.addEventListener("DOMContentLoaded", () => {
+  const modal = document.getElementById("videoModal");
+  const videoFrame = document.getElementById("videoFrame");
+  const closeBtn = document.querySelector(".modal .close");
+
+  if (!modal || !videoFrame || !closeBtn) {
+    console.warn("❌ Модальное окно или элементы не найдены");
+    return;
+  }
+
+  // Делегирование: открытие модального окна по клику на кнопку "Обзор"
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest(".product-review");
+    if (!btn) return;
+
+    const rawUrl = (btn.getAttribute("data-video") || "").trim();
+    console.log("▶️ Клик по кнопке Обзор, ссылка:", rawUrl);
+
+    if (!rawUrl) return;
+
+    const embedUrl = toYouTubeEmbed(rawUrl);
+    if (!embedUrl) {
+      console.warn("❌ Невалидная ссылка для преобразования:", rawUrl);
+      return;
+    }
+
+    // Сохраняем оригинальный функционал + автозапуск
+    videoFrame.src = embedUrl + (embedUrl.includes("?") ? "&autoplay=1" : "?autoplay=1");
+    modal.style.display = "block";
+    modal.setAttribute("aria-hidden", "false");
+    trapFocus(modal);
   });
-}
 
-let currentPage = 1;
-const itemsPerPage = 75; // 5 x 15
+  // Закрытие по крестику
+  closeBtn.addEventListener("click", () => closeModal());
 
-function renderProducts() {
-  const grid = document.getElementById("product-grid");
-  const pageInfo = document.getElementById("page-info");
-  const totalPages = Math.ceil(products.length / itemsPerPage) || 1;
+  // Закрытие по клику на фон
+  window.addEventListener("click", (e) => {
+    if (e.target === modal) closeModal();
+  });
 
-  // Корректируем текущую страницу по границам
-  if (currentPage < 1) currentPage = 1;
-  if (currentPage > totalPages) currentPage = totalPages;
+  // Закрытие по Escape
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.style.display === "block") closeModal();
+  });
 
-  const start = (currentPage - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  const pageProducts = products.slice(start, end);
-
-  // Очищаем сетку
-  grid.innerHTML = "";
-
-  if (pageProducts.length === 0) {
-    grid.innerHTML = `<div class="empty-state">Нет товаров для отображения.</div>`;
-  } else {
-    const frag = document.createDocumentFragment();
-
-    pageProducts.forEach(p => {
-      const card = document.createElement("div");
-      card.className = "product-card";
-
-      // Формируем содержимое карточки
-      card.innerHTML = `
-        <img src="${p.img}" alt="${p.name}" loading="lazy">
-        <h3>${p.name}</h3>
-        <p>Описание ${p.name}</p>
-        <span class="price">${p.price}</span>
-        <a href="${p.link}" target="_blank" rel="noopener noreferrer">Перейти к продавцу</a>
-      `;
-
-      // Важно: не используем onerror для смены изображения на fallback,
-      // чтобы избежать лишних перерисовок. Проверьте наличие файлов в img/.
-      frag.appendChild(card);
-    });
-
-    grid.appendChild(frag);
+  function closeModal() {
+    modal.style.display = "none";
+    modal.setAttribute("aria-hidden", "true");
+    videoFrame.src = ""; // очищаем, чтобы остановить воспроизведение
+    releaseFocus();
   }
 
-  // Обновляем текст пагинации
-  pageInfo.textContent = `Страница ${currentPage} из ${totalPages}`;
+  // Преобразование YouTube URL в embed (поддержка watch, youtu.be, embed, shorts)
+  function toYouTubeEmbed(url) {
+    try {
+      const u = new URL(url);
 
-  // Обновляем состояние кнопок пагинации
-  const prevBtn = document.querySelector(".pagination button:nth-child(1)");
-  const nextBtn = document.querySelector(".pagination button:nth-child(3)");
-  if (prevBtn && nextBtn) {
-    prevBtn.disabled = currentPage <= 1;
-    nextBtn.disabled = currentPage >= totalPages;
+      // Нормализуем хост (убираем www.)
+      const host = u.hostname.replace(/^www\./, "");
+
+      if (host.includes("youtube.com")) {
+        // https://youtube.com/watch?v=VIDEO_ID
+        if (u.pathname === "/watch") {
+          const id = u.searchParams.get("v");
+          return id ? `https://www.youtube.com/embed/${id}` : null;
+        }
+        // https://youtube.com/embed/VIDEO_ID
+        if (u.pathname.startsWith("/embed/")) {
+          // Сохраняем оригинальный функционал — если уже embed, возвращаем как есть
+          return url;
+        }
+        // https://youtube.com/shorts/VIDEO_ID
+        if (u.pathname.startsWith("/shorts/")) {
+          const id = u.pathname.split("/shorts/")[1];
+          return id ? `https://www.youtube.com/embed/${id}` : null;
+        }
+      }
+
+      // https://youtu.be/VIDEO_ID
+      if (host === "youtu.be") {
+        const id = u.pathname.slice(1);
+        return id ? `https://www.youtube.com/embed/${id}` : null;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
   }
-}
 
-function nextPage() {
-  const totalPages = Math.ceil(products.length / itemsPerPage) || 1;
-  if (currentPage < totalPages) {
-    currentPage++;
-    renderProducts();
-    scrollCatalogTop();
+  // Ловушка фокуса внутри модального окна (UX/Accessibility)
+  let previousActive = null;
+  function trapFocus(container) {
+    previousActive = document.activeElement;
+    const focusables = container.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    if (first) first.focus();
+
+    container.addEventListener("keydown", handleTab);
+    function handleTab(e) {
+      if (e.key !== "Tab") return;
+      if (focusables.length === 0) return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    }
   }
-}
 
-function prevPage() {
-  if (currentPage > 1) {
-    currentPage--;
-    renderProducts();
-    scrollCatalogTop();
+  function releaseFocus() {
+    if (previousActive && typeof previousActive.focus === "function") {
+      previousActive.focus();
+    }
   }
-}
-
-function scrollCatalogTop() {
-  const catalog = document.getElementById("catalog");
-  if (catalog) catalog.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-// Первичная отрисовка при загрузке
-document.addEventListener("DOMContentLoaded", renderProducts);
+});

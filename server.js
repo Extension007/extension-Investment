@@ -14,12 +14,9 @@ const cloudinary = require("cloudinary").v2;
 const app = express();
 
 // Подключение MongoDB Atlas
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log("✅ MongoDB подключена"))
-.catch(err => console.error("❌ Ошибка подключения MongoDB:", err));
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("✅ MongoDB подключена"))
+  .catch(err => console.error("❌ Ошибка подключения MongoDB:", err));
 
 // Настройка шаблонов
 app.set("view engine", "ejs");
@@ -43,7 +40,7 @@ app.use(session({
 // Статика
 app.use(express.static(path.join(__dirname, "public")));
 
-// favicon (безопасный fallback)
+// favicon
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.get("/favicon.png", (req, res) => res.status(204).end());
 
@@ -119,16 +116,16 @@ app.post("/admin/product", requireAuth, upload.single("image"), async (req, res)
   console.log("📦 RAW req.body:", req.body);
   console.log("🖼️ RAW req.file:", req.file);
 
-  const { name, description, price, link } = req.body;
+  const { name, description, price, link, video_url } = req.body; // ✅ добавили video_url
   let image_url = null;
 
   try {
     if (req.file) {
-      image_url = req.file.url || req.file.path;
+      image_url = req.file.path;
       console.log("✅ Cloudinary URL:", image_url);
     }
 
-    await Product.create({ name, description, price, link, image_url });
+    await Product.create({ name, description, price, link, image_url, video_url }); // ✅ сохраняем video_url
     res.redirect("/admin");
   } catch (err) {
     console.error("❌ Ошибка добавления товара:", err);
@@ -163,18 +160,18 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
   console.log("📦 RAW req.body:", req.body);
   console.log("🖼️ RAW req.file:", req.file);
 
-  const { name, description, price, link, current_image } = req.body;
+  const { name, description, price, link, video_url, current_image } = req.body; // ✅ добавили video_url
   let image_url = current_image || null;
 
   try {
     if (req.file) {
-      image_url = req.file.url || req.file.path;
+      image_url = req.file.path;
       console.log("✅ Cloudinary URL:", image_url);
     }
 
     await Product.findByIdAndUpdate(
       req.params.id,
-      { name, description, price, link, image_url },
+      { name, description, price, link, image_url, video_url }, // ✅ сохраняем video_url
       { runValidators: true }
     );
     res.redirect("/admin");
@@ -205,5 +202,12 @@ app.use((err, req, res, next) => {
   res.status(500).send("Внутренняя ошибка сервера");
 });
 
-// Экспорт для Vercel
+// Запуск
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
+  });
+}
+
 module.exports = app;

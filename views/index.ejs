@@ -24,7 +24,7 @@
     <section id="catalog" class="section">
       <h2>Каталог товаров</h2>
 
-      <div class="product-grid">
+      <div id="product-grid" class="product-grid">
         <% if (products && products.length) { %>
           <% products.forEach(p => { %>
             <div class="product-card">
@@ -38,11 +38,18 @@
                 <div class="no-image">Нет изображения</div>
               <% } %>
 
-              <!-- Нижний блок: описание + цена + кнопка прижаты к низу -->
+              <!-- Нижний блок: описание + цена + кнопки -->
               <div class="product-bottom">
                 <p class="product-desc"><%= p.description %></p>
                 <span class="price"><%= p.price %> ₸</span>
-                <a class="product-action" href="<%= p.link %>" target="_blank" rel="noopener">Перейти</a>
+                <div class="product-actions">
+                  <a class="product-action" href="<%= p.link %>" target="_blank" rel="noopener">Перейти</a>
+
+                  <!-- ✅ Кнопка "Обзор" только если video_url задан -->
+                  <% if (p.video_url) { %>
+                    <button class="product-review" data-video="<%= p.video_url %>">Обзор</button>
+                  <% } %>
+                </div>
               </div>
             </div>
           <% }) %>
@@ -52,7 +59,7 @@
       </div>
     </section>
 
-    <!-- Блок "О проекте" (по якорю) -->
+    <!-- Блок "О проекте" -->
     <section id="about" class="section">
       <h2>О проекте</h2>
       <p class="disclaimer">
@@ -60,7 +67,7 @@
       </p>
     </section>
 
-    <!-- Блок "Контакты" (по якорю) -->
+    <!-- Блок "Контакты" -->
     <section id="contacts" class="section">
       <h2>Контакты</h2>
       <p class="disclaimer">
@@ -72,6 +79,14 @@
   <footer class="footer">
     <p>© 2025 EXTO Ecosystem</p>
   </footer>
+
+  <!-- Модальное окно для видео -->
+  <div id="videoModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
+      <button class="close" aria-label="Закрыть видео">&times;</button>
+      <iframe id="videoFrame" width="100%" height="480" frameborder="0" allowfullscreen></iframe>
+    </div>
+  </div>
 
   <script src="/script.js"></script>
 </body>

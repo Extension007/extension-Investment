@@ -13,6 +13,10 @@
     <input type="number" name="price" placeholder="Цена" required>
     <input type="url" name="link" placeholder="Ссылка" required>
     <input type="file" name="image" accept="image/*">
+
+    <!-- ✅ Новое поле для ссылки на YouTube -->
+    <input type="url" name="video_url" placeholder="Ссылка на YouTube видео">
+
     <button type="submit">Добавить</button>
   </form>
 
@@ -25,6 +29,14 @@
           <img src="<%= p.image_url %>" alt="<%= p.name %>" style="max-width: 160px; height: auto;">
         </div>
       <% } %>
+
+      <!-- ✅ Отображение ссылки на видео, если она есть -->
+      <% if (p.video_url) { %>
+        <div>
+          Видео: <a href="<%= p.video_url %>" target="_blank" rel="noopener"><%= p.video_url %></a>
+        </div>
+      <% } %>
+
       <div>
         <a href="/admin/product/<%= p.id %>/edit">Редактировать</a>
         <form method="POST" action="/admin/product/<%= p.id %>/delete" style="display:inline">

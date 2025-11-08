@@ -105,6 +105,13 @@ body {
 }
 
 /* Кнопка — прижата к низу карточки и визуально выразительная */
+.product-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
 .product-card .product-action {
   display: inline-block;
   background: linear-gradient(45deg, #ff0000, #ff3333);
@@ -119,6 +126,26 @@ body {
   transform: translateY(-2px);
 }
 .product-card .product-action:focus-visible {
+  outline: 2px solid #ff3333;
+  outline-offset: 2px;
+}
+
+/* Вторая кнопка — обзор видео */
+.product-review {
+  background: transparent;
+  border: 2px solid #ff3333;
+  color: #ff3333;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.product-review:hover {
+  background: #ff0000;
+  color: #fff;
+  transform: translateY(-2px);
+}
+.product-review:focus-visible {
   outline: 2px solid #ff3333;
   outline-offset: 2px;
 }
@@ -145,4 +172,39 @@ body {
   margin-top: 10px;
   color: #bbb;
   font-size: 0.95rem;
+}
+
+/* Модальное окно */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8);
+}
+
+.modal-content {
+  background: #111;
+  margin: 5% auto;
+  padding: 20px;
+  border-radius: 10px;
+  width: 80%;
+  max-width: 900px;
+  box-shadow: 0 0 20px #ff3333;
+  position: relative;
+}
+
+.modal .close {
+  color: #fff;
+  font-size: 28px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  position: absolute;
+  top: 10px;
+  right: 14px;
+}
+.modal .close:hover {
+  color: #ff3333;
 }
