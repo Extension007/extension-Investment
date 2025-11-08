@@ -1,4 +1,4 @@
-require("dotenv").config(); // ✅ добавлено для локальной загрузки .env
+require("dotenv").config(); // ✅ для локальной загрузки .env
 
 const express = require("express");
 const path = require("path");
@@ -62,7 +62,7 @@ app.get("/", async (req, res) => {
     const products = await Product.find().sort({ _id: -1 });
     res.render("index", { products, page: 1, totalPages: 1 });
   } catch (err) {
-    console.error("❌ Ошибка получения товаров:", err.message);
+    console.error("❌ Ошибка получения товаров:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -101,7 +101,7 @@ app.post("/admin/login", async (req, res) => {
     console.log("✅ Сессия установлена:", req.session.user);
     res.redirect("/admin");
   } catch (err) {
-    console.error("❌ Ошибка входа:", err.message);
+    console.error("❌ Ошибка входа:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -112,7 +112,7 @@ app.get("/admin", requireAuth, async (req, res) => {
     const products = await Product.find().sort({ _id: -1 });
     res.render("admin", { products });
   } catch (err) {
-    console.error("❌ Ошибка получения товаров (админ):", err.message);
+    console.error("❌ Ошибка получения товаров (админ):", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -127,14 +127,14 @@ app.post("/admin/product", requireAuth, upload.single("image"), async (req, res)
 
   try {
     if (req.file) {
-      image_url = req.file.path || req.file.url; // ✅ ссылка Cloudinary
+      image_url = req.file.url; // ✅ ссылка Cloudinary
       console.log("✅ Cloudinary URL:", image_url);
     }
 
     await Product.create({ name, description, price, link, image_url });
     res.redirect("/admin");
   } catch (err) {
-    console.error("❌ Ошибка добавления товара:", err.message, err.stack);
+    console.error("❌ Ошибка добавления товара:", err);
     res.status(500).send("Ошибка загрузки изображения или базы данных");
   }
 });
@@ -145,7 +145,7 @@ app.post("/admin/product/:id/delete", requireAuth, async (req, res) => {
     await Product.findByIdAndDelete(req.params.id);
     res.redirect("/admin");
   } catch (err) {
-    console.error("❌ Ошибка удаления товара:", err.message);
+    console.error("❌ Ошибка удаления товара:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -157,7 +157,7 @@ app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
     if (!product) return res.redirect("/admin");
     res.render("edit", { product });
   } catch (err) {
-    console.error("❌ Ошибка получения товара для редактирования:", err.message);
+    console.error("❌ Ошибка получения товара для редактирования:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -170,9 +170,9 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
   console.log("🖼️ Файл (update):", req.file);
 
   try {
-     if (req.file) {
-       image_url = req.file.url; // ✅ всегда ссылка Cloudinary
-       console.log("✅ Cloudinary URL:", image_url);
+    if (req.file) {
+      image_url = req.file.url; // ✅ ссылка Cloudinary
+      console.log("✅ Cloudinary URL:", image_url);
     }
 
     await Product.findByIdAndUpdate(
@@ -182,7 +182,7 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
     );
     res.redirect("/admin");
   } catch (err) {
-    console.error("❌ Ошибка редактирования товара:", err.message, err.stack);
+    console.error("❌ Ошибка редактирования товара:", err);
     res.status(500).send("Ошибка загрузки изображения или базы данных");
   }
 });
