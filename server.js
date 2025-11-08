@@ -1,20 +1,14 @@
+require("dotenv").config(); // ✅ добавлено для локальной загрузки .env
+
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
-const bcrypt = require("bcryptjs"); // ✅ используем bcryptjs для стабильности
+const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const MongoStore = require("connect-mongo");
 const Product = require("./models/Product");
 const User = require("./models/User");
 const upload = require("./utils/upload");
-const cloudinary = require("cloudinary").v2; // ✅ добавлено
-
-// Настройка Cloudinary (ключи должны быть в .env)
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
-});
 
 const app = express();
 
@@ -68,7 +62,7 @@ app.get("/", async (req, res) => {
     const products = await Product.find().sort({ _id: -1 });
     res.render("index", { products, page: 1, totalPages: 1 });
   } catch (err) {
-    console.error("❌ Ошибка получения товаров:", err);
+    console.error("❌ Ошибка получения товаров:", err.message);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -107,7 +101,7 @@ app.post("/admin/login", async (req, res) => {
     console.log("✅ Сессия установлена:", req.session.user);
     res.redirect("/admin");
   } catch (err) {
-    console.error("❌ Ошибка входа:", err);
+    console.error("❌ Ошибка входа:", err.message);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -118,7 +112,7 @@ app.get("/admin", requireAuth, async (req, res) => {
     const products = await Product.find().sort({ _id: -1 });
     res.render("admin", { products });
   } catch (err) {
-    console.error("❌ Ошибка получения товаров (админ):", err);
+    console.error("❌ Ошибка получения товаров (админ):", err.message);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -133,15 +127,14 @@ app.post("/admin/product", requireAuth, upload.single("image"), async (req, res)
 
   try {
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
-      image_url = result.secure_url;
+      image_url = req.file.path || req.file.url; // ✅ ссылка Cloudinary
       console.log("✅ Cloudinary URL:", image_url);
     }
 
     await Product.create({ name, description, price, link, image_url });
     res.redirect("/admin");
   } catch (err) {
-    console.error("❌ Ошибка добавления товара:", err);
+    console.error("❌ Ошибка добавления товара:", err.message, err.stack);
     res.status(500).send("Ошибка загрузки изображения или базы данных");
   }
 });
@@ -152,7 +145,7 @@ app.post("/admin/product/:id/delete", requireAuth, async (req, res) => {
     await Product.findByIdAndDelete(req.params.id);
     res.redirect("/admin");
   } catch (err) {
-    console.error("❌ Ошибка удаления товара:", err);
+    console.error("❌ Ошибка удаления товара:", err.message);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -164,7 +157,7 @@ app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
     if (!product) return res.redirect("/admin");
     res.render("edit", { product });
   } catch (err) {
-    console.error("❌ Ошибка получения товара для редактирования:", err);
+    console.error("❌ Ошибка получения товара для редактирования:", err.message);
     res.status(500).send("Ошибка базы данных");
   }
 });
@@ -178,8 +171,7 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
 
   try {
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path);
-      image_url = result.secure_url;
+      image_url = req.file.path || req.file.url; // ✅ ссылка Cloudinary
       console.log("✅ Cloudinary URL:", image_url);
     }
 
@@ -190,7 +182,7 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
     );
     res.redirect("/admin");
   } catch (err) {
-    console.error("❌ Ошибка редактирования товара:", JSON.stringify(err, null, 2));
+    console.error("❌ Ошибка редактирования товара:", err.message, err.stack);
     res.status(500).send("Ошибка загрузки изображения или базы данных");
   }
 });
