@@ -32,8 +32,10 @@
               <h3 class="product-title"><%= p.name %></h3>
 
               <!-- Картинка под названием -->
-              <% if (p.image_path) { %>
-                <img src="<%= p.image_path %>" alt="<%= p.name %>">
+              <% if (p.image_url) { %>
+                <img src="<%= p.image_url %>" alt="<%= p.name %>">
+              <% } else { %>
+                <div class="no-image">Нет изображения</div>
               <% } %>
 
               <!-- Нижний блок: описание + цена + кнопка прижаты к низу -->
