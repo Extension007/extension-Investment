@@ -117,9 +117,8 @@ app.get("/admin", requireAuth, async (req, res) => {
   }
 });
 
-/ Добавление товара
+// Добавление товара
 app.post("/admin/product", requireAuth, upload.single("image"), async (req, res) => {
-  // 👉 вставляем сразу после начала функции
   console.log("📦 RAW req.body:", req.body);
   console.log("🖼️ RAW req.file:", req.file);
 
@@ -131,7 +130,7 @@ app.post("/admin/product", requireAuth, upload.single("image"), async (req, res)
 
   try {
     if (req.file) {
-      image_url = req.file.url || req.file.path; // исправлено
+      image_url = req.file.url || req.file.path; // поддержка обоих вариантов
       console.log("✅ Cloudinary URL:", image_url);
     }
 
@@ -167,6 +166,9 @@ app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
 });
 
 app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (req, res) => {
+  console.log("📦 RAW req.body:", req.body);
+  console.log("🖼️ RAW req.file:", req.file);
+
   const { name, description, price, link, current_image } = req.body;
   let image_url = current_image || null;
 
@@ -175,7 +177,7 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
 
   try {
     if (req.file) {
-      image_url = req.file.url || req.file.path; // исправлено
+      image_url = req.file.url || req.file.path; // поддержка обоих вариантов
       console.log("✅ Cloudinary URL:", image_url);
     }
 
