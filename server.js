@@ -7,6 +7,14 @@ const MongoStore = require("connect-mongo");
 const Product = require("./models/Product");
 const User = require("./models/User");
 const upload = require("./utils/upload");
+const cloudinary = require("cloudinary").v2; // ✅ добавлено
+
+// Настройка Cloudinary (ключи должны быть в .env)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
 
 const app = express();
 
@@ -118,12 +126,18 @@ app.get("/admin", requireAuth, async (req, res) => {
 // Добавление товара
 app.post("/admin/product", requireAuth, upload.single("image"), async (req, res) => {
   const { name, description, price, link } = req.body;
-  const image_url = req.file?.path || null;
+  let image_url = null;
 
   console.log("📦 Данные формы (create):", { name, description, price, link });
   console.log("🖼️ Файл (create):", req.file);
 
   try {
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path);
+      image_url = result.secure_url;
+      console.log("✅ Cloudinary URL:", image_url);
+    }
+
     await Product.create({ name, description, price, link, image_url });
     res.redirect("/admin");
   } catch (err) {
@@ -157,12 +171,18 @@ app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
 
 app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (req, res) => {
   const { name, description, price, link, current_image } = req.body;
-  const image_url = req.file?.path || current_image || null;
+  let image_url = current_image || null;
 
   console.log("📦 Данные формы (update):", { name, description, price, link, current_image });
   console.log("🖼️ Файл (update):", req.file);
 
   try {
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path);
+      image_url = result.secure_url;
+      console.log("✅ Cloudinary URL:", image_url);
+    }
+
     await Product.findByIdAndUpdate(
       req.params.id,
       { name, description, price, link, image_url },
