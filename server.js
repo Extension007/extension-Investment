@@ -124,6 +124,9 @@ app.post("/admin/product", requireAuth, upload.single("image"), async (req, res)
 
   console.log("📦 Данные формы (create):", { name, description, price, link });
   console.log("🖼️ Файл (create):", req.file);
+  console.log("🔍 CLOUDINARY_CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME);
+  console.log("🔍 CLOUDINARY_API_KEY:", process.env.CLOUDINARY_API_KEY ? "OK" : "MISSING");
+  console.log("🔍 CLOUDINARY_API_SECRET:", process.env.CLOUDINARY_API_SECRET ? "OK" : "MISSING");
 
   try {
     if (req.file) {
@@ -168,6 +171,7 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
 
   console.log("📦 Данные формы (update):", { name, description, price, link, current_image });
   console.log("🖼️ Файл (update):", req.file);
+  console.log("🔍 CLOUDINARY_CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME);
 
   try {
     if (req.file) {
