@@ -190,7 +190,7 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
     );
     res.redirect("/admin");
   } catch (err) {
-    console.error("❌ Ошибка редактирования товара:", err);
+    console.error("❌ Ошибка редактирования товара:", JSON.stringify(err, null, 2));
     res.status(500).send("Ошибка загрузки изображения или базы данных");
   }
 });
