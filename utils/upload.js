@@ -2,9 +2,26 @@ const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("cloudinary").v2;
 
-// Автоматическая конфигурация через CLOUDINARY_URL из .env
-cloudinary.config();
+// Берём переменную окружения и убираем лишние пробелы/переносы
+const url = (process.env.CLOUDINARY_URL || "").trim();
 
+// Жёсткая проверка наличия и формата CLOUDINARY_URL
+if (!url || !url.startsWith("cloudinary://")) {
+  console.error("❌ CLOUDINARY_URL отсутствует или неверного формата");
+  throw new Error("CLOUDINARY_URL is missing or invalid");
+}
+
+// Явная конфигурация Cloudinary через URL
+cloudinary.config(url);
+
+// Дополнительный лог (безопасный): убеждаемся, что SDK видит значения
+console.log("🔧 Cloudinary config:", {
+  cloud_name: cloudinary.config().cloud_name,
+  api_key: (cloudinary.config().api_key || "").slice(0, 6) + "***",
+  has_secret: !!cloudinary.config().api_secret
+});
+
+// Настройка хранилища Cloudinary
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {

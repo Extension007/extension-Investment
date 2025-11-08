@@ -9,6 +9,7 @@ const MongoStore = require("connect-mongo");
 const Product = require("./models/Product");
 const User = require("./models/User");
 const upload = require("./utils/upload");
+const cloudinary = require("cloudinary").v2;
 
 const app = express();
 
@@ -42,13 +43,9 @@ app.use(session({
 // Статика
 app.use(express.static(path.join(__dirname, "public")));
 
-// favicon
-app.get("/favicon.ico", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "favicon.ico"));
-});
-app.get("/favicon.png", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "favicon.png"));
-});
+// favicon (безопасный fallback)
+app.get("/favicon.ico", (req, res) => res.status(204).end());
+app.get("/favicon.png", (req, res) => res.status(204).end());
 
 // Middleware авторизации
 function requireAuth(req, res, next) {
@@ -127,7 +124,7 @@ app.post("/admin/product", requireAuth, upload.single("image"), async (req, res)
 
   try {
     if (req.file) {
-      image_url = req.file.url || req.file.path; // поддержка обоих вариантов
+      image_url = req.file.url || req.file.path;
       console.log("✅ Cloudinary URL:", image_url);
     }
 
@@ -171,7 +168,7 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
 
   try {
     if (req.file) {
-      image_url = req.file.url || req.file.path; // поддержка обоих вариантов
+      image_url = req.file.url || req.file.path;
       console.log("✅ Cloudinary URL:", image_url);
     }
 
@@ -184,6 +181,21 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
   } catch (err) {
     console.error("❌ Ошибка редактирования товара:", err);
     res.status(500).send("Ошибка загрузки изображения или базы данных");
+  }
+});
+
+// Health-check Cloudinary
+app.get("/__health/cloudinary", async (req, res) => {
+  try {
+    const dataUri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAukB9yx7CmoAAAAASUVORK5CYII=";
+    const result = await cloudinary.uploader.upload(dataUri, {
+      folder: "health-check",
+      transformation: [{ width: 10, height: 10, crop: "limit" }]
+    });
+    res.json({ ok: true, public_id: result.public_id, secure_url: result.secure_url });
+  } catch (err) {
+    console.error("❌ Cloudinary health error:", err);
+    res.status(500).json({ ok: false, name: err.name, http_code: err.http_code, message: err.message });
   }
 });
 
