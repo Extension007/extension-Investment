@@ -117,8 +117,12 @@ app.get("/admin", requireAuth, async (req, res) => {
   }
 });
 
-// Добавление товара
+/ Добавление товара
 app.post("/admin/product", requireAuth, upload.single("image"), async (req, res) => {
+  // 👉 вставляем сразу после начала функции
+  console.log("📦 RAW req.body:", req.body);
+  console.log("🖼️ RAW req.file:", req.file);
+
   const { name, description, price, link } = req.body;
   let image_url = null;
 
