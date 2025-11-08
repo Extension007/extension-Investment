@@ -170,9 +170,9 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
   console.log("🖼️ Файл (update):", req.file);
 
   try {
-    if (req.file) {
-      image_url = req.file.path || req.file.url; // ✅ ссылка Cloudinary
-      console.log("✅ Cloudinary URL:", image_url);
+     if (req.file) {
+       image_url = req.file.url; // ✅ всегда ссылка Cloudinary
+       console.log("✅ Cloudinary URL:", image_url);
     }
 
     await Product.findByIdAndUpdate(
