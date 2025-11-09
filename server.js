@@ -1,3 +1,4 @@
+// 📂 server.js
 require("dotenv").config(); // ✅ для локальной загрузки .env
 
 const express = require("express");
@@ -22,8 +23,9 @@ mongoose.connect(process.env.MONGODB_URI)
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Парсинг форм
+// Парсинг форм/JSON
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json()); // ✅ нужно для API рейтинга
 
 // Сессии (MongoDB)
 app.use(session({
@@ -40,7 +42,7 @@ app.use(session({
 // Статика
 app.use(express.static(path.join(__dirname, "public")));
 
-// favicon
+// favicon (глушим запросы)
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.get("/favicon.png", (req, res) => res.status(204).end());
 
@@ -50,10 +52,11 @@ function requireAuth(req, res, next) {
   res.redirect("/admin/login");
 }
 
-// Главная страница
+// Главная страница — каталог
 app.get("/", async (req, res) => {
   try {
     const products = await Product.find().sort({ _id: -1 });
+    // page/totalPages оставлены для совместимости с твоим рендером
     res.render("index", { products, page: 1, totalPages: 1 });
   } catch (err) {
     console.error("❌ Ошибка получения товаров:", err);
@@ -68,31 +71,16 @@ app.get("/admin/login", (req, res) => {
 
 app.post("/admin/login", async (req, res) => {
   const { username, password } = req.body;
-  console.log("🛂 Получено:", req.body);
-
   try {
     const user = await User.findOne({ username });
-    console.log("🔎 Найден пользователь:", user);
-
     if (!user) {
-      return res.render("login", { 
-        error: "Неверный логин или пароль", 
-        debug: { body: req.body, user: null }
-      });
+      return res.render("login", { error: "Неверный логин или пароль", debug: null });
     }
-
     const ok = await bcrypt.compare(password, user.password_hash);
-    console.log("🔐 Сравнение пароля:", ok);
-
     if (!ok) {
-      return res.render("login", { 
-        error: "Неверный логин или пароль", 
-        debug: { body: req.body, user, compare: false }
-      });
+      return res.render("login", { error: "Неверный логин или пароль", debug: null });
     }
-
     req.session.user = { _id: user._id, username: user.username };
-    console.log("✅ Сессия установлена:", req.session.user);
     res.redirect("/admin");
   } catch (err) {
     console.error("❌ Ошибка входа:", err);
@@ -113,19 +101,21 @@ app.get("/admin", requireAuth, async (req, res) => {
 
 // Добавление товара
 app.post("/admin/product", requireAuth, upload.single("image"), async (req, res) => {
-  console.log("📦 RAW req.body:", req.body);
-  console.log("🖼️ RAW req.file:", req.file);
-
-  const { name, description, price, link, video_url } = req.body; // ✅ добавили video_url
+  const { name, description, price, link, video_url } = req.body;
   let image_url = null;
-
   try {
-    if (req.file) {
-      image_url = req.file.path;
-      console.log("✅ Cloudinary URL:", image_url);
-    }
-
-    await Product.create({ name, description, price, link, image_url, video_url }); // ✅ сохраняем video_url
+    if (req.file) image_url = req.file.path;
+    await Product.create({
+      name,
+      description,
+      price,
+      link,
+      image_url,
+      video_url,
+      // ✅ инициализируем счётчики голосов
+      likes: 0,
+      dislikes: 0
+    });
     res.redirect("/admin");
   } catch (err) {
     console.error("❌ Ошибка добавления товара:", err);
@@ -133,7 +123,7 @@ app.post("/admin/product", requireAuth, upload.single("image"), async (req, res)
   }
 });
 
-// Удаление
+// Удаление товара
 app.post("/admin/product/:id/delete", requireAuth, async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
@@ -144,7 +134,7 @@ app.post("/admin/product/:id/delete", requireAuth, async (req, res) => {
   }
 });
 
-// Редактирование
+// Редактирование товара (форма)
 app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
@@ -156,28 +146,67 @@ app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
   }
 });
 
+// Редактирование товара (сохранение)
 app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (req, res) => {
-  console.log("📦 RAW req.body:", req.body);
-  console.log("🖼️ RAW req.file:", req.file);
-
-  const { name, description, price, link, video_url, current_image } = req.body; // ✅ добавили video_url
+  const { name, description, price, link, video_url, current_image } = req.body;
   let image_url = current_image || null;
-
   try {
-    if (req.file) {
-      image_url = req.file.path;
-      console.log("✅ Cloudinary URL:", image_url);
-    }
-
+    if (req.file) image_url = req.file.path;
     await Product.findByIdAndUpdate(
       req.params.id,
-      { name, description, price, link, image_url, video_url }, // ✅ сохраняем video_url
+      { name, description, price, link, image_url, video_url },
       { runValidators: true }
     );
     res.redirect("/admin");
   } catch (err) {
     console.error("❌ Ошибка редактирования товара:", err);
     res.status(500).send("Ошибка загрузки изображения или базы данных");
+  }
+});
+
+// 📌 Голосование (лайки/дизлайки → возвращаем результат и общее количество голосов)
+app.post("/api/rating/:id", async (req, res) => {
+  try {
+    const { value } = req.body; // "like" или "dislike"
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: "Товар не найден" });
+
+    if (value === "like") product.likes += 1;
+    else if (value === "dislike") product.dislikes += 1;
+
+    product.rating_updated_at = Date.now();
+
+    await product.save();
+
+    res.json({
+      success: true,
+      likes: product.likes,
+      dislikes: product.dislikes,
+      total: product.likes + product.dislikes,
+      result: product.likes - product.dislikes // 🔹 конечный результат
+    });
+  } catch (err) {
+    console.error("❌ Ошибка обновления рейтинга:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Получение состояния голосов
+app.get("/api/rating/:id", async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: "Товар не найден" });
+
+    res.json({
+      success: true,
+      likes: product.likes,
+      dislikes: product.dislikes,
+      total: product.likes + product.dislikes,
+      result: product.likes - product.dislikes
+    });
+  } catch (err) {
+    console.error("❌ Ошибка получения рейтинга:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -210,4 +239,5 @@ if (require.main === module) {
   });
 }
 
+// Экспорт для тестов/серверлесс
 module.exports = app;

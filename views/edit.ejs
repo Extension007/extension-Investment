@@ -31,6 +31,24 @@
     <button type="submit">Сохранить изменения</button>
   </form>
 
+  <!-- 🔹 Блок рейтинга для редактируемого товара -->
+  <h2>Рейтинг товара</h2>
+  <div class="product-rating" data-id="<%= product._id %>">
+    <button class="like-btn" type="button" aria-label="Лайк">👍</button>
+
+    <span class="result">
+      <% const likes = product.likes || 0; %>
+      <% const dislikes = product.dislikes || 0; %>
+      <%= likes - dislikes %>
+    </span>
+
+    <button class="dislike-btn" type="button" aria-label="Дизлайк">👎</button>
+
+    <span class="votes">
+      (<%= (product.likes || 0) + (product.dislikes || 0) %> голосов)
+    </span>
+  </div>
+
   <p><a href="/admin">Назад к админке</a></p>
 </body>
 </html>

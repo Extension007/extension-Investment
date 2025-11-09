@@ -208,3 +208,29 @@ body {
 .modal .close:hover {
   color: #ff3333;
 }
+/* Рейтинг (лайки/дизлайки) */
+.product-rating {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.product-rating button {
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.product-rating button:hover {
+  transform: scale(1.2);
+}
+
+.product-rating .rating-value {
+  font-weight: 700;
+  color: #ff3333;
+  font-size: 1.1rem;
+}

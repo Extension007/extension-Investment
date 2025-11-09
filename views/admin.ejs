@@ -22,7 +22,7 @@
 
   <h2>Список товаров</h2>
   <% products.forEach(p => { %>
-    <div style="margin: 10px 0;">
+    <div style="margin: 10px 0; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
       <strong><%= p.name %></strong> — <%= p.price %> ₸
       <% if (p.image_url) { %>
         <div>
@@ -37,7 +37,24 @@
         </div>
       <% } %>
 
-      <div>
+      <!-- 🔹 Блок рейтинга для админки -->
+      <div class="product-rating" data-id="<%= p._id %>" style="margin-top: 5px;">
+        <button class="like-btn" type="button" aria-label="Лайк">👍</button>
+
+        <span class="result">
+          <% const likes = p.likes || 0; %>
+          <% const dislikes = p.dislikes || 0; %>
+          <%= likes - dislikes %>
+        </span>
+
+        <button class="dislike-btn" type="button" aria-label="Дизлайк">👎</button>
+
+        <span class="votes">
+          (<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)
+        </span>
+      </div>
+
+      <div style="margin-top: 5px;">
         <a href="/admin/product/<%= p.id %>/edit">Редактировать</a>
         <form method="POST" action="/admin/product/<%= p.id %>/delete" style="display:inline">
           <button type="submit">Удалить</button>
