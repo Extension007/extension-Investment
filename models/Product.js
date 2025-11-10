@@ -7,6 +7,13 @@ const productSchema = new mongoose.Schema({
   link: { type: String, trim: true },
   image_url: { type: String, default: null },
   video_url: { type: String, trim: true, default: "" },
+  owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+  voters: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  category: {
+    type: String,
+    enum: ["home", "beauty", "auto", "electric", "electronics", "plumbing"],
+    default: "home"
+  },
 
   // 🔹 Рейтинг
   likes: { type: Number, default: 0 },

@@ -2,65 +2,99 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Админка</title>
+  <title>Админка — Управление товарами</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <h1>Управление товарами</h1>
-
-  <form method="POST" action="/admin/product" enctype="multipart/form-data">
-    <input type="text" name="name" placeholder="Название" required>
-    <input type="text" name="description" placeholder="Описание">
-    <input type="number" name="price" placeholder="Цена" required>
-    <input type="url" name="link" placeholder="Ссылка" required>
-    <input type="file" name="image" accept="image/*">
-
-    <!-- ✅ Новое поле для ссылки на YouTube -->
-    <input type="url" name="video_url" placeholder="Ссылка на YouTube видео">
-
-    <button type="submit">Добавить</button>
-  </form>
-
-  <h2>Список товаров</h2>
-  <% products.forEach(p => { %>
-    <div style="margin: 10px 0; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
-      <strong><%= p.name %></strong> — <%= p.price %> ₸
-      <% if (p.image_url) { %>
-        <div>
-          <img src="<%= p.image_url %>" alt="<%= p.name %>" style="max-width: 160px; height: auto;">
-        </div>
-      <% } %>
-
-      <!-- ✅ Отображение ссылки на видео, если она есть -->
-      <% if (p.video_url) { %>
-        <div>
-          Видео: <a href="<%= p.video_url %>" target="_blank" rel="noopener"><%= p.video_url %></a>
-        </div>
-      <% } %>
-
-      <!-- 🔹 Блок рейтинга для админки -->
-      <div class="product-rating" data-id="<%= p._id %>" style="margin-top: 5px;">
-        <button class="like-btn" type="button" aria-label="Лайк">👍</button>
-
-        <span class="result">
-          <% const likes = p.likes || 0; %>
-          <% const dislikes = p.dislikes || 0; %>
-          <%= likes - dislikes %>
-        </span>
-
-        <button class="dislike-btn" type="button" aria-label="Дизлайк">👎</button>
-
-        <span class="votes">
-          (<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)
-        </span>
-      </div>
-
-      <div style="margin-top: 5px;">
-        <a href="/admin/product/<%= p.id %>/edit">Редактировать</a>
-        <form method="POST" action="/admin/product/<%= p.id %>/delete" style="display:inline">
-          <button type="submit">Удалить</button>
-        </form>
+  <header class="main-header">
+    <div class="container header-inner">
+      <a class="logo" href="/">EXTO</a>
+      <nav class="nav">
+        <ul class="nav-list">
+          <li><a class="nav-link" href="/">Каталог</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <span class="user-chip">Админ-панель</span>
       </div>
     </div>
-  <% }) %>
+  </header>
+
+  <main class="container">
+    <section class="section">
+      <div class="section-header">
+        <h2>Добавить товар</h2>
+      </div>
+      <form method="POST" action="/admin/product" enctype="multipart/form-data" class="form-grid">
+        <input type="text" name="name" placeholder="Название" required>
+        <input type="text" name="description" placeholder="Описание">
+        <input type="number" name="price" placeholder="Цена" min="0" step="1" required>
+        <input type="url" name="link" placeholder="Ссылка" required>
+        <input type="file" name="image" accept="image/*">
+        <input type="url" name="video_url" placeholder="Ссылка на YouTube видео">
+        <button type="submit" class="btn primary">Добавить</button>
+      </form>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>Список товаров</h2>
+      </div>
+
+      <% if (products && products.length) { %>
+        <div class="product-grid">
+          <% products.forEach(p => { %>
+            <div class="product-card">
+              <h3 class="product-title"><%= p.name %></h3>
+              <% if (p.image_url) { %>
+                <img src="<%= p.image_url %>" alt="<%= p.name %>">
+              <% } else { %>
+                <div class="no-image">Нет изображения</div>
+              <% } %>
+
+              <div class="product-bottom">
+                <p class="product-desc"><%= p.description || "—" %></p>
+                <div class="row" style="justify-content:center; gap:8px;">
+                  <span class="muted">Цена:</span>
+                  <strong class="price"><%= p.price %></strong>
+                </div>
+
+                <div class="product-actions">
+                  <a class="btn small outline" href="/admin/product/<%= p.id %>/edit">Редактировать</a>
+                  <form method="POST" action="/admin/product/<%= p.id %>/delete" style="display:inline">
+                    <button type="submit" class="btn small outline">Удалить</button>
+                  </form>
+                  <% if (p.link) { %>
+                    <a class="btn small" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
+                  <% } %>
+                  <% if (p.video_url) { %>
+                    <a class="btn small" href="<%= p.video_url %>" target="_blank" rel="noopener">Видео</a>
+                  <% } %>
+                </div>
+
+                <!-- Рейтинг (для наглядности в админке тоже показываем) -->
+                <div class="product-rating" data-id="<%= p._id %>">
+                  <button class="btn icon" type="button" disabled aria-label="Лайк">👍</button>
+                  <span class="result"><%= (p.likes || 0) - (p.dislikes || 0) %></span>
+                  <button class="btn icon" type="button" disabled aria-label="Дизлайк">👎</button>
+                  <span class="votes">(<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)</span>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="empty-state">Пока нет товаров</p>
+      <% } %>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2025 EXTO Ecosystem</p>
+  </footer>
 </body>
 </html>

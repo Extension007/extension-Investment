@@ -1,4 +1,62 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // 🔹 Модалка регистрации
+  const registerModal = document.getElementById("registerModal");
+  const openRegisterBtn = document.getElementById("openRegister");
+  const closeRegisterBtn = document.querySelector("[data-close-register]");
+  const registerForm = document.getElementById("registerForm");
+  const registerError = document.getElementById("registerError");
+  const registerSuccess = document.getElementById("registerSuccess");
+
+  if (openRegisterBtn && registerModal) {
+    openRegisterBtn.addEventListener("click", () => {
+      registerModal.style.display = "block";
+      registerModal.setAttribute("aria-hidden", "false");
+    });
+    closeRegisterBtn?.addEventListener("click", () => {
+      registerModal.style.display = "none";
+      registerModal.setAttribute("aria-hidden", "true");
+      registerError && (registerError.style.display = "none");
+    });
+    window.addEventListener("click", (e) => { if (e.target === registerModal) { registerModal.style.display = "none"; registerModal.setAttribute("aria-hidden", "true"); } });
+  }
+
+  registerForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const formData = Object.fromEntries(new FormData(registerForm).entries());
+    try {
+      const res = await fetch("/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        // Показываем сообщение об успешной регистрации без редиректа
+        if (registerError) { registerError.style.display = "none"; }
+        if (registerSuccess) {
+          registerSuccess.textContent = "Регистрация завершена. Теперь вы можете открыть личный кабинет.";
+          registerSuccess.style.display = "block";
+        } else {
+          alert("Регистрация завершена");
+        }
+      } else {
+        if (registerError) {
+          registerError.textContent = data.message || "Ошибка регистрации";
+          registerError.style.display = "block";
+        } else {
+          alert(data.message || "Ошибка регистрации");
+        }
+      }
+    } catch (err) {
+      if (registerError) {
+        registerError.textContent = "Сеть недоступна или сервер не отвечает";
+        registerError.style.display = "block";
+      } else {
+        alert("Сеть недоступна или сервер не отвечает");
+      }
+    }
+  });
+
   // 🔹 Модальное окно для видео
   const modal = document.getElementById("videoModal");
   const videoFrame = document.getElementById("videoFrame");
@@ -6,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (modal && videoFrame && closeBtn) {
     document.addEventListener("click", (e) => {
-      const btn = e.target.closest(".product-review");
+      const btn = e.target.closest("[data-video]");
       if (!btn) return;
 
       const rawUrl = btn.getAttribute("data-video")?.trim();
@@ -85,12 +143,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔹 Логика рейтинга (лайки/дизлайки → результат и общее количество голосов)
   document.addEventListener("click", async (e) => {
+    // Категории (dropdown)
+    const openCat = e.target.closest("#openCategories");
+    const dropdown = document.getElementById("categoriesMenu");
+    if (openCat && dropdown) {
+      const opened = dropdown.classList.toggle("open");
+      dropdown.setAttribute("aria-hidden", opened ? "false" : "true");
+      return;
+    }
+    const catItem = e.target.closest(".dropdown-item");
+    if (catItem && dropdown) {
+      const cat = catItem.getAttribute("data-category");
+      const url = new URL(window.location.href);
+      if (cat === "all") url.searchParams.delete("category"); else url.searchParams.set("category", cat);
+      window.location.href = url.toString();
+      return;
+    }
+    if (dropdown && !e.target.closest(".category-dropdown")) {
+      dropdown.classList.remove("open");
+      dropdown.setAttribute("aria-hidden", "true");
+    }
+
     const likeBtn = e.target.closest(".like-btn");
     const dislikeBtn = e.target.closest(".dislike-btn");
 
     if (likeBtn || dislikeBtn) {
+      if (!window.IS_AUTH) {
+        // Предложим регистрацию
+        const modal = document.getElementById("registerModal");
+        if (modal) {
+          modal.style.display = "block";
+          modal.setAttribute("aria-hidden", "false");
+        } else {
+          alert("Голосование доступно только зарегистрированным пользователям");
+        }
+        return;
+      }
+
       const ratingBlock = e.target.closest(".product-rating");
       if (!ratingBlock) return;
+      if (ratingBlock.dataset.voted === "true") {
+        // Уже голосовал — блокируем повтор
+        return;
+      }
 
       const resultEl = ratingBlock.querySelector(".result");
       const votesEl = ratingBlock.querySelector(".votes");
@@ -110,8 +205,18 @@ document.addEventListener("DOMContentLoaded", () => {
           resultEl.textContent = String(data.result);
           // 🔹 обновляем количество голосов
           votesEl.textContent = `(${data.total} голосов)`;
+          // 🔹 помечаем, что голос отдан
+          ratingBlock.dataset.voted = "true";
+          ratingBlock.querySelectorAll("button").forEach(b => b.disabled = true);
         } else {
           console.warn("⚠️ Сервер вернул ошибку:", data.message || data.error);
+          if (res.status === 401) {
+            alert("Голосование доступно только зарегистрированным пользователям");
+          }
+          if (res.status === 409) {
+            ratingBlock.dataset.voted = "true";
+            ratingBlock.querySelectorAll("button").forEach(b => b.disabled = true);
+          }
         }
       } catch (err) {
         console.error("❌ Ошибка сохранения рейтинга:", err);

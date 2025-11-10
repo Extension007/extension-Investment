@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Личный кабинет</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="main-header">
+    <div class="container header-inner">
+      <a class="logo" href="/">EXTO</a>
+      <nav class="nav">
+        <ul class="nav-list">
+          <li><a class="nav-link" href="/">Каталог</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <span class="user-chip">👤 <%= user.username %></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="section">
+      <h2>Создать карточку товара</h2>
+      <form id="createProductForm" class="form-grid" enctype="multipart/form-data">
+        <input type="text" name="name" placeholder="Название" required>
+        <input type="text" name="description" placeholder="Описание">
+        <input type="url" name="link" placeholder="Ссылка">
+        <input type="url" name="video_url" placeholder="YouTube ссылка">
+        <input type="number" name="price" placeholder="Цена" min="0" step="1" required>
+        <input type="file" name="image" accept="image/*">
+        <select name="category" required>
+          <option value="home">Для дома</option>
+          <option value="beauty">Красота и здоровье</option>
+          <option value="auto">Авто мото</option>
+          <option value="electric">Электрика</option>
+          <option value="electronics">Электроника</option>
+          <option value="plumbing">Сантехника</option>
+        </select>
+        <button type="submit" class="btn primary">Отправить</button>
+      </form>
+      <div id="createProductMsg" class="note" style="margin-top:10px;"></div>
+    </section>
+
+    <section class="section">
+      <h2>Мои карточки</h2>
+      <% if (products && products.length) { %>
+        <div class="product-grid">
+          <% products.forEach(p => { %>
+            <div class="product-card">
+              <h3 class="product-title"><%= p.name %></h3>
+              <div class="product-bottom">
+                <div class="row">
+                  <span class="muted">Текущая цена:</span>
+                  <strong class="price" data-id="<%= p._id %>"><%= p.price %></strong>
+                </div>
+                <form class="priceForm" data-id="<%= p._id %>">
+                  <input type="number" name="price" min="0" step="1" placeholder="Новая цена" required>
+                  <button type="submit" class="btn small">Обновить цену</button>
+                </form>
+                <p class="product-desc"><%= p.description || "—" %></p>
+                <div class="product-actions">
+                  <% if (p.link) { %>
+                    <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
+                  <% } %>
+                  <% if (p.video_url) { %>
+                    <a class="btn small" href="<%= p.video_url %>" target="_blank" rel="noopener">Видео</a>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="empty-state">У вас пока нет карточек.</p>
+      <% } %>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2025 EXTO Ecosystem</p>
+  </footer>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.getElementById("createProductForm");
+      const msg = document.getElementById("createProductMsg");
+      form?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form); // отправляем multipart, чтобы передать файл
+        const res = await fetch("/cabinet/product", { method: "POST", body: formData });
+        const json = await res.json();
+        if (json.success) {
+          msg.textContent = "Карточка отправлена на модерацию.";
+          msg.style.color = "green";
+          setTimeout(() => location.reload(), 800);
+        } else {
+          msg.textContent = json.message || "Ошибка";
+          msg.style.color = "#b00020";
+        }
+      });
+
+      document.querySelectorAll(".priceForm").forEach((f) => {
+        f.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const id = f.getAttribute("data-id");
+          const price = f.querySelector("input[name='price']").value;
+          const res = await fetch(`/cabinet/product/${id}/price`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ price })
+          });
+          const json = await res.json();
+          if (json.success) {
+            document.querySelector(`.price[data-id='${id}']`).textContent = json.price;
+          } else {
+            alert(json.message || "Ошибка обновления цены");
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
+
+
