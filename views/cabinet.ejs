@@ -27,7 +27,7 @@
   <main class="container">
     <section class="section">
       <h2>Создать карточку товара</h2>
-      <form id="createProductForm" class="form-grid" enctype="multipart/form-data">
+      <form id="createProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/product">
         <input type="text" name="name" placeholder="Название" required>
         <input type="text" name="description" placeholder="Описание">
         <input type="url" name="link" placeholder="Ссылка">
@@ -54,22 +54,49 @@
           <% products.forEach(p => { %>
             <div class="product-card">
               <h3 class="product-title"><%= p.name %></h3>
+              <% if (p.image_url) { %>
+                <img src="<%= p.image_url %>" alt="<%= p.name %>">
+              <% } else { %>
+                <div class="no-image">Нет изображения</div>
+              <% } %>
               <div class="product-bottom">
+                <!-- Статус карточки -->
+                <div style="text-align:center;margin-bottom:10px;">
+                  <% if (p.status === "pending") { %>
+                    <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ⏳ На модерации
+                    </span>
+                  <% } else if (p.status === "approved") { %>
+                    <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ✅ Опубликовано
+                    </span>
+                  <% } else if (p.status === "rejected") { %>
+                    <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ❌ Отклонено
+                    </span>
+                    <% if (p.rejection_reason) { %>
+                      <p style="color:#f44336;font-size:0.85rem;margin-top:5px;"><%= p.rejection_reason %></p>
+                    <% } %>
+                  <% } %>
+                </div>
+
                 <div class="row">
                   <span class="muted">Текущая цена:</span>
                   <strong class="price" data-id="<%= p._id %>"><%= p.price %></strong>
                 </div>
-                <form class="priceForm" data-id="<%= p._id %>">
-                  <input type="number" name="price" min="0" step="1" placeholder="Новая цена" required>
-                  <button type="submit" class="btn small">Обновить цену</button>
-                </form>
+                <% if (p.status === "approved" || p.status === "pending") { %>
+                  <form class="priceForm" data-id="<%= p._id %>">
+                    <input type="number" name="price" min="0" step="1" placeholder="Новая цена" required>
+                    <button type="submit" class="btn small">Обновить цену</button>
+                  </form>
+                <% } %>
                 <p class="product-desc"><%= p.description || "—" %></p>
                 <div class="product-actions">
                   <% if (p.link) { %>
                     <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
                   <% } %>
                   <% if (p.video_url) { %>
-                    <a class="btn small" href="<%= p.video_url %>" target="_blank" rel="noopener">Видео</a>
+                    <button class="btn small" data-video="<%= p.video_url %>">Обзор</button>
                   <% } %>
                 </div>
               </div>
@@ -86,21 +113,113 @@
     <p>© 2025 EXTO Ecosystem</p>
   </footer>
 
+  <!-- Модальное окно для видео -->
+  <div id="videoModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
+      <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
+      <iframe id="videoFrame" 
+              width="100%" 
+              height="480" 
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              allowfullscreen
+              loading="eager"
+              referrerpolicy="strict-origin-when-cross-origin"
+              style="display: block; visibility: visible;"></iframe>
+    </div>
+  </div>
+
   <script>
+    // Загружаем функцию toYouTubeEmbed из глобального скрипта, если она там есть
+    // Если нет, определяем локально (упрощенная версия для избежания ошибки 153)
+    if (typeof toYouTubeEmbed === 'undefined') {
+      function toYouTubeEmbed(url) {
+        try {
+          if (!url || typeof url !== 'string') return null;
+          url = url.trim();
+          
+          // Если уже embed URL, извлекаем video ID
+          if (url.includes('/embed/')) {
+            const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
+            if (embedId) {
+              // Используем обычный youtube.com для лучшей совместимости
+              return `https://www.youtube.com/embed/${embedId}`;
+            }
+          }
+          
+          const u = new URL(url);
+          const host = u.hostname.replace(/^www\./, "").toLowerCase();
+          let videoId = null;
+          
+          if (host.includes("youtube.com")) {
+            if (u.pathname === "/watch") {
+              videoId = u.searchParams.get("v");
+            } else if (u.pathname.startsWith("/embed/")) {
+              videoId = u.pathname.split("/embed/")[1]?.split("?")[0];
+            } else if (u.pathname.startsWith("/shorts/")) {
+              videoId = u.pathname.split("/shorts/")[1]?.split("?")[0];
+            } else if (u.pathname.startsWith("/v/")) {
+              videoId = u.pathname.split("/v/")[1]?.split("?")[0];
+            }
+          } else if (host === "youtu.be") {
+            videoId = u.pathname.slice(1).split("?")[0];
+          }
+          
+          if (videoId) {
+            videoId = videoId.split('&')[0].split('#')[0].trim();
+            if (videoId) {
+              // Используем обычный youtube.com для лучшей совместимости
+              return `https://www.youtube.com/embed/${videoId}`;
+            }
+          }
+          
+          return null;
+        } catch (err) {
+          console.error("Ошибка преобразования YouTube URL:", err);
+          return null;
+        }
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("createProductForm");
       const msg = document.getElementById("createProductMsg");
-      form?.addEventListener("submit", async (e) => {
+      
+      if (!form) {
+        console.error("❌ Форма создания карточки не найдена!");
+        return;
+      }
+      
+      form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const formData = new FormData(form); // отправляем multipart, чтобы передать файл
-        const res = await fetch("/cabinet/product", { method: "POST", body: formData });
-        const json = await res.json();
-        if (json.success) {
-          msg.textContent = "Карточка отправлена на модерацию.";
-          msg.style.color = "green";
-          setTimeout(() => location.reload(), 800);
-        } else {
-          msg.textContent = json.message || "Ошибка";
+        e.stopPropagation();
+        console.log("📤 Отправка формы создания карточки (перехвачено JavaScript)");
+        
+        const formData = new FormData(form);
+        console.log("Данные формы:", {
+          name: formData.get("name"),
+          price: formData.get("price"),
+          category: formData.get("category"),
+          hasImage: !!formData.get("image")
+        });
+        
+        try {
+          const res = await fetch("/cabinet/product", { method: "POST", body: formData });
+          const json = await res.json();
+          console.log("Ответ сервера:", json);
+          
+          if (json.success) {
+            msg.textContent = "Карточка отправлена на модерацию.";
+            msg.style.color = "green";
+            setTimeout(() => location.reload(), 800);
+          } else {
+            msg.textContent = json.message || "Ошибка";
+            msg.style.color = "#b00020";
+            console.error("Ошибка создания карточки:", json.message);
+          }
+        } catch (err) {
+          console.error("Ошибка сети:", err);
+          msg.textContent = "Ошибка сети: " + err.message;
           msg.style.color = "#b00020";
         }
       });
@@ -123,8 +242,194 @@
           }
         });
       });
+
+      // Видео модалка
+      const videoModal = document.getElementById("videoModal");
+      const videoFrame = document.getElementById("videoFrame");
+
+      // Используем делегирование событий с capture phase для приоритета
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-video]");
+        if (!btn) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log("🖱️ Клик по кнопке видео:", btn);
+        const url = btn.getAttribute("data-video");
+        console.log("📹 URL из атрибута:", url);
+        
+        if (!url) {
+          console.warn("⚠️ Кнопка с data-video не содержит URL");
+          return;
+        }
+        
+        const embedUrl = toYouTubeEmbed(url);
+        console.log("🎬 Embed URL:", embedUrl);
+        
+        if (embedUrl && videoModal && videoFrame) {
+          // Формируем финальный URL с autoplay и mute для автоматического воспроизведения
+          // Для YouTube Shorts и обычных видео используем специальные параметры
+          // Используем правильные параметры для избежания ошибки 153
+          let finalUrl = embedUrl;
+          if (finalUrl.includes("?")) {
+            finalUrl += "&autoplay=1&mute=1&rel=0&enablejsapi=1&playsinline=1&controls=1";
+          } else {
+            finalUrl += "?autoplay=1&mute=1&rel=0&enablejsapi=1&playsinline=1&controls=1";
+          }
+          console.log("🎥 Загрузка видео с autoplay:", finalUrl);
+          
+          // Очищаем предыдущий src
+          videoFrame.src = "";
+          
+          // Открываем модальное окно
+          videoModal.style.display = "block";
+          videoModal.setAttribute("aria-hidden", "false");
+          
+          // Убеждаемся, что iframe видим
+          videoFrame.style.display = "block";
+          videoFrame.style.visibility = "visible";
+          videoFrame.style.opacity = "1";
+          
+          // Загружаем видео в следующем кадре с проверкой видимости
+          requestAnimationFrame(() => {
+            // Проверяем видимость iframe перед загрузкой
+            const isVisible = videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0;
+            console.log("📺 iframe видимый перед загрузкой:", isVisible, "width:", videoFrame.offsetWidth, "height:", videoFrame.offsetHeight);
+            
+            if (!isVisible) {
+              console.warn("⚠️ iframe не видимый, ждем еще...");
+              setTimeout(() => {
+                try {
+                  videoFrame.src = finalUrl;
+                  console.log("✅ Видео URL установлен (с задержкой):", videoFrame.src);
+                } catch (err) {
+                  console.error("❌ Ошибка при установке src:", err);
+                }
+              }, 300);
+            } else {
+              try {
+                videoFrame.src = finalUrl;
+                console.log("✅ Видео URL установлен:", videoFrame.src);
+                
+                // Проверяем, что src установлен
+                setTimeout(() => {
+                  const currentSrc = videoFrame.src;
+                  if (currentSrc && currentSrc.includes("youtube")) {
+                    console.log("✅ Видео успешно загружено в iframe");
+                    console.log("📺 iframe готов к воспроизведению (пользователь может нажать play)");
+                  } else {
+                    console.error("❌ Проблема: src iframe не установлен правильно");
+                    console.log("📺 Текущий src iframe:", currentSrc);
+                  }
+                }, 300);
+              } catch (err) {
+                console.error("❌ Ошибка при установке src:", err);
+              }
+            }
+          });
+        } else {
+          console.error("❌ Не удалось преобразовать URL видео:", url);
+          alert("Некорректная ссылка на видео. Поддерживаются только ссылки YouTube.");
+        }
+      }, true); // Capture phase для приоритета
+
+      // Функция закрытия модального окна
+      function closeVideoModal() {
+        console.log("❌ Закрытие модального окна видео");
+        if (videoModal) {
+          videoModal.style.display = "none";
+          // Убираем aria-hidden только после того, как элемент потерял фокус
+          setTimeout(() => {
+            if (videoModal.style.display === "none") {
+              videoModal.setAttribute("aria-hidden", "true");
+            }
+          }, 100);
+        }
+        if (videoFrame) {
+          videoFrame.src = "";
+        }
+      }
+      
+      // Обработчик кнопки закрытия
+      function setupCloseHandlers() {
+        const closeBtn = document.querySelector("[data-close-video]");
+        if (closeBtn) {
+          // Удаляем старый обработчик, если есть
+          closeBtn.replaceWith(closeBtn.cloneNode(true));
+          const newCloseBtn = document.querySelector("[data-close-video]");
+          
+          newCloseBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation(); // Останавливаем все обработчики
+            closeVideoModal();
+          });
+        }
+      }
+      
+      // Устанавливаем обработчики после загрузки
+      setupCloseHandlers();
+
+      // Обработчик клика вне модального окна (только на overlay)
+      window.addEventListener("click", (e) => {
+        // Проверяем, что клик именно на overlay (сам modal), а не на его содержимое
+        if (e.target === videoModal && videoModal.style.display === "block") {
+          closeVideoModal();
+        }
+      });
+
+      // Закрытие по Escape
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && videoModal && videoModal.style.display === "block") {
+          closeVideoModal();
+        }
+      });
     });
   </script>
+
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.8);
+    }
+    .modal-content {
+      background-color: #1a1a1a;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #444;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 800px;
+      position: relative;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      background: none;
+      border: none;
+      position: absolute;
+      right: 15px;
+      top: 10px;
+    }
+    .close:hover {
+      color: #fff;
+    }
+    #videoFrame {
+      width: 100%;
+      height: 480px;
+      border-radius: 8px;
+    }
+  </style>
 </body>
 </html>
 

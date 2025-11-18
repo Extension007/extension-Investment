@@ -22,8 +22,16 @@
         </ul>
       </nav>
       <div class="header-actions">
-        <a class="btn outline" href="/cabinet">Личный кабинет</a>
-        <button id="openRegister" type="button" class="btn outline">Регистрация</button>
+        <% if (isAuth) { %>
+          <% if (isAdmin) { %>
+            <a class="btn outline" href="/admin">Админ-панель</a>
+          <% } else { %>
+            <a class="btn outline" href="/cabinet">Личный кабинет</a>
+          <% } %>
+        <% } else { %>
+          <a class="btn outline" href="/user/login">Вход</a>
+          <button id="openRegister" type="button" class="btn outline">Регистрация</button>
+        <% } %>
       </div>
     </div>
   </header>
@@ -125,8 +133,16 @@
   <!-- Модальное окно для видео -->
   <div id="videoModal" class="modal" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
-      <button class="close" aria-label="Закрыть видео">&times;</button>
-      <iframe id="videoFrame" width="100%" height="480" frameborder="0" allowfullscreen></iframe>
+      <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
+      <iframe id="videoFrame" 
+              width="100%" 
+              height="480" 
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              allowfullscreen
+              loading="eager"
+              referrerpolicy="strict-origin-when-cross-origin"
+              style="display: block !important; visibility: visible !important; opacity: 1 !important;"></iframe>
     </div>
   </div>
 
@@ -146,7 +162,7 @@
     </div>
   </div>
 
-  <script>window.IS_AUTH = <%= isAuth ? 'true' : 'false' %>;</script>
+  <script>window.IS_AUTH = <%= JSON.stringify(isAuth) %>;</script>
   <script src="/script.js"></script>
 </body>
 </html>

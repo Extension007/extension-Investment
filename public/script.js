@@ -57,61 +57,252 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // 🔹 Функция преобразования YouTube URL (определяем глобально)
+  function toYouTubeEmbed(url) {
+    try {
+      if (!url || typeof url !== 'string') return null;
+      
+      url = url.trim();
+      
+      // Если уже embed URL, извлекаем video ID
+      if (url.includes('/embed/')) {
+        const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
+        if (embedId) {
+          // Используем обычный youtube.com для лучшей совместимости
+          return `https://www.youtube.com/embed/${embedId}`;
+        }
+      }
+      
+      const u = new URL(url);
+      const host = u.hostname.replace(/^www\./, "").toLowerCase();
+      let videoId = null;
+      
+      if (host.includes("youtube.com")) {
+        if (u.pathname === "/watch") {
+          videoId = u.searchParams.get("v");
+        } else if (u.pathname.startsWith("/embed/")) {
+          videoId = u.pathname.split("/embed/")[1]?.split("?")[0];
+        } else if (u.pathname.startsWith("/shorts/")) {
+          videoId = u.pathname.split("/shorts/")[1]?.split("?")[0];
+        } else if (u.pathname.startsWith("/v/")) {
+          videoId = u.pathname.split("/v/")[1]?.split("?")[0];
+        }
+      } else if (host === "youtu.be") {
+        videoId = u.pathname.slice(1).split("?")[0];
+      }
+      
+      if (videoId) {
+        videoId = videoId.split('&')[0].split('#')[0].trim();
+        if (videoId) {
+          // Используем обычный youtube.com для лучшей совместимости
+          return `https://www.youtube.com/embed/${videoId}`;
+        }
+      }
+      
+      return null;
+    } catch (err) {
+      console.error("Ошибка преобразования YouTube URL:", err);
+      return null;
+    }
+  }
+
   // 🔹 Модальное окно для видео
   const modal = document.getElementById("videoModal");
   const videoFrame = document.getElementById("videoFrame");
   const closeBtn = document.querySelector(".modal .close");
 
-  if (modal && videoFrame && closeBtn) {
-    document.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-video]");
-      if (!btn) return;
+  if (modal && videoFrame) {
+    // Функция для открытия видео
+    function openVideoModal(videoUrl) {
+      if (!videoUrl) {
+        console.warn("Пустой URL видео");
+        return;
+      }
+      
+      console.log("🎬 Открытие видео:", videoUrl);
+      
+      const embedUrl = toYouTubeEmbed(videoUrl);
+      if (!embedUrl) {
+        console.error("❌ Не удалось преобразовать URL видео:", videoUrl);
+        alert("Некорректная ссылка на видео. Поддерживаются только ссылки YouTube.");
+        return;
+      }
 
-      const rawUrl = btn.getAttribute("data-video")?.trim();
-      if (!rawUrl) return;
+      console.log("✅ Embed URL:", embedUrl);
 
-      const embedUrl = toYouTubeEmbed(rawUrl);
-      if (!embedUrl) return;
-
-      videoFrame.src = embedUrl + (embedUrl.includes("?") ? "&autoplay=1" : "?autoplay=1");
+      // Формируем финальный URL с autoplay и mute для автоматического воспроизведения
+      // Для YouTube Shorts и обычных видео используем специальные параметры
+      // Используем правильные параметры для избежания ошибки 153
+      let finalUrl = embedUrl;
+      if (finalUrl.includes("?")) {
+        finalUrl += "&autoplay=1&mute=1&rel=0&enablejsapi=1&playsinline=1&controls=1";
+      } else {
+        finalUrl += "?autoplay=1&mute=1&rel=0&enablejsapi=1&playsinline=1&controls=1";
+      }
+      console.log("🎥 Загрузка видео с autoplay:", finalUrl);
+      
+      // СНАЧАЛА открываем модальное окно
       modal.style.display = "block";
       modal.setAttribute("aria-hidden", "false");
-      trapFocus(modal);
-    });
+      console.log("✅ Модальное окно открыто, display:", modal.style.display);
+      console.log("📺 modal offsetWidth:", modal.offsetWidth, "offsetHeight:", modal.offsetHeight);
+      console.log("📺 modal computed display:", window.getComputedStyle(modal).display);
+      
+      // Принудительно делаем iframe видимым
+      videoFrame.style.display = "block";
+      videoFrame.style.visibility = "visible";
+      videoFrame.style.opacity = "1";
+      
+      console.log("📺 videoFrame до загрузки:", videoFrame);
+      console.log("📺 videoFrame offsetWidth:", videoFrame.offsetWidth, "offsetHeight:", videoFrame.offsetHeight);
+      console.log("📺 videoFrame computed display:", window.getComputedStyle(videoFrame).display);
+      
+      // Очищаем предыдущий src
+      videoFrame.src = "";
+      
+      // Используем requestAnimationFrame для гарантии, что модальное окно отобразилось
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // Двойной requestAnimationFrame гарантирует, что браузер отрисовал модальное окно
+          try {
+            console.log("🎬 Установка src в iframe...");
+            console.log("📺 videoFrame перед установкой src - offsetWidth:", videoFrame.offsetWidth, "offsetHeight:", videoFrame.offsetHeight);
+            
+            videoFrame.src = finalUrl;
+            
+            console.log("✅ Видео URL установлен в iframe.src:", videoFrame.src);
+            console.log("📺 iframe элемент:", videoFrame);
+            console.log("📺 iframe видимый:", videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0);
+            console.log("📺 iframe computed style display:", window.getComputedStyle(videoFrame).display);
+            console.log("📺 iframe computed style visibility:", window.getComputedStyle(videoFrame).visibility);
+            console.log("📺 iframe computed style opacity:", window.getComputedStyle(videoFrame).opacity);
+            
+            // Проверяем через небольшую задержку
+            setTimeout(() => {
+              const currentSrc = videoFrame.src;
+              const isVisible = videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0;
+              console.log("📺 Проверка через 500мс:");
+              console.log("📺 currentSrc:", currentSrc);
+              console.log("📺 isVisible:", isVisible);
+              
+              // Проверяем, загружен ли iframe
+              try {
+                const iframeWindow = videoFrame.contentWindow;
+                const iframeDoc = videoFrame.contentDocument || (iframeWindow && iframeWindow.document);
+                console.log("📺 iframe contentWindow:", iframeWindow ? "доступен" : "не доступен");
+                console.log("📺 iframe contentDocument:", iframeDoc ? "доступен" : "не доступен (нормально для cross-origin)");
+              } catch (e) {
+                console.log("📺 iframe cross-origin (нормально):", e.message);
+              }
+              
+              if (currentSrc && currentSrc.includes("youtube") && isVisible) {
+                console.log("✅ Видео успешно загружено в iframe и iframe видимый");
+                console.log("📺 Финальный src iframe:", currentSrc);
+                console.log("📺 iframe готов к воспроизведению");
+                console.log("ℹ️  Если видео не воспроизводится, попробуйте:");
+                console.log("   1. Нажать кнопку play в плеере YouTube");
+                console.log("   2. Проверить, не блокирует ли браузер автовоспроизведение");
+                console.log("   3. Проверить, доступно ли видео для встраивания");
+                
+                // Видео должно автоматически начать воспроизведение
+                console.log("🎬 Видео должно начать воспроизведение автоматически (muted)");
+                
+                // Дополнительная попытка: перезагружаем iframe через небольшую задержку для гарантии
+                setTimeout(() => {
+                  const currentSrc = videoFrame.src;
+                  if (currentSrc && currentSrc.includes("youtube")) {
+                    // Перезагружаем iframe для принудительного запуска
+                    console.log("🔄 Перезагрузка iframe для принудительного запуска...");
+                    const tempSrc = videoFrame.src;
+                    videoFrame.src = "";
+                    setTimeout(() => {
+                      videoFrame.src = tempSrc;
+                      console.log("✅ iframe перезагружен:", tempSrc);
+                    }, 100);
+                  }
+                }, 1500);
+              } else {
+                console.error("❌ Проблема:");
+                console.error("  - src установлен:", currentSrc && currentSrc.includes("youtube"));
+                console.error("  - iframe видимый:", isVisible);
+                console.error("  - Текущий src iframe:", currentSrc);
+                if (!isVisible) {
+                  console.error("  - iframe не видимый! offsetWidth:", videoFrame.offsetWidth, "offsetHeight:", videoFrame.offsetHeight);
+                }
+                console.log("📺 Попытка установить src еще раз...");
+                videoFrame.src = finalUrl;
+              }
+            }, 500);
+          } catch (err) {
+            console.error("❌ Ошибка при установке src:", err);
+          }
+        });
+      });
+      
+      if (typeof trapFocus === "function") {
+        trapFocus(modal);
+      }
+    }
 
-    closeBtn.addEventListener("click", closeModal);
-    window.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
-    window.addEventListener("keydown", (e) => { if (e.key === "Escape" && modal.style.display === "block") closeModal(); });
+    // Обработчик клика на кнопки с data-video (используем делегирование с capture phase)
+    document.addEventListener("click", (e) => {
+      // Проверяем, кликнули ли на кнопку с data-video или внутри неё
+      const btn = e.target.closest("[data-video]");
+      if (!btn) return;
+      
+      console.log("🖱️ Клик по кнопке видео:", btn);
+      
+      // Предотвращаем всплытие события
+      e.preventDefault();
+      e.stopPropagation();
+
+      const rawUrl = btn.getAttribute("data-video")?.trim();
+      if (!rawUrl) {
+        console.warn("⚠️ Кнопка с data-video не содержит URL");
+        return;
+      }
+
+      console.log("📹 URL из атрибута:", rawUrl);
+      openVideoModal(rawUrl);
+    }, true); // Используем capture phase для приоритета
+
+    // Обработчик закрытия модального окна
+    const closeVideoBtn = document.querySelector("[data-close-video]");
+    if (closeVideoBtn) {
+      closeVideoBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal();
+      });
+    } else if (closeBtn) {
+      closeBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal();
+      });
+    }
+    
+    // Обработчик клика вне модального окна (только на overlay)
+    window.addEventListener("click", (e) => { 
+      // Проверяем, что клик именно на overlay (сам modal), а не на его содержимое
+      if (e.target === modal && modal.style.display === "block") {
+        closeModal();
+      }
+    });
+    
+    // Закрытие по Escape
+    window.addEventListener("keydown", (e) => { 
+      if (e.key === "Escape" && modal.style.display === "block") {
+        closeModal();
+      }
+    });
 
     function closeModal() {
       modal.style.display = "none";
       modal.setAttribute("aria-hidden", "true");
       videoFrame.src = "";
-      releaseFocus();
-    }
-
-    function toYouTubeEmbed(url) {
-      try {
-        const u = new URL(url);
-        const host = u.hostname.replace(/^www\./, "");
-        if (host.includes("youtube.com")) {
-          if (u.pathname === "/watch") {
-            const id = u.searchParams.get("v");
-            return id ? `https://www.youtube.com/embed/${id}` : null;
-          }
-          if (u.pathname.startsWith("/embed/")) return url;
-          if (u.pathname.startsWith("/shorts/")) {
-            const id = u.pathname.split("/shorts/")[1];
-            return id ? `https://www.youtube.com/embed/${id}` : null;
-          }
-        }
-        if (host === "youtu.be") {
-          const id = u.pathname.slice(1);
-          return id ? `https://www.youtube.com/embed/${id}` : null;
-        }
-        return null;
-      } catch {
-        return null;
+      if (typeof releaseFocus === "function") {
+        releaseFocus();
       }
     }
 
@@ -143,6 +334,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔹 Логика рейтинга (лайки/дизлайки → результат и общее количество голосов)
   document.addEventListener("click", async (e) => {
+    // Сначала проверяем, не кликнули ли на кнопку видео (приоритет выше)
+    // Проверяем и саму кнопку, и её родительские элементы
+    const videoBtn = e.target.closest("[data-video]");
+    if (videoBtn) {
+      return; // Обработчик видео уже обработал этот клик
+    }
+
     // Категории (dropdown)
     const openCat = e.target.closest("#openCategories");
     const dropdown = document.getElementById("categoriesMenu");

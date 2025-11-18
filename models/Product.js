@@ -18,7 +18,15 @@ const productSchema = new mongoose.Schema({
   // 🔹 Рейтинг
   likes: { type: Number, default: 0 },
   dislikes: { type: Number, default: 0 },
-  rating_updated_at: { type: Date, default: Date.now }
+  rating_updated_at: { type: Date, default: Date.now },
+  
+  // 🔹 Модерация
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending"
+  },
+  rejection_reason: { type: String, default: "" }
 }, { timestamps: true });
 
 // 🔹 Виртуальное поле: итоговый результат (лайки − дизлайки)

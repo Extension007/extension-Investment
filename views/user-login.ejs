@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Вход — Пользователь</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #2b2b2b;
+      padding: 20px;
+    }
+    .login-container {
+      background: #1a1a1a;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #fff;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    input {
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid #444;
+      border-radius: 8px;
+      background: #2b2b2b;
+      color: #fff;
+    }
+    input:focus {
+      outline: none;
+      border-color: #ff3333;
+    }
+    button {
+      padding: 12px;
+      background: linear-gradient(#3a0e0e, #3a0e0e) padding-box,
+                  linear-gradient(45deg, #ff0000, #ff4d4d) border-box;
+      color: #fff;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.15s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+    }
+    .error {
+      color: #ff3333;
+      margin-top: 10px;
+      text-align: center;
+      font-size: 14px;
+    }
+    .link {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .link a {
+      color: #ff3333;
+      text-decoration: none;
+    }
+    .link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Вход для пользователей</h2>
+
+    <form method="POST" action="/user/login">
+      <input type="text" name="username" placeholder="Логин" required>
+      <input type="password" name="password" placeholder="Пароль" required>
+      <button type="submit">Войти</button>
+    </form>
+
+    <% if (error) { %>
+      <p class="error"><%= error %></p>
+    <% } %>
+
+    <div class="link">
+      <a href="/">Вернуться на главную</a>
+    </div>
+  </div>
+</body>
+</html>
+

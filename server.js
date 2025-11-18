@@ -41,12 +41,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"], // Разрешаем inline скрипты для админ-панели и других страниц
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
       fontSrc: ["'self'", "https:", "data:"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      imgSrc: ["'self'", "data:", "https:", "blob:", "https://res.cloudinary.com"], // Добавляем Cloudinary
       connectSrc: ["'self'", "https:"],
-      frameSrc: ["'self'", "https://www.youtube.com", "https://youtube.com", "https://youtu.be"],
+      frameSrc: ["'self'", "https://www.youtube.com", "https://youtube.com", "https://youtu.be", "https://*.youtube.com", "https://www.youtube-nocookie.com"],
       mediaSrc: ["'self'", "https:"],
       objectSrc: ["'none'"]
     }
@@ -94,24 +94,55 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.get("/favicon.png", (req, res) => res.status(204).end());
 
-// Middleware авторизации
-function requireAuth(req, res, next) {
-  if (req.session.user) return next();
-  const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-  if (wantsJson) return res.status(401).json({ error: "Unauthorized" });
-  res.redirect("/admin/login");
+// Middleware авторизации для админов
+function requireAdmin(req, res, next) {
+  if (!req.session.user) {
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) return res.status(401).json({ error: "Unauthorized" });
+    return res.redirect("/admin/login");
+  }
+  // Проверяем роль админа
+  if (req.session.user.role !== "admin") {
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) return res.status(403).json({ error: "Forbidden: Admin access required" });
+    return res.status(403).send("Доступ запрещен: требуется роль администратора");
+  }
+  next();
 }
 
-// Главная страница — каталог
+// Middleware авторизации для пользователей
+function requireUser(req, res, next) {
+  if (!req.session.user) {
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) return res.status(401).json({ error: "Unauthorized" });
+    return res.redirect("/user/login");
+  }
+  next();
+}
+
+// Для обратной совместимости
+const requireAuth = requireAdmin;
+
+// Главная страница — каталог (только опубликованные карточки)
 app.get("/", async (req, res) => {
   try {
     const isAuth = Boolean(req.session.user);
+    const userRole = req.session.user?.role || null;
+    const isAdmin = userRole === "admin";
+    const isUser = userRole === "user";
     const selected = req.query.category;
 
     if (!HAS_MONGO) {
-      return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, categories: CATEGORY_LABELS, selectedCategory: selected || "all" });
+      return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, categories: CATEGORY_LABELS, selectedCategory: selected || "all" });
     }
-    const filter = {};
+    // Показываем карточки со статусом "approved" или без статуса (для обратной совместимости)
+    const filter = { 
+      $or: [
+        { status: "approved" },
+        { status: { $exists: false } },
+        { status: null }
+      ]
+    };
     if (selected && CATEGORY_KEYS.includes(selected)) {
       filter.category = selected;
     }
@@ -127,17 +158,29 @@ app.get("/", async (req, res) => {
       });
     }
     // page/totalPages оставлены для совместимости с твоим рендером
-    res.render("index", { products, page: 1, totalPages: 1, isAuth, votedMap, categories: CATEGORY_LABELS, selectedCategory: selected || "all" });
+    res.render("index", { products, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap, categories: CATEGORY_LABELS, selectedCategory: selected || "all" });
   } catch (err) {
     console.error("❌ Ошибка получения товаров:", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
 
-// Вход
+// Вход для админов
 app.get("/admin/login", (req, res) => {
   if (!HAS_MONGO) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
+  if (req.session.user && req.session.user.role === "admin") {
+    return res.redirect("/admin");
+  }
   res.render("login", { error: null, debug: null });
+});
+
+// Вход для пользователей
+app.get("/user/login", (req, res) => {
+  if (!HAS_MONGO) return res.status(503).send("Вход недоступен: отсутствует подключение к БД");
+  if (req.session.user) {
+    return res.redirect("/cabinet");
+  }
+  res.render("user-login", { error: null });
 });
 
 // Регистрация пользователя
@@ -158,7 +201,16 @@ app.post("/auth/register", async (req, res) => {
     const password_hash = await bcrypt.hash(password, 10);
     const user = await User.create({ username, email, password_hash, role: "user" });
     // автологин в сессию
-    req.session.user = { _id: user._id, username: user.username, role: user.role };
+    req.session.user = { 
+      _id: user._id.toString(), 
+      username: user.username, 
+      role: user.role 
+    };
+    console.log("✅ Пользователь зарегистрирован и залогинен:", {
+      username: user.username,
+      role: user.role,
+      id: user._id.toString()
+    });
     res.json({ success: true });
   } catch (err) {
     console.error("❌ Ошибка регистрации:", err);
@@ -167,9 +219,8 @@ app.post("/auth/register", async (req, res) => {
 });
 
 // Личный кабинет (простой)
-app.get("/cabinet", async (req, res) => {
+app.get("/cabinet", requireUser, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).send("Личный кабинет недоступен: нет БД");
-  if (!req.session.user) return res.redirect("/admin/login"); // временно используем ту же форму входа
   try {
     const myProducts = await Product.find({ owner: req.session.user._id }).sort({ _id: -1 });
     res.render("cabinet", { user: req.session.user, products: myProducts });
@@ -179,22 +230,91 @@ app.get("/cabinet", async (req, res) => {
   }
 });
 
-// Пользователь создаёт карточку (на модерацию: owner заполняется, но можно пометить статусом далее)
-app.post("/cabinet/product", upload.single("image"), async (req, res) => {
+// Пользователь создаёт карточку (на модерацию: статус pending)
+app.post("/cabinet/product", requireUser, upload.single("image"), async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
-  if (!req.session.user) return res.status(401).json({ success: false, message: "Unauthorized" });
   try {
+    // Проверяем, что пользователь залогинен и имеет ID
+    if (!req.session.user || !req.session.user._id) {
+      console.error("❌ Пользователь не авторизован или нет ID в сессии");
+      return res.status(401).json({ success: false, message: "Необходима авторизация" });
+    }
+
     const { name, description, link, video_url, category } = req.body;
     const price = Number(req.body.price || 0) || 0;
     const categoryValue = CATEGORY_KEYS.includes(category) ? category : "home";
-    const image_url = req.file ? req.file.path : null;
-    const created = await Product.create({
-      name, description, link, video_url, price, owner: req.session.user._id, category: categoryValue, image_url
+    
+    // Обрабатываем путь к изображению
+    let image_url = null;
+    if (req.file) {
+      // Если используется Cloudinary, путь уже в req.file.path
+      // Если используется локальное хранилище, нужен относительный путь
+      if (req.file.path && !req.file.path.startsWith('http')) {
+        // Локальное хранилище - используем относительный путь
+        image_url = '/uploads/' + req.file.filename;
+      } else {
+        // Cloudinary - используем полный путь
+        image_url = req.file.path;
+      }
+    }
+    
+    // Используем mongoose.Types.ObjectId для правильного преобразования
+    // Проверяем валидность ObjectId перед созданием
+    let ownerId = null;
+    if (req.session.user._id) {
+      if (mongoose.isValidObjectId && mongoose.isValidObjectId(req.session.user._id)) {
+        ownerId = new mongoose.Types.ObjectId(req.session.user._id);
+      } else if (mongoose.Types.ObjectId.isValid(req.session.user._id)) {
+        ownerId = new mongoose.Types.ObjectId(req.session.user._id);
+      } else {
+        ownerId = req.session.user._id;
+      }
+    }
+    
+    const productData = {
+      name, 
+      description, 
+      link, 
+      video_url, 
+      price, 
+      owner: ownerId, 
+      category: categoryValue, 
+      image_url, 
+      status: "pending",
+      likes: 0,
+      dislikes: 0
+    };
+    
+    console.log("📝 Создание карточки пользователем:", {
+      name,
+      owner: ownerId.toString(),
+      status: "pending",
+      username: req.session.user.username,
+      userId: req.session.user._id
     });
+    
+    const created = await Product.create(productData);
+    
+    // Проверяем, что карточка создана правильно
+    const verify = await Product.findById(created._id).populate("owner", "username");
+    
+    console.log("✅ Карточка создана и проверена:", {
+      id: verify._id.toString(),
+      status: verify.status,
+      owner: verify.owner ? verify.owner._id.toString() : "null",
+      ownerUsername: verify.owner ? verify.owner.username : "не указан",
+      name: verify.name
+    });
+    
     res.json({ success: true, productId: created._id });
   } catch (err) {
     console.error("❌ Ошибка создания карточки:", err);
-    res.status(500).json({ success: false, message: "Ошибка создания карточки" });
+    console.error("Детали ошибки:", {
+      message: err.message,
+      stack: err.stack,
+      name: err.name
+    });
+    res.status(500).json({ success: false, message: "Ошибка создания карточки: " + err.message });
   }
 });
 
@@ -219,6 +339,7 @@ app.post("/cabinet/product/:id/price", async (req, res) => {
     res.status(500).json({ success: false, message: "Ошибка изменения цены" });
   }
 });
+// Вход для админов (POST)
 app.post("/admin/login", async (req, res) => {
   if (!HAS_MONGO) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
   const { username, password } = req.body;
@@ -227,11 +348,25 @@ app.post("/admin/login", async (req, res) => {
     if (!user) {
       return res.render("login", { error: "Неверный логин или пароль", debug: null });
     }
+    // Проверяем роль админа
+    if (user.role !== "admin") {
+      return res.render("login", { error: "Доступ разрешен только администраторам", debug: null });
+    }
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) {
       return res.render("login", { error: "Неверный логин или пароль", debug: null });
     }
-    req.session.user = { _id: user._id, username: user.username };
+    // Сохраняем _id как строку для совместимости
+    req.session.user = { 
+      _id: user._id.toString(), 
+      username: user.username, 
+      role: user.role 
+    };
+    console.log("✅ Админ залогинен:", {
+      username: user.username,
+      role: user.role,
+      id: user._id.toString()
+    });
     res.redirect("/admin");
   } catch (err) {
     console.error("❌ Ошибка входа:", err);
@@ -239,25 +374,97 @@ app.post("/admin/login", async (req, res) => {
   }
 });
 
+// Вход для пользователей (POST)
+app.post("/user/login", async (req, res) => {
+  if (!HAS_MONGO) return res.status(503).send("Вход недоступен: отсутствует подключение к БД");
+  const { username, password } = req.body;
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.render("user-login", { error: "Неверный логин или пароль" });
+    }
+    // Пользователи не могут входить через админку
+    if (user.role === "admin") {
+      return res.render("user-login", { error: "Для входа администратора используйте /admin/login" });
+    }
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) {
+      return res.render("user-login", { error: "Неверный логин или пароль" });
+    }
+    // Сохраняем _id как строку для совместимости
+    req.session.user = { 
+      _id: user._id.toString(), 
+      username: user.username, 
+      role: user.role 
+    };
+    console.log("✅ Пользователь залогинен:", {
+      username: user.username,
+      role: user.role,
+      id: user._id.toString()
+    });
+    res.redirect("/cabinet");
+  } catch (err) {
+    console.error("❌ Ошибка входа:", err);
+    res.status(500).send("Ошибка базы данных");
+  }
+});
+
 // Админка
-app.get("/admin", requireAuth, async (req, res) => {
+app.get("/admin", requireAdmin, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
-    const products = await Product.find().sort({ _id: -1 });
-    res.render("admin", { products });
+    
+    // Получаем все карточки с информацией о владельце
+    const allProducts = await Product.find()
+      .sort({ _id: -1 })
+      .populate("owner", "username email");
+    
+    // Получаем карточки на модерации (со статусом pending и с owner)
+    const pendingProducts = await Product.find({ 
+      $and: [
+        { owner: { $ne: null, $exists: true } },
+        {
+          $or: [
+            { status: "pending" },
+            { status: { $exists: false } },
+            { status: null }
+          ]
+        }
+      ]
+    })
+      .sort({ _id: -1 })
+      .populate("owner", "username email");
+    
+    console.log(`📋 Всего карточек: ${allProducts.length}`);
+    console.log(`⏳ На модерации: ${pendingProducts.length}`);
+    
+    res.render("admin", { 
+      products: allProducts, 
+      pendingProducts,
+      categories: CATEGORY_LABELS
+    });
   } catch (err) {
     console.error("❌ Ошибка получения товаров (админ):", err);
     res.status(500).send("Ошибка базы данных");
   }
 });
 
-// Добавление товара
-app.post("/admin/product", requireAuth, upload.single("image"), async (req, res) => {
+// Добавление товара (админом - сразу approved)
+app.post("/admin/product", requireAdmin, upload.single("image"), async (req, res) => {
   if (!HAS_MONGO) return res.status(503).send("Недоступно: отсутствует подключение к БД");
   const { name, description, price, link, video_url } = req.body;
   let image_url = null;
   try {
-    if (req.file) image_url = req.file.path;
+    if (req.file) {
+      // Обрабатываем путь к изображению
+      if (req.file.path && !req.file.path.startsWith('http')) {
+        // Локальное хранилище - используем относительный путь
+        image_url = '/uploads/' + req.file.filename;
+      } else {
+        // Cloudinary - используем полный путь
+        image_url = req.file.path;
+      }
+    }
     await Product.create({
       name,
       description,
@@ -265,6 +472,7 @@ app.post("/admin/product", requireAuth, upload.single("image"), async (req, res)
       link,
       image_url,
       video_url,
+      status: "approved", // Админ создает сразу опубликованные
       // ✅ инициализируем счётчики голосов
       likes: 0,
       dislikes: 0
@@ -307,7 +515,16 @@ app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (
   const { name, description, price, link, video_url, current_image } = req.body;
   let image_url = current_image || null;
   try {
-    if (req.file) image_url = req.file.path;
+    if (req.file) {
+      // Обрабатываем путь к изображению
+      if (req.file.path && !req.file.path.startsWith('http')) {
+        // Локальное хранилище - используем относительный путь
+        image_url = '/uploads/' + req.file.filename;
+      } else {
+        // Cloudinary - используем полный путь
+        image_url = req.file.path;
+      }
+    }
     await Product.findByIdAndUpdate(
       req.params.id,
       { name, description, price, link, image_url, video_url },
@@ -376,6 +593,64 @@ app.get("/api/rating/:id", async (req, res) => {
   } catch (err) {
     console.error("❌ Ошибка получения рейтинга:", err);
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Модерация: одобрить карточку
+app.post("/admin/product/:id/approve", requireAdmin, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved", rejection_reason: "" },
+      { new: true }
+    );
+    if (!product) return res.status(404).json({ success: false, message: "Карточка не найдена" });
+    res.json({ success: true, status: product.status });
+  } catch (err) {
+    console.error("❌ Ошибка одобрения карточки:", err);
+    res.status(500).json({ success: false, message: "Ошибка одобрения карточки" });
+  }
+});
+
+// Модерация: отклонить карточку
+app.post("/admin/product/:id/reject", requireAdmin, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const { reason } = req.body;
+    const product = await Product.findByIdAndUpdate(
+      req.params.id,
+      { status: "rejected", rejection_reason: reason || "Несоответствие правилам публикации" },
+      { new: true }
+    );
+    if (!product) return res.status(404).json({ success: false, message: "Карточка не найдена" });
+    res.json({ success: true, status: product.status, rejection_reason: product.rejection_reason });
+  } catch (err) {
+    console.error("❌ Ошибка отклонения карточки:", err);
+    res.status(500).json({ success: false, message: "Ошибка отклонения карточки" });
+  }
+});
+
+// Блокировка карточки (скрытие с главной страницы)
+app.post("/admin/product/:id/toggle-visibility", requireAdmin, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const product = await Product.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: "Карточка не найдена" });
+    
+    // Если карточка approved, меняем на rejected (блокируем)
+    // Если rejected, меняем на approved (разблокируем)
+    const newStatus = product.status === "approved" ? "rejected" : "approved";
+    const updated = await Product.findByIdAndUpdate(
+      req.params.id,
+      { status: newStatus, rejection_reason: newStatus === "rejected" ? "Заблокировано администратором" : "" },
+      { new: true }
+    );
+    
+    res.json({ success: true, status: updated.status, message: newStatus === "rejected" ? "Карточка заблокирована" : "Карточка разблокирована" });
+  } catch (err) {
+    console.error("❌ Ошибка блокировки карточки:", err);
+    res.status(500).json({ success: false, message: "Ошибка блокировки карточки" });
   }
 });
 

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карточка товара с видео</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        .product-card {
+            max-width: 400px;
+            margin: 20px auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+        
+        .product-body {
+            padding: 20px;
+        }
+        
+        .product-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .product-price {
+            font-size: 1.25rem;
+            color: #28a745;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .product-description {
+            color: #6c757d;
+            margin-bottom: 20px;
+        }
+        
+        /* Стили для модального окна с видео */
+        .modal-video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 соотношение сторон */
+            height: 0;
+            overflow: hidden;
+        }
+        
+        .modal-video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .btn-overview {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="product-card card">
+            <img src="https://via.placeholder.com/400x250?text=Product+Image" alt="Товар" class="product-image">
+            <div class="product-body">
+                <h3 class="product-title">Название товара</h3>
+                <div class="product-price">1 999 ₽</div>
+                <p class="product-description">
+                    Описание товара. Здесь может быть подробная информация о продукте, 
+                    его характеристиках и преимуществах.
+                </p>
+                <button type="button" class="btn btn-primary btn-overview" data-bs-toggle="modal" data-bs-target="#videoModal" data-video-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                    Обзор
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно Bootstrap 5 -->
+    <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="videoModalLabel">Видео обзор товара</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="modal-video-container">
+                        <iframe id="youtubeVideoFrame" 
+                                src="" 
+                                frameborder="0" 
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle (включает Popper) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Функция для преобразования YouTube URL в embed формат
+        function convertToEmbedUrl(url) {
+            if (!url) return '';
+            
+            // Если уже embed URL, возвращаем как есть
+            if (url.includes('/embed/')) {
+                return url;
+            }
+            
+            // Извлекаем video ID из различных форматов YouTube URL
+            let videoId = '';
+            
+            // Формат: https://www.youtube.com/watch?v=VIDEO_ID
+            if (url.includes('youtube.com/watch')) {
+                const urlObj = new URL(url);
+                videoId = urlObj.searchParams.get('v');
+            }
+            // Формат: https://youtu.be/VIDEO_ID
+            else if (url.includes('youtu.be/')) {
+                videoId = url.split('youtu.be/')[1].split('?')[0].split('&')[0];
+            }
+            // Формат: https://www.youtube.com/shorts/VIDEO_ID
+            else if (url.includes('youtube.com/shorts/')) {
+                videoId = url.split('youtube.com/shorts/')[1].split('?')[0].split('&')[0];
+            }
+            // Формат: https://www.youtube.com/embed/VIDEO_ID
+            else if (url.includes('youtube.com/embed/')) {
+                videoId = url.split('youtube.com/embed/')[1].split('?')[0].split('&')[0];
+            }
+            
+            if (videoId) {
+                return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&rel=0`;
+            }
+            
+            return '';
+        }
+
+        // Получаем элементы
+        const videoModal = document.getElementById('videoModal');
+        const videoFrame = document.getElementById('youtubeVideoFrame');
+        const overviewButton = document.querySelector('[data-video-url]');
+
+        // Обработчик открытия модального окна
+        videoModal.addEventListener('show.bs.modal', function (event) {
+            // Получаем URL видео из атрибута кнопки
+            const button = event.relatedTarget;
+            const videoUrl = button.getAttribute('data-video-url');
+            
+            // Преобразуем URL в embed формат
+            const embedUrl = convertToEmbedUrl(videoUrl);
+            
+            if (embedUrl) {
+                // Устанавливаем src для iframe
+                videoFrame.src = embedUrl;
+                console.log('Видео загружено:', embedUrl);
+            } else {
+                console.error('Не удалось преобразовать URL видео');
+            }
+        });
+
+        // Обработчик закрытия модального окна
+        videoModal.addEventListener('hide.bs.modal', function () {
+            // Останавливаем видео, очищая src
+            videoFrame.src = '';
+            console.log('Видео остановлено');
+        });
+
+        // Дополнительная обработка при полном закрытии модального окна
+        videoModal.addEventListener('hidden.bs.modal', function () {
+            // Убеждаемся, что видео полностью остановлено
+            videoFrame.src = '';
+        });
+    </script>
+</body>
+</html>

@@ -238,10 +238,41 @@ body {
   margin: 5% auto;
   padding: 20px;
   border-radius: 10px;
-  width: 80%;
+  width: 90%;
   max-width: 900px;
   box-shadow: 0 0 20px #ff3333;
   position: relative;
+}
+
+#videoModal .modal-content {
+  padding: 40px 20px 20px;
+  min-height: 520px;
+}
+
+#videoFrame {
+  width: 100% !important;
+  height: 480px !important;
+  min-height: 480px !important;
+  border: none !important;
+  border-radius: 8px;
+  background: #000;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative;
+  z-index: 1;
+}
+
+#videoModal[aria-hidden="false"] #videoFrame {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+#videoModal[style*="display: block"] #videoFrame {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
 }
 
 .modal .close {

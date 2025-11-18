@@ -25,6 +25,69 @@
   </header>
 
   <main class="container">
+    <!-- Секция модерации -->
+    <section class="section">
+      <div class="section-header">
+        <h2>Модерация карточек</h2>
+        <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+          <% if (pendingProducts && pendingProducts.length) { %>
+            <%= pendingProducts.length %> на проверке
+          <% } else { %>
+            Нет карточек на модерации
+          <% } %>
+        </span>
+      </div>
+
+      <% if (pendingProducts && pendingProducts.length) { %>
+        <div class="product-grid">
+          <% pendingProducts.forEach(p => { %>
+            <div class="product-card" style="border:2px solid #ff9800;">
+              <h3 class="product-title"><%= p.name %></h3>
+              <% if (p.image_url) { %>
+                <img src="<%= p.image_url %>" alt="<%= p.name %>">
+              <% } else { %>
+                <div class="no-image">Нет изображения</div>
+              <% } %>
+
+              <div class="product-bottom">
+                <p class="product-desc"><%= p.description || "—" %></p>
+                <div class="row" style="justify-content:center; gap:8px;">
+                  <span class="muted">Цена:</span>
+                  <strong class="price"><%= p.price %></strong>
+                </div>
+                <% if (p.owner) { %>
+                  <% if (typeof p.owner === 'object' && p.owner.username) { %>
+                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= p.owner.username %></p>
+                  <% } else { %>
+                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= p.owner %></p>
+                  <% } %>
+                <% } else { %>
+                  <p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
+                <% } %>
+
+                <div class="product-actions" style="flex-direction:column;gap:8px;">
+                  <button class="btn small approve-btn" data-id="<%= p._id %>" style="background:#4caf50;color:#fff;">
+                    ✅ Одобрить
+                  </button>
+                  <button class="btn small reject-btn" data-id="<%= p._id %>" style="background:#f44336;color:#fff;">
+                    ❌ Отклонить
+                  </button>
+                  <% if (p.link) { %>
+                    <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
+                  <% } %>
+                  <% if (p.video_url) { %>
+                    <button class="btn small outline" data-video="<%= p.video_url %>">Видео</button>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="empty-state">Нет карточек на модерации</p>
+      <% } %>
+    </section>
+
     <section class="section">
       <div class="section-header">
         <h2>Добавить товар</h2>
@@ -42,13 +105,26 @@
 
     <section class="section">
       <div class="section-header">
-        <h2>Список товаров</h2>
+        <h2>Все карточки</h2>
+        <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+          Всего: <%= products ? products.length : 0 %>
+        </span>
       </div>
 
       <% if (products && products.length) { %>
         <div class="product-grid">
           <% products.forEach(p => { %>
-            <div class="product-card">
+            <% 
+              let cardStyle = '';
+              if (p.status === 'rejected') {
+                cardStyle = 'opacity:0.7;border:2px solid #f44336;';
+              } else if (p.status === 'approved') {
+                cardStyle = 'border:2px solid #4caf50;';
+              } else {
+                cardStyle = 'border:2px solid #ff9800;';
+              }
+            %>
+            <div class="product-card" style="<%= cardStyle %>">
               <h3 class="product-title"><%= p.name %></h3>
               <% if (p.image_url) { %>
                 <img src="<%= p.image_url %>" alt="<%= p.name %>">
@@ -57,27 +133,82 @@
               <% } %>
 
               <div class="product-bottom">
+                <!-- Статус карточки -->
+                <div style="text-align:center;margin-bottom:10px;">
+                  <% if (p.status === "pending") { %>
+                    <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ⏳ На модерации
+                    </span>
+                  <% } else if (p.status === "approved") { %>
+                    <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ✅ Опубликовано
+                    </span>
+                  <% } else if (p.status === "rejected") { %>
+                    <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ❌ Заблокировано
+                    </span>
+                  <% } else { %>
+                    <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ⚠️ Без статуса
+                    </span>
+                  <% } %>
+                </div>
+
                 <p class="product-desc"><%= p.description || "—" %></p>
                 <div class="row" style="justify-content:center; gap:8px;">
                   <span class="muted">Цена:</span>
                   <strong class="price"><%= p.price %></strong>
                 </div>
 
-                <div class="product-actions">
-                  <a class="btn small outline" href="/admin/product/<%= p.id %>/edit">Редактировать</a>
-                  <form method="POST" action="/admin/product/<%= p.id %>/delete" style="display:inline">
-                    <button type="submit" class="btn small outline">Удалить</button>
+                <!-- Владелец -->
+                <% if (p.owner) { %>
+                  <% if (typeof p.owner === 'object' && p.owner.username) { %>
+                    <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+                      👤 Владелец: <%= p.owner.username %>
+                    </p>
+                  <% } else { %>
+                    <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+                      👤 Владелец: ID <%= p.owner %>
+                    </p>
+                  <% } %>
+                <% } else { %>
+                  <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
+                    ⚠️ Владелец не указан (создано админом)
+                  </p>
+                <% } %>
+
+                <!-- Категория -->
+                <% if (categories && p.category) { %>
+                  <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+                    📁 <%= categories[p.category] || p.category %>
+                  </p>
+                <% } %>
+
+                <div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
+                  <!-- Блокировка/Разблокировка -->
+                  <button class="btn small toggle-visibility-btn" 
+                          data-id="<%= p._id %>" 
+                          data-status="<%= p.status %>"
+                          style="<%= p.status === 'approved' ? 'background:#f44336;color:#fff;' : (p.status === 'rejected' ? 'background:#4caf50;color:#fff;' : 'background:#4caf50;color:#fff;') %>">
+                    <%= p.status === 'approved' ? '🚫 Заблокировать' : '✅ Разблокировать' %>
+                  </button>
+                  
+                  <a class="btn small outline" href="/admin/product/<%= p._id %>/edit">✏️ Редактировать</a>
+                  
+                  <form method="POST" action="/admin/product/<%= p._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
+                    <button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
                   </form>
+                  
                   <% if (p.link) { %>
-                    <a class="btn small" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
+                    <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">🔗 Ссылка</a>
                   <% } %>
                   <% if (p.video_url) { %>
-                    <a class="btn small" href="<%= p.video_url %>" target="_blank" rel="noopener">Видео</a>
+                    <button class="btn small outline" data-video="<%= p.video_url %>">▶️ Видео</button>
                   <% } %>
                 </div>
 
-                <!-- Рейтинг (для наглядности в админке тоже показываем) -->
-                <div class="product-rating" data-id="<%= p._id %>">
+                <!-- Рейтинг -->
+                <div class="product-rating" data-id="<%= p._id %>" style="margin-top:10px;">
                   <button class="btn icon" type="button" disabled aria-label="Лайк">👍</button>
                   <span class="result"><%= (p.likes || 0) - (p.dislikes || 0) %></span>
                   <button class="btn icon" type="button" disabled aria-label="Дизлайк">👎</button>
@@ -96,5 +227,476 @@
   <footer class="footer">
     <p>© 2025 EXTO Ecosystem</p>
   </footer>
+
+  <!-- Модальное окно для отклонения -->
+  <div id="rejectModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Отклонить карточку">
+      <button class="close" data-close-reject aria-label="Закрыть">&times;</button>
+      <h3>Отклонить карточку</h3>
+      <form id="rejectForm">
+        <textarea name="reason" placeholder="Причина отклонения (необязательно)" rows="4" style="width:100%;padding:8px;border-radius:6px;border:1px solid #444;background:#2b2b2b;color:#fff;resize:vertical;"></textarea>
+        <button type="submit" class="btn" style="background:#f44336;color:#fff;margin-top:10px;">Отклонить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Модальное окно для видео -->
+  <div id="videoModal" class="modal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
+      <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
+      <iframe id="videoFrame" 
+              width="100%" 
+              height="480" 
+              frameborder="0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              allowfullscreen
+              loading="eager"
+              referrerpolicy="strict-origin-when-cross-origin"
+              style="display: block; visibility: visible;"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // Функция преобразования YouTube URL (глобальная)
+    function toYouTubeEmbed(url) {
+      try {
+        if (!url || typeof url !== 'string') {
+          console.error("❌ toYouTubeEmbed: пустой или неверный URL");
+          return null;
+        }
+        url = url.trim();
+        console.log("🔍 Преобразование URL:", url);
+        
+        // Если уже embed URL, извлекаем video ID
+        if (url.includes('/embed/')) {
+          const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
+          if (embedId) {
+            // Используем обычный youtube.com для лучшей совместимости
+            const result = `https://www.youtube.com/embed/${embedId}`;
+            console.log("✅ Embed URL (уже embed, упрощенный):", result);
+            return result;
+          }
+        }
+        
+        // Парсим URL
+        let u;
+        try {
+          u = new URL(url);
+        } catch (err) {
+          // Если URL не полный, добавляем протокол
+          if (!url.startsWith('http://') && !url.startsWith('https://')) {
+            u = new URL('https://' + url);
+          } else {
+            throw err;
+          }
+        }
+        
+        const host = u.hostname.replace(/^www\./, "").toLowerCase();
+        let videoId = null;
+        
+        console.log("🔍 Host:", host);
+        console.log("🔍 Pathname:", u.pathname);
+        
+        if (host.includes("youtube.com")) {
+          if (u.pathname === "/watch") {
+            videoId = u.searchParams.get("v");
+            console.log("🔍 Video ID из /watch:", videoId);
+          } else if (u.pathname.startsWith("/embed/")) {
+            videoId = u.pathname.split("/embed/")[1]?.split("?")[0];
+            console.log("🔍 Video ID из /embed/:", videoId);
+          } else if (u.pathname.startsWith("/shorts/")) {
+            videoId = u.pathname.split("/shorts/")[1]?.split("?")[0];
+            console.log("🔍 Video ID из /shorts/:", videoId);
+          } else if (u.pathname.startsWith("/v/")) {
+            videoId = u.pathname.split("/v/")[1]?.split("?")[0];
+            console.log("🔍 Video ID из /v/:", videoId);
+          }
+        } else if (host === "youtu.be") {
+          videoId = u.pathname.slice(1).split("?")[0];
+          console.log("🔍 Video ID из youtu.be:", videoId);
+        }
+        
+        if (videoId) {
+          videoId = videoId.split('&')[0].split('#')[0].trim();
+          if (videoId) {
+            // Используем обычный youtube.com для лучшей совместимости
+            const result = `https://www.youtube.com/embed/${videoId}`;
+            console.log("✅ Embed URL создан (упрощенный):", result);
+            return result;
+          }
+        }
+        
+        console.error("❌ Не удалось извлечь video ID из URL:", url);
+        return null;
+      } catch (err) {
+        console.error("❌ Ошибка преобразования YouTube URL:", err);
+        return null;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      console.log("🔧 Инициализация админ-панели");
+      
+      // Блокировка/Разблокировка карточек
+      const toggleBtns = document.querySelectorAll(".toggle-visibility-btn");
+      console.log(`🔘 Найдено кнопок блокировки: ${toggleBtns.length}`);
+      toggleBtns.forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("🔘 Клик по кнопке блокировки");
+          const id = btn.getAttribute("data-id");
+          const currentStatus = btn.getAttribute("data-status");
+          const action = currentStatus === "approved" ? "заблокировать" : "разблокировать";
+          
+          if (!confirm(`Вы уверены, что хотите ${action} эту карточку?`)) return;
+          
+          try {
+            console.log(`📤 Отправка запроса на блокировку: /admin/product/${id}/toggle-visibility`);
+            const res = await fetch(`/admin/product/${id}/toggle-visibility`, { method: "POST" });
+            const data = await res.json();
+            console.log("📥 Ответ сервера:", data);
+            if (data.success) {
+              alert(data.message || "Статус карточки изменен");
+              location.reload();
+            } else {
+              alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+            }
+          } catch (err) {
+            console.error("❌ Ошибка блокировки:", err);
+            alert("Ошибка сети: " + err.message);
+          }
+        });
+      });
+
+      // Модерация: одобрение
+      const approveBtns = document.querySelectorAll(".approve-btn");
+      console.log(`✅ Найдено кнопок одобрения: ${approveBtns.length}`);
+      approveBtns.forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log("✅ Клик по кнопке одобрения");
+          const id = btn.getAttribute("data-id");
+          console.log(`📤 ID карточки: ${id}`);
+          if (!confirm("Одобрить эту карточку?")) return;
+          try {
+            console.log(`📤 Отправка запроса на одобрение: /admin/product/${id}/approve`);
+            const res = await fetch(`/admin/product/${id}/approve`, { method: "POST" });
+            const data = await res.json();
+            console.log("📥 Ответ сервера:", data);
+            if (data.success) {
+              alert("Карточка одобрена!");
+              location.reload();
+            } else {
+              alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+            }
+          } catch (err) {
+            console.error("❌ Ошибка одобрения:", err);
+            alert("Ошибка сети: " + err.message);
+          }
+        });
+      });
+
+      // Модерация: отклонение
+      const rejectModal = document.getElementById("rejectModal");
+      const rejectForm = document.getElementById("rejectForm");
+      let currentRejectId = null;
+
+      document.querySelectorAll(".reject-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          currentRejectId = btn.getAttribute("data-id");
+          rejectModal.style.display = "block";
+          rejectModal.setAttribute("aria-hidden", "false");
+        });
+      });
+
+      document.querySelector("[data-close-reject]")?.addEventListener("click", () => {
+        rejectModal.style.display = "none";
+        rejectModal.setAttribute("aria-hidden", "true");
+        rejectForm.reset();
+        currentRejectId = null;
+      });
+
+      rejectForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!currentRejectId) return;
+        const reason = new FormData(rejectForm).get("reason") || "Несоответствие правилам публикации";
+        try {
+          const res = await fetch(`/admin/product/${currentRejectId}/reject`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reason })
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert("Карточка отклонена");
+            location.reload();
+          } else {
+            alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+          }
+        } catch (err) {
+          console.error("Ошибка отклонения:", err);
+          alert("Ошибка сети");
+        }
+      });
+
+      // Видео модалка
+      const videoModal = document.getElementById("videoModal");
+      const videoFrame = document.getElementById("videoFrame");
+      console.log(`🎥 Модальное окно видео:`, videoModal ? "найдено" : "не найдено");
+      console.log(`🎥 iframe видео:`, videoFrame ? "найден" : "не найден");
+
+      // Флаг для предотвращения закрытия сразу после открытия
+      let isOpeningVideo = false;
+      let lastVideoButtonClick = null; // Храним информацию о последнем клике на кнопку
+
+      // Используем делегирование событий с capture phase для приоритета
+      document.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-video]");
+        if (!btn) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation(); // Останавливаем все последующие обработчики
+        
+        // Сохраняем информацию о клике
+        lastVideoButtonClick = {
+          time: Date.now(),
+          target: e.target,
+          button: btn
+        };
+        
+        console.log("🖱️ Клик по кнопке видео:", btn);
+        const url = btn.getAttribute("data-video");
+        console.log("📹 URL из атрибута:", url);
+        
+        if (!url) {
+          console.warn("⚠️ Кнопка с data-video не содержит URL");
+          return;
+        }
+        
+        const embedUrl = toYouTubeEmbed(url);
+        console.log("🎬 Embed URL:", embedUrl);
+        
+        if (embedUrl && videoModal && videoFrame) {
+          // Устанавливаем флаг открытия ДО открытия модального окна
+          isOpeningVideo = true;
+          
+          // Формируем финальный URL с autoplay и mute для автоматического воспроизведения
+          // Для YouTube Shorts и обычных видео используем специальные параметры
+          // Используем правильные параметры для избежания ошибки 153
+          let finalUrl = embedUrl;
+          if (finalUrl.includes("?")) {
+            finalUrl += "&autoplay=1&mute=1&rel=0&enablejsapi=1&playsinline=1&controls=1";
+          } else {
+            finalUrl += "?autoplay=1&mute=1&rel=0&enablejsapi=1&playsinline=1&controls=1";
+          }
+          console.log("🎥 Финальный URL для загрузки с autoplay:", finalUrl);
+          console.log("🎥 videoFrame элемент:", videoFrame);
+          console.log("🎥 videoModal элемент:", videoModal);
+          
+          // Сначала очищаем предыдущий src, если был
+          videoFrame.src = "";
+          
+          // Открываем модальное окно СРАЗУ, но используем requestAnimationFrame для гарантии
+          requestAnimationFrame(() => {
+            videoModal.style.display = "block";
+            videoModal.setAttribute("aria-hidden", "false");
+            console.log("✅ Модальное окно открыто");
+            
+            // Убеждаемся, что iframe видим
+            videoFrame.style.display = "block";
+            videoFrame.style.visibility = "visible";
+            videoFrame.style.opacity = "1";
+            
+            // Ждем еще один кадр, чтобы модальное окно точно отрисовалось
+            requestAnimationFrame(() => {
+              // Проверяем видимость iframe перед загрузкой
+              const isVisible = videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0;
+              console.log("📺 iframe видимый перед загрузкой:", isVisible, "width:", videoFrame.offsetWidth, "height:", videoFrame.offsetHeight);
+              
+              if (!isVisible) {
+                console.warn("⚠️ iframe не видимый, ждем еще...");
+                setTimeout(() => {
+                  try {
+                    videoFrame.src = finalUrl;
+                    console.log("✅ Видео URL установлен в iframe.src (с задержкой):", videoFrame.src);
+                  } catch (err) {
+                    console.error("❌ Ошибка при установке src:", err);
+                  }
+                }, 300);
+              } else {
+                try {
+                  videoFrame.src = finalUrl;
+                  console.log("✅ Видео URL установлен в iframe.src:", videoFrame.src);
+                  
+                  // Проверяем, что src установлен
+                  setTimeout(() => {
+                    const currentSrc = videoFrame.src;
+                    if (currentSrc && currentSrc.includes("youtube")) {
+                      console.log("✅ Видео успешно загружено в iframe");
+                      console.log("📺 Текущий src iframe:", currentSrc);
+                      console.log("📺 iframe готов к воспроизведению (пользователь может нажать play)");
+                    } else {
+                      console.error("❌ Проблема: src iframe не установлен правильно");
+                      console.log("📺 Текущий src iframe:", currentSrc);
+                    }
+                  }, 300);
+                } catch (err) {
+                  console.error("❌ Ошибка при установке src:", err);
+                }
+              }
+            });
+          });
+          
+          // Сбрасываем флаг через большую задержку
+          setTimeout(() => {
+            isOpeningVideo = false;
+            if (videoModal.style.display === "block") {
+              console.log("✅ Модальное окно успешно открыто и готово к использованию");
+              // Переустанавливаем обработчики после открытия
+              setupCloseHandlers();
+            }
+          }, 800); // Увеличена задержка до 800мс
+        } else {
+          console.error("❌ Не удалось преобразовать URL видео:", url);
+          console.error("❌ embedUrl:", embedUrl);
+          console.error("❌ videoModal:", videoModal);
+          console.error("❌ videoFrame:", videoFrame);
+          alert("Некорректная ссылка на видео. Поддерживаются только ссылки YouTube.");
+          isOpeningVideo = false; // Сбрасываем флаг в случае ошибки
+        }
+      }, true); // Capture phase для приоритета
+
+      // Функция закрытия модального окна
+      function closeVideoModal() {
+        // Не закрываем, если модальное окно только что открылось
+        if (isOpeningVideo) {
+          console.log("⏸️ Пропуск закрытия - модальное окно только что открылось");
+          return;
+        }
+        
+        // Дополнительная проверка: не закрываем, если прошло меньше секунды с последнего клика на кнопку
+        if (lastVideoButtonClick && Date.now() - lastVideoButtonClick.time < 1000) {
+          console.log("⏸️ Пропуск закрытия - недавний клик на кнопке видео");
+          return;
+        }
+        
+        console.log("❌ Закрытие модального окна видео");
+        if (videoModal) {
+          videoModal.style.display = "none";
+          // Убираем aria-hidden только после того, как элемент потерял фокус
+          setTimeout(() => {
+            if (videoModal.style.display === "none") {
+              videoModal.setAttribute("aria-hidden", "true");
+            }
+          }, 100);
+        }
+        if (videoFrame) {
+          videoFrame.src = "";
+        }
+      }
+
+      // Обработчик кнопки закрытия - устанавливаем после загрузки DOM
+      function setupCloseHandlers() {
+        const closeBtn = document.querySelector("[data-close-video]");
+        if (closeBtn) {
+          // Удаляем старый обработчик, если есть
+          closeBtn.replaceWith(closeBtn.cloneNode(true));
+          const newCloseBtn = document.querySelector("[data-close-video]");
+          
+          newCloseBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation(); // Останавливаем все обработчики
+            closeVideoModal();
+          });
+        }
+      }
+      
+      // Устанавливаем обработчики после загрузки
+      setupCloseHandlers();
+
+      // Обработчик клика вне модального окна (только на overlay)
+      // Используем обычную фазу, чтобы не конфликтовать с обработчиком открытия
+      window.addEventListener("click", (e) => {
+        // Пропускаем закрытие, если модальное окно только что открылось
+        if (isOpeningVideo) {
+          console.log("⏸️ Пропуск закрытия - модальное окно только что открылось");
+          return;
+        }
+        
+        // Пропускаем, если это был клик на кнопке видео (проверяем по времени и цели)
+        if (lastVideoButtonClick && 
+            Date.now() - lastVideoButtonClick.time < 1000 && 
+            (e.target === lastVideoButtonClick.target || e.target === lastVideoButtonClick.button || e.target.closest("[data-video]"))) {
+          console.log("⏸️ Пропуск закрытия - это клик на кнопке видео");
+          return;
+        }
+        
+        // Пропускаем, если клик был на кнопке видео или внутри модального окна
+        if (e.target.closest("[data-video]") || e.target.closest(".modal-content")) {
+          return;
+        }
+        
+        // Проверяем, что:
+        // 1. Клик именно на overlay (сам modal), а не на его содержимое
+        // 2. Модальное окно открыто
+        // 3. Клик не на кнопке закрытия
+        if (e.target === videoModal && 
+            videoModal.style.display === "block" &&
+            !e.target.closest("[data-close-video]")) {
+          console.log("❌ Закрытие модального окна по клику вне его");
+          closeVideoModal();
+        }
+      }, false); // Обычная фаза, чтобы не конфликтовать
+
+      // Закрытие по Escape
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && videoModal && videoModal.style.display === "block") {
+          closeVideoModal();
+        }
+      });
+    });
+  </script>
+
+  <style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.8);
+    }
+    .modal-content {
+      background-color: #1a1a1a;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #444;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      position: relative;
+    }
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      background: none;
+      border: none;
+      position: absolute;
+      right: 15px;
+      top: 10px;
+    }
+    .close:hover {
+      color: #fff;
+    }
+  </style>
 </body>
 </html>
