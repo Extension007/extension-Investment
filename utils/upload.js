@@ -11,17 +11,19 @@ let hasCloudinary =
           process.env.CLOUDINARY_API_KEY && 
           process.env.CLOUDINARY_API_SECRET);
 
-// В serverless окружении Cloudinary обязателен
-if (isServerless && !hasCloudinary) {
-  console.error("❌ В serverless окружении (Vercel) Cloudinary обязателен!");
-  console.error("⚠️  Установите переменные окружения:");
-  console.error("   - CLOUDINARY_CLOUD_NAME");
-  console.error("   - CLOUDINARY_API_KEY");
-  console.error("   - CLOUDINARY_API_SECRET");
-  throw new Error("Cloudinary configuration required in serverless environment. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.");
-}
-
 let storage;
+
+// Функция для проверки конфигурации при использовании
+function checkStorageConfiguration() {
+  if (isServerless && !hasCloudinary) {
+    console.error("❌ В serverless окружении (Vercel) Cloudinary обязателен!");
+    console.error("⚠️  Установите переменные окружения:");
+    console.error("   - CLOUDINARY_CLOUD_NAME");
+    console.error("   - CLOUDINARY_API_KEY");
+    console.error("   - CLOUDINARY_API_SECRET");
+    throw new Error("Cloudinary configuration required in serverless environment. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.");
+  }
+}
 
 if (hasCloudinary) {
   // Используем Cloudinary, если настроен
@@ -52,36 +54,65 @@ if (hasCloudinary) {
 if (!hasCloudinary) {
   // Используем локальное хранилище только если не serverless окружение
   if (isServerless) {
-    throw new Error("Local file storage is not available in serverless environments. Please configure Cloudinary with CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.");
-  }
-  
-  // Используем локальное хранилище
-  const uploadsDir = path.join(__dirname, "..", "uploads");
-  
-  try {
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    storage = multer.diskStorage({
-      destination: (req, file, cb) => {
-        cb(null, uploadsDir);
+    // В serverless окружении создаем заглушку, которая выбросит ошибку при использовании
+    storage = {
+      _handleFile: function(req, file, cb) {
+        checkStorageConfiguration();
+        cb(new Error("File upload not configured. Please set Cloudinary environment variables."));
       },
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+      _removeFile: function(req, file, cb) {
+        cb(null);
       }
-    });
-    console.log("✅ Используется локальное хранилище файлов (uploads/)");
-  } catch (err) {
-    // Если не удалось создать директорию, выбрасываем понятную ошибку
-    console.error("❌ Ошибка настройки локального хранилища:", err.message);
-    throw new Error(`Failed to create uploads directory: ${err.message}. Please check file system permissions or use Cloudinary.`);
+    };
+    console.warn("⚠️  Serverless окружение обнаружено, но Cloudinary не настроен.");
+    console.warn("⚠️  Загрузка файлов будет недоступна до настройки Cloudinary.");
+  } else {
+    // Используем локальное хранилище
+    const uploadsDir = path.join(__dirname, "..", "uploads");
+    
+    try {
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      storage = multer.diskStorage({
+        destination: (req, file, cb) => {
+          cb(null, uploadsDir);
+        },
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
+          const ext = path.extname(file.originalname);
+          cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+        }
+      });
+      console.log("✅ Используется локальное хранилище файлов (uploads/)");
+    } catch (err) {
+      // Если не удалось создать директорию, выбрасываем понятную ошибку
+      console.error("❌ Ошибка настройки локального хранилища:", err.message);
+      throw new Error(`Failed to create uploads directory: ${err.message}. Please check file system permissions or use Cloudinary.`);
+    }
   }
 }
 
-module.exports = multer({ 
+// Создаем multer middleware с проверкой при использовании
+const multerInstance = multer({ 
   storage,
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+});
+
+// Обертка для проверки конфигурации перед использованием
+function uploadSingle(fieldName) {
+  if (isServerless && !hasCloudinary) {
+    checkStorageConfiguration();
+  }
+  return multerInstance.single(fieldName);
+}
+
+// Экспортируем как объект для совместимости с существующим кодом
+module.exports = Object.assign(multerInstance, {
+  single: uploadSingle,
+  array: multerInstance.array.bind(multerInstance),
+  fields: multerInstance.fields.bind(multerInstance),
+  none: multerInstance.none.bind(multerInstance),
+  any: multerInstance.any.bind(multerInstance)
 });
