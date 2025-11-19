@@ -21,36 +21,58 @@ const HAS_MONGO = Boolean(process.env.MONGODB_URI);
 
 // Подключение MongoDB Atlas (если задано)
 if (HAS_MONGO) {
-  mongoose.connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 10000, // Таймаут выбора сервера 10 секунд
-    socketTimeoutMS: 45000, // Таймаут сокета 45 секунд
-    connectTimeoutMS: 10000, // Таймаут подключения 10 секунд
-  })
-    .then(() => {
-      console.log("✅ MongoDB подключена");
-      console.log("📊 Состояние подключения:", mongoose.connection.readyState, "(1=connected)");
+  // Проверяем формат MONGODB_URI
+  const mongoUri = process.env.MONGODB_URI;
+  if (!mongoUri || !mongoUri.startsWith('mongodb')) {
+    console.error("❌ Неверный формат MONGODB_URI. Ожидается строка, начинающаяся с 'mongodb://' или 'mongodb+srv://'");
+    console.warn("⚠️  Приложение будет работать без БД");
+  } else {
+    mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000, // Таймаут выбора сервера 10 секунд
+      socketTimeoutMS: 45000, // Таймаут сокета 45 секунд
+      connectTimeoutMS: 10000, // Таймаут подключения 10 секунд
+      retryWrites: true,
+      w: 'majority'
     })
-    .catch(err => {
-      console.error("❌ Ошибка подключения MongoDB:", err.message);
-      console.warn("⚠️  Приложение будет работать без БД (каталог пуст, админ/рейтинг отключены).");
+      .then(() => {
+        console.log("✅ MongoDB подключена");
+        console.log("📊 Состояние подключения:", mongoose.connection.readyState, "(1=connected)");
+        console.log("📊 Имя базы данных:", mongoose.connection.name);
+      })
+      .catch(err => {
+        console.error("❌ Ошибка подключения MongoDB:", err.message);
+        console.error("❌ Тип ошибки:", err.name);
+        if (err.message.includes('authentication')) {
+          console.error("⚠️  Проблема с аутентификацией. Проверьте username и password в MONGODB_URI");
+        } else if (err.message.includes('timeout')) {
+          console.error("⚠️  Таймаут подключения. Проверьте Network Access в MongoDB Atlas");
+        } else if (err.message.includes('ENOTFOUND') || err.message.includes('DNS')) {
+          console.error("⚠️  Проблема с DNS. Проверьте правильность hostname в MONGODB_URI");
+        }
+        console.warn("⚠️  Приложение будет работать без БД (каталог пуст, админ/рейтинг отключены).");
+      });
+    
+    // Обработчики событий подключения
+    mongoose.connection.on('connecting', () => {
+      console.log("🔄 Подключение к MongoDB...");
     });
-  
-  // Обработчики событий подключения
-  mongoose.connection.on('connecting', () => {
-    console.log("🔄 Подключение к MongoDB...");
-  });
-  
-  mongoose.connection.on('connected', () => {
-    console.log("✅ MongoDB подключена (событие)");
-  });
-  
-  mongoose.connection.on('error', (err) => {
-    console.error("❌ Ошибка MongoDB:", err.message);
-  });
-  
-  mongoose.connection.on('disconnected', () => {
-    console.warn("⚠️  MongoDB отключена");
-  });
+    
+    mongoose.connection.on('connected', () => {
+      console.log("✅ MongoDB подключена (событие)");
+    });
+    
+    mongoose.connection.on('error', (err) => {
+      console.error("❌ Ошибка MongoDB:", err.message);
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.warn("⚠️  MongoDB отключена");
+    });
+    
+    mongoose.connection.on('reconnected', () => {
+      console.log("🔄 MongoDB переподключена");
+    });
+  }
 } else {
   console.warn("⚠️  MONGODB_URI не задан. Приложение запущено без БД (каталог пуст, админ/рейтинг отключены).");
 }
