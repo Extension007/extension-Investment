@@ -23,6 +23,11 @@ document.addEventListener("DOMContentLoaded", () => {
   registerForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const formData = Object.fromEntries(new FormData(registerForm).entries());
+    
+    // Скрываем предыдущие сообщения
+    if (registerError) { registerError.style.display = "none"; }
+    if (registerSuccess) { registerSuccess.style.display = "none"; }
+    
     try {
       const res = await fetch("/auth/register", {
         method: "POST",
@@ -39,6 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           alert("Регистрация завершена");
         }
+        // Очищаем форму
+        registerForm.reset();
       } else {
         if (registerError) {
           registerError.textContent = data.message || "Ошибка регистрации";
@@ -133,6 +140,19 @@ document.addEventListener("DOMContentLoaded", () => {
       // Определяем, является ли устройство iOS
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      
+      // На iOS YouTube iframe часто не работает в модальных окнах
+      // Открываем видео в новом окне/вкладке
+      if (isIOS) {
+        // Преобразуем embed URL обратно в обычный YouTube URL для открытия
+        const videoId = embedUrl.match(/embed\/([^?&#]+)/)?.[1];
+        if (videoId) {
+          const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+          console.log("📱 iOS обнаружен, открываем видео в новом окне:", watchUrl);
+          window.open(watchUrl, '_blank', 'noopener,noreferrer');
+          return;
+        }
+      }
       
       // Формируем финальный URL с параметрами
       // На iOS автовоспроизведение часто блокируется, поэтому делаем его опциональным

@@ -489,6 +489,19 @@
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
           
+          // На iOS YouTube iframe часто не работает в модальных окнах
+          // Открываем видео в новом окне/вкладке
+          if (isIOS) {
+            // Преобразуем embed URL обратно в обычный YouTube URL для открытия
+            const videoId = embedUrl.match(/embed\/([^?&#]+)/)?.[1];
+            if (videoId) {
+              const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+              console.log("📱 iOS обнаружен, открываем видео в новом окне:", watchUrl);
+              window.open(watchUrl, '_blank', 'noopener,noreferrer');
+              return;
+            }
+          }
+          
           // Формируем финальный URL с параметрами
           // На iOS автовоспроизведение часто блокируется, поэтому делаем его опциональным
           let finalUrl = embedUrl;
