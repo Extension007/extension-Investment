@@ -141,21 +141,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       
-      // На iOS YouTube iframe часто не работает в модальных окнах
-      // Открываем видео в новом окне/вкладке
-      if (isIOS) {
-        // Преобразуем embed URL обратно в обычный YouTube URL для открытия
-        const videoId = embedUrl.match(/embed\/([^?&#]+)/)?.[1];
-        if (videoId) {
-          const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
-          console.log("📱 iOS обнаружен, открываем видео в новом окне:", watchUrl);
-          window.open(watchUrl, '_blank', 'noopener,noreferrer');
-          return;
-        }
-      }
-      
       // Формируем финальный URL с параметрами
-      // На iOS автовоспроизведение часто блокируется, поэтому делаем его опциональным
+      // На iOS автовоспроизведение часто блокируется, но iframe должен работать
       let finalUrl = embedUrl;
       const params = new URLSearchParams();
       params.set('rel', '0');
@@ -164,14 +151,14 @@ document.addEventListener("DOMContentLoaded", () => {
       params.set('controls', '1');
       
       // На iOS не добавляем autoplay, так как он часто блокируется
-      // Пользователь должен нажать play вручную
+      // Пользователь должен нажать play вручную, но iframe будет работать
       if (!isIOS) {
         params.set('autoplay', '1');
         params.set('mute', '1');
       }
       
       finalUrl += (finalUrl.includes("?") ? "&" : "?") + params.toString();
-      console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay)" : "(с autoplay)");
+      console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay, но в модальном окне)" : "(с autoplay)");
       
       // СНАЧАЛА открываем модальное окно
       modal.style.display = "block";
@@ -192,15 +179,31 @@ document.addEventListener("DOMContentLoaded", () => {
       // Очищаем предыдущий src
       videoFrame.src = "";
       
+      // На iOS нужна дополнительная задержка для правильной отрисовки модального окна
+      const loadDelay = isIOS ? 300 : 0;
+      
       // Используем requestAnimationFrame для гарантии, что модальное окно отобразилось
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           // Двойной requestAnimationFrame гарантирует, что браузер отрисовал модальное окно
-          try {
-            console.log("🎬 Установка src в iframe...");
-            console.log("📺 videoFrame перед установкой src - offsetWidth:", videoFrame.offsetWidth, "offsetHeight:", videoFrame.offsetHeight);
-            
-            videoFrame.src = finalUrl;
+          setTimeout(() => {
+            try {
+              console.log("🎬 Установка src в iframe...");
+              console.log("📺 videoFrame перед установкой src - offsetWidth:", videoFrame.offsetWidth, "offsetHeight:", videoFrame.offsetHeight);
+              
+              // На iOS убеждаемся, что iframe полностью видим перед загрузкой
+              if (isIOS) {
+                // Принудительно устанавливаем стили для iOS
+                videoFrame.style.display = "block";
+                videoFrame.style.visibility = "visible";
+                videoFrame.style.opacity = "1";
+                videoFrame.style.width = "100%";
+                videoFrame.style.height = "480px";
+                videoFrame.style.position = "relative";
+                videoFrame.style.zIndex = "1";
+              }
+              
+              videoFrame.src = finalUrl;
             
             console.log("✅ Видео URL установлен в iframe.src:", videoFrame.src);
             console.log("📺 iframe элемент:", videoFrame);
@@ -265,6 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 videoFrame.src = finalUrl;
               }
             }, 500);
+            }, loadDelay);
           } catch (err) {
             console.error("❌ Ошибка при установке src:", err);
           }

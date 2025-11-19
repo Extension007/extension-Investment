@@ -274,21 +274,8 @@
           const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
           
-          // На iOS YouTube iframe часто не работает в модальных окнах
-          // Открываем видео в новом окне/вкладке
-          if (isIOS) {
-            // Преобразуем embed URL обратно в обычный YouTube URL для открытия
-            const videoId = embedUrl.match(/embed\/([^?&#]+)/)?.[1];
-            if (videoId) {
-              const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
-              console.log("📱 iOS обнаружен, открываем видео в новом окне:", watchUrl);
-              window.open(watchUrl, '_blank', 'noopener,noreferrer');
-              return;
-            }
-          }
-          
           // Формируем финальный URL с параметрами
-          // На iOS автовоспроизведение часто блокируется, поэтому делаем его опциональным
+          // На iOS автовоспроизведение часто блокируется, но iframe должен работать
           let finalUrl = embedUrl;
           const params = new URLSearchParams();
           params.set('rel', '0');
@@ -297,17 +284,20 @@
           params.set('controls', '1');
           
           // На iOS не добавляем autoplay, так как он часто блокируется
-          // Пользователь должен нажать play вручную
+          // Пользователь должен нажать play вручную, но iframe будет работать
           if (!isIOS) {
             params.set('autoplay', '1');
             params.set('mute', '1');
           }
           
           finalUrl += (finalUrl.includes("?") ? "&" : "?") + params.toString();
-          console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay)" : "(с autoplay)");
+          console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay, но в модальном окне)" : "(с autoplay)");
           
           // Очищаем предыдущий src
           videoFrame.src = "";
+          
+          // На iOS нужна дополнительная задержка для правильной отрисовки модального окна
+          const loadDelay = isIOS ? 300 : 0;
           
           // Открываем модальное окно
           videoModal.style.display = "block";
@@ -318,26 +308,35 @@
           videoFrame.style.visibility = "visible";
           videoFrame.style.opacity = "1";
           
+          // На iOS принудительно устанавливаем стили для iframe
+          if (isIOS) {
+            videoFrame.style.width = "100%";
+            videoFrame.style.height = "480px";
+            videoFrame.style.position = "relative";
+            videoFrame.style.zIndex = "1";
+          }
+          
           // Загружаем видео в следующем кадре с проверкой видимости
           requestAnimationFrame(() => {
-            // Проверяем видимость iframe перед загрузкой
-            const isVisible = videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0;
-            console.log("📺 iframe видимый перед загрузкой:", isVisible, "width:", videoFrame.offsetWidth, "height:", videoFrame.offsetHeight);
-            
-            if (!isVisible) {
-              console.warn("⚠️ iframe не видимый, ждем еще...");
-              setTimeout(() => {
+            setTimeout(() => {
+              // Проверяем видимость iframe перед загрузкой
+              const isVisible = videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0;
+              console.log("📺 iframe видимый перед загрузкой:", isVisible, "width:", videoFrame.offsetWidth, "height:", videoFrame.offsetHeight);
+              
+              if (!isVisible) {
+                console.warn("⚠️ iframe не видимый, ждем еще...");
+                setTimeout(() => {
+                  try {
+                    videoFrame.src = finalUrl;
+                    console.log("✅ Видео URL установлен (с задержкой):", videoFrame.src);
+                  } catch (err) {
+                    console.error("❌ Ошибка при установке src:", err);
+                  }
+                }, 300);
+              } else {
                 try {
                   videoFrame.src = finalUrl;
-                  console.log("✅ Видео URL установлен (с задержкой):", videoFrame.src);
-                } catch (err) {
-                  console.error("❌ Ошибка при установке src:", err);
-                }
-              }, 300);
-            } else {
-              try {
-                videoFrame.src = finalUrl;
-                console.log("✅ Видео URL установлен:", videoFrame.src);
+                  console.log("✅ Видео URL установлен:", videoFrame.src);
                 
                 // Проверяем, что src установлен
                 setTimeout(() => {
@@ -348,12 +347,12 @@
                   } else {
                     console.error("❌ Проблема: src iframe не установлен правильно");
                     console.log("📺 Текущий src iframe:", currentSrc);
-                  }
-                }, 300);
+                }
+              }, 300);
               } catch (err) {
                 console.error("❌ Ошибка при установке src:", err);
               }
-            }
+            }, loadDelay);
           });
         } else {
           console.error("❌ Не удалось преобразовать URL видео:", url);
