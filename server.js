@@ -21,9 +21,15 @@ const HAS_MONGO = Boolean(process.env.MONGODB_URI);
 
 // Подключение MongoDB Atlas (если задано)
 if (HAS_MONGO) {
-  mongoose.connect(process.env.MONGODB_URI)
+  mongoose.connect(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000, // Таймаут выбора сервера 5 секунд
+    socketTimeoutMS: 45000, // Таймаут сокета 45 секунд
+  })
     .then(() => console.log("✅ MongoDB подключена"))
-    .catch(err => console.error("❌ Ошибка подключения MongoDB:", err));
+    .catch(err => {
+      console.error("❌ Ошибка подключения MongoDB:", err.message);
+      console.warn("⚠️  Приложение будет работать без БД (каталог пуст, админ/рейтинг отключены).");
+    });
 } else {
   console.warn("⚠️  MONGODB_URI не задан. Приложение запущено без БД (каталог пуст, админ/рейтинг отключены).");
 }
@@ -140,9 +146,10 @@ app.get("/", async (req, res) => {
       return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, categories, selectedCategory: selected || "all" });
     }
     
-    // Проверяем подключение к БД
-    if (mongoose.connection.readyState !== 1) {
-      console.warn("⚠️ MongoDB не подключена, показываем пустой каталог");
+    // Проверяем подключение к БД (readyState: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting)
+    const dbState = mongoose.connection.readyState;
+    if (dbState !== 1) {
+      console.warn(`⚠️ MongoDB не подключена (состояние: ${dbState}), показываем пустой каталог`);
       return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
     }
     
@@ -157,7 +164,16 @@ app.get("/", async (req, res) => {
     if (selected && categoryKeys.includes(selected)) {
       filter.category = selected;
     }
-    const products = await Product.find(filter).sort({ _id: -1 });
+    
+    // Выполняем запрос с обработкой таймаутов
+    let products = [];
+    try {
+      products = await Product.find(filter).sort({ _id: -1 }).maxTimeMS(5000); // Таймаут 5 секунд
+    } catch (queryErr) {
+      // Если ошибка запроса (таймаут, нет подключения и т.д.), показываем пустой каталог
+      console.warn("⚠️ Ошибка запроса к БД:", queryErr.message);
+      return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+    }
     // пометим где пользователь голосовал
     const userId = req.session.user?._id?.toString();
     const votedMap = {};
