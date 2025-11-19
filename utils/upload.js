@@ -108,11 +108,26 @@ function uploadSingle(fieldName) {
   return multerInstance.single(fieldName);
 }
 
-// Экспортируем как объект для совместимости с существующим кодом
-module.exports = Object.assign(multerInstance, {
+// Сохраняем оригинальные методы multer
+const originalSingle = multerInstance.single.bind(multerInstance);
+const originalArray = multerInstance.array.bind(multerInstance);
+const originalFields = multerInstance.fields.bind(multerInstance);
+const originalNone = multerInstance.none.bind(multerInstance);
+const originalAny = multerInstance.any.bind(multerInstance);
+
+// Обертка для single
+function uploadSingle(fieldName) {
+  if (isServerless && !hasCloudinary) {
+    checkStorageConfiguration();
+  }
+  return originalSingle(fieldName);
+}
+
+// Экспортируем
+module.exports = {
   single: uploadSingle,
-  array: multerInstance.array.bind(multerInstance),
-  fields: multerInstance.fields.bind(multerInstance),
-  none: multerInstance.none.bind(multerInstance),
-  any: multerInstance.any.bind(multerInstance)
-});
+  array: originalArray,
+  fields: originalFields,
+  none: originalNone,
+  any: originalAny
+};

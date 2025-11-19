@@ -85,10 +85,10 @@
                   <strong class="price" data-id="<%= p._id %>"><%= p.price %></strong>
                 </div>
                 <% if (p.status === "approved" || p.status === "pending") { %>
-                  <form class="priceForm" data-id="<%= p._id %>">
-                    <input type="number" name="price" min="0" step="1" placeholder="Новая цена" required>
-                    <button type="submit" class="btn small">Обновить цену</button>
-                  </form>
+                <form class="priceForm" data-id="<%= p._id %>">
+                  <input type="number" name="price" min="0" step="1" placeholder="Новая цена" required>
+                  <button type="submit" class="btn small">Обновить цену</button>
+                </form>
                 <% } %>
                 <p class="product-desc"><%= p.description || "—" %></p>
                 <div class="product-actions">
@@ -204,16 +204,16 @@
         });
         
         try {
-          const res = await fetch("/cabinet/product", { method: "POST", body: formData });
-          const json = await res.json();
+        const res = await fetch("/cabinet/product", { method: "POST", body: formData });
+        const json = await res.json();
           console.log("Ответ сервера:", json);
           
-          if (json.success) {
-            msg.textContent = "Карточка отправлена на модерацию.";
-            msg.style.color = "green";
-            setTimeout(() => location.reload(), 800);
-          } else {
-            msg.textContent = json.message || "Ошибка";
+        if (json.success) {
+          msg.textContent = "Карточка отправлена на модерацию.";
+          msg.style.color = "green";
+          setTimeout(() => location.reload(), 800);
+        } else {
+          msg.textContent = json.message || "Ошибка";
             msg.style.color = "#b00020";
             console.error("Ошибка создания карточки:", json.message);
           }

@@ -113,8 +113,8 @@ function requireAdmin(req, res, next) {
 // Middleware авторизации для пользователей
 function requireUser(req, res, next) {
   if (!req.session.user) {
-    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-    if (wantsJson) return res.status(401).json({ error: "Unauthorized" });
+  const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+  if (wantsJson) return res.status(401).json({ error: "Unauthorized" });
     return res.redirect("/user/login");
   }
   next();

@@ -273,7 +273,7 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         e.stopPropagation();
         closeModal();
-      });
+    });
     } else if (closeBtn) {
       closeBtn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -302,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
       modal.setAttribute("aria-hidden", "true");
       videoFrame.src = "";
       if (typeof releaseFocus === "function") {
-        releaseFocus();
+      releaseFocus();
       }
     }
 
