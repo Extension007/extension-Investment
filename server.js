@@ -211,18 +211,45 @@ app.get("/", async (req, res) => {
     res.render("index", { products, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap, categories, selectedCategory: selected || "all" });
   } catch (err) {
     console.error("❌ Ошибка получения товаров:", err);
+    console.error("❌ Детали ошибки:", err.message);
+    console.error("❌ Стек ошибки:", err.stack);
+    
     // Пытаемся показать страницу с пустым каталогом вместо ошибки 500
     try {
       const isAuth = Boolean(req.session.user);
       const userRole = req.session.user?.role || null;
       const isAdmin = userRole === "admin";
       const isUser = userRole === "user";
-      const selected = req.query.category;
+      const selected = req.query.category || "all";
       const categories = typeof CATEGORY_LABELS !== 'undefined' ? CATEGORY_LABELS : {};
-      res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+      
+      // Убеждаемся, что все переменные определены
+      res.render("index", { 
+        products: [], 
+        page: 1, 
+        totalPages: 1, 
+        isAuth: isAuth || false, 
+        isAdmin: isAdmin || false, 
+        isUser: isUser || false, 
+        userRole: userRole || null, 
+        votedMap: {}, 
+        categories: categories || {}, 
+        selectedCategory: selected 
+      });
     } catch (renderErr) {
       console.error("❌ Критическая ошибка рендеринга:", renderErr);
-      res.status(500).send("Ошибка базы данных");
+      console.error("❌ Детали ошибки рендеринга:", renderErr.message);
+      // В крайнем случае отправляем простой HTML
+      res.status(500).send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Ошибка</title></head>
+        <body>
+          <h1>Временная ошибка сервера</h1>
+          <p>Попробуйте обновить страницу через несколько секунд.</p>
+        </body>
+        </html>
+      `);
     }
   }
 });
