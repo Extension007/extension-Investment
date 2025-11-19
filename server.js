@@ -194,8 +194,28 @@ app.get("/", async (req, res) => {
     if (dbState !== 1) {
       const stateNames = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
       console.warn(`⚠️ MongoDB не подключена (состояние: ${dbState} = ${stateNames[dbState] || 'unknown'}), показываем пустой каталог`);
-      // Если в процессе подключения, можно подождать, но для простоты показываем пустой каталог
-      return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+      
+      // Если в процессе подключения (состояние 2), ждем немного перед показом пустого каталога
+      // Это дает MongoDB время на подключение при первом запросе
+      if (dbState === 2) {
+        // Ждем до 2 секунд для подключения
+        let waited = 0;
+        while (mongoose.connection.readyState === 2 && waited < 2000) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          waited += 100;
+        }
+        // Если подключилось, продолжаем нормально
+        if (mongoose.connection.readyState === 1) {
+          console.log("✅ MongoDB подключилась после ожидания");
+          // Продолжаем выполнение ниже
+        } else {
+          console.warn("⚠️ MongoDB все еще не подключена после ожидания, показываем пустой каталог");
+          return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+        }
+      } else {
+        // Для других состояний сразу показываем пустой каталог
+        return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+      }
     }
     
     // Показываем карточки со статусом "approved" или без статуса (для обратной совместимости)
