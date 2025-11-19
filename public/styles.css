@@ -249,6 +249,37 @@ body {
   min-height: 520px;
 }
 
+/* Улучшения для мобильных устройств */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    margin: 2% auto;
+    padding: 15px;
+  }
+  
+  #videoModal .modal-content {
+    padding: 35px 15px 15px;
+    min-height: auto;
+  }
+  
+  #videoFrame {
+    height: 300px !important;
+    min-height: 300px !important;
+  }
+}
+
+/* Специальные стили для iOS */
+@supports (-webkit-touch-callout: none) {
+  #videoModal {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  #videoFrame {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}
+
 #videoFrame {
   width: 100% !important;
   height: 480px !important;

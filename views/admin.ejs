@@ -250,6 +250,8 @@
               frameborder="0" 
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
               allowfullscreen
+              playsinline
+              webkit-playsinline
               loading="eager"
               referrerpolicy="strict-origin-when-cross-origin"
               style="display: block; visibility: visible;"></iframe>
@@ -483,16 +485,28 @@
           // Устанавливаем флаг открытия ДО открытия модального окна
           isOpeningVideo = true;
           
-          // Формируем финальный URL с autoplay и mute для автоматического воспроизведения
-          // Для YouTube Shorts и обычных видео используем специальные параметры
-          // Используем правильные параметры для избежания ошибки 153
+          // Определяем, является ли устройство iOS
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+          
+          // Формируем финальный URL с параметрами
+          // На iOS автовоспроизведение часто блокируется, поэтому делаем его опциональным
           let finalUrl = embedUrl;
-          if (finalUrl.includes("?")) {
-            finalUrl += "&autoplay=1&mute=1&rel=0&enablejsapi=1&playsinline=1&controls=1";
-          } else {
-            finalUrl += "?autoplay=1&mute=1&rel=0&enablejsapi=1&playsinline=1&controls=1";
+          const params = new URLSearchParams();
+          params.set('rel', '0');
+          params.set('enablejsapi', '1');
+          params.set('playsinline', '1');
+          params.set('controls', '1');
+          
+          // На iOS не добавляем autoplay, так как он часто блокируется
+          // Пользователь должен нажать play вручную
+          if (!isIOS) {
+            params.set('autoplay', '1');
+            params.set('mute', '1');
           }
-          console.log("🎥 Финальный URL для загрузки с autoplay:", finalUrl);
+          
+          finalUrl += (finalUrl.includes("?") ? "&" : "?") + params.toString();
+          console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay)" : "(с autoplay)");
           console.log("🎥 videoFrame элемент:", videoFrame);
           console.log("🎥 videoModal элемент:", videoModal);
           
