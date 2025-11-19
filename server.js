@@ -22,14 +22,35 @@ const HAS_MONGO = Boolean(process.env.MONGODB_URI);
 // Подключение MongoDB Atlas (если задано)
 if (HAS_MONGO) {
   mongoose.connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 5000, // Таймаут выбора сервера 5 секунд
+    serverSelectionTimeoutMS: 10000, // Таймаут выбора сервера 10 секунд
     socketTimeoutMS: 45000, // Таймаут сокета 45 секунд
+    connectTimeoutMS: 10000, // Таймаут подключения 10 секунд
   })
-    .then(() => console.log("✅ MongoDB подключена"))
+    .then(() => {
+      console.log("✅ MongoDB подключена");
+      console.log("📊 Состояние подключения:", mongoose.connection.readyState, "(1=connected)");
+    })
     .catch(err => {
       console.error("❌ Ошибка подключения MongoDB:", err.message);
       console.warn("⚠️  Приложение будет работать без БД (каталог пуст, админ/рейтинг отключены).");
     });
+  
+  // Обработчики событий подключения
+  mongoose.connection.on('connecting', () => {
+    console.log("🔄 Подключение к MongoDB...");
+  });
+  
+  mongoose.connection.on('connected', () => {
+    console.log("✅ MongoDB подключена (событие)");
+  });
+  
+  mongoose.connection.on('error', (err) => {
+    console.error("❌ Ошибка MongoDB:", err.message);
+  });
+  
+  mongoose.connection.on('disconnected', () => {
+    console.warn("⚠️  MongoDB отключена");
+  });
 } else {
   console.warn("⚠️  MONGODB_URI не задан. Приложение запущено без БД (каталог пуст, админ/рейтинг отключены).");
 }
@@ -149,7 +170,9 @@ app.get("/", async (req, res) => {
     // Проверяем подключение к БД (readyState: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting)
     const dbState = mongoose.connection.readyState;
     if (dbState !== 1) {
-      console.warn(`⚠️ MongoDB не подключена (состояние: ${dbState}), показываем пустой каталог`);
+      const stateNames = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
+      console.warn(`⚠️ MongoDB не подключена (состояние: ${dbState} = ${stateNames[dbState] || 'unknown'}), показываем пустой каталог`);
+      // Если в процессе подключения, можно подождать, но для простоты показываем пустой каталог
       return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
     }
     
