@@ -132,9 +132,20 @@ app.get("/", async (req, res) => {
     const isUser = userRole === "user";
     const selected = req.query.category;
 
+    // Определяем категории (если не определены, используем пустой объект)
+    const categories = typeof CATEGORY_LABELS !== 'undefined' ? CATEGORY_LABELS : {};
+    const categoryKeys = typeof CATEGORY_KEYS !== 'undefined' ? CATEGORY_KEYS : [];
+
     if (!HAS_MONGO) {
-      return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, categories: CATEGORY_LABELS, selectedCategory: selected || "all" });
+      return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, categories, selectedCategory: selected || "all" });
     }
+    
+    // Проверяем подключение к БД
+    if (mongoose.connection.readyState !== 1) {
+      console.warn("⚠️ MongoDB не подключена, показываем пустой каталог");
+      return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+    }
+    
     // Показываем карточки со статусом "approved" или без статуса (для обратной совместимости)
     const filter = { 
       $or: [
@@ -143,7 +154,7 @@ app.get("/", async (req, res) => {
         { status: null }
       ]
     };
-    if (selected && CATEGORY_KEYS.includes(selected)) {
+    if (selected && categoryKeys.includes(selected)) {
       filter.category = selected;
     }
     const products = await Product.find(filter).sort({ _id: -1 });
@@ -158,10 +169,22 @@ app.get("/", async (req, res) => {
       });
     }
     // page/totalPages оставлены для совместимости с твоим рендером
-    res.render("index", { products, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap, categories: CATEGORY_LABELS, selectedCategory: selected || "all" });
+    res.render("index", { products, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap, categories, selectedCategory: selected || "all" });
   } catch (err) {
     console.error("❌ Ошибка получения товаров:", err);
-    res.status(500).send("Ошибка базы данных");
+    // Пытаемся показать страницу с пустым каталогом вместо ошибки 500
+    try {
+      const isAuth = Boolean(req.session.user);
+      const userRole = req.session.user?.role || null;
+      const isAdmin = userRole === "admin";
+      const isUser = userRole === "user";
+      const selected = req.query.category;
+      const categories = typeof CATEGORY_LABELS !== 'undefined' ? CATEGORY_LABELS : {};
+      res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+    } catch (renderErr) {
+      console.error("❌ Критическая ошибка рендеринга:", renderErr);
+      res.status(500).send("Ошибка базы данных");
+    }
   }
 });
 

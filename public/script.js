@@ -204,74 +204,74 @@ document.addEventListener("DOMContentLoaded", () => {
               }
               
               videoFrame.src = finalUrl;
-            
-            console.log("✅ Видео URL установлен в iframe.src:", videoFrame.src);
-            console.log("📺 iframe элемент:", videoFrame);
-            console.log("📺 iframe видимый:", videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0);
-            console.log("📺 iframe computed style display:", window.getComputedStyle(videoFrame).display);
-            console.log("📺 iframe computed style visibility:", window.getComputedStyle(videoFrame).visibility);
-            console.log("📺 iframe computed style opacity:", window.getComputedStyle(videoFrame).opacity);
-            
-            // Проверяем через небольшую задержку
-            setTimeout(() => {
-              const currentSrc = videoFrame.src;
-              const isVisible = videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0;
-              console.log("📺 Проверка через 500мс:");
-              console.log("📺 currentSrc:", currentSrc);
-              console.log("📺 isVisible:", isVisible);
               
-              // Проверяем, загружен ли iframe
-              try {
-                const iframeWindow = videoFrame.contentWindow;
-                const iframeDoc = videoFrame.contentDocument || (iframeWindow && iframeWindow.document);
-                console.log("📺 iframe contentWindow:", iframeWindow ? "доступен" : "не доступен");
-                console.log("📺 iframe contentDocument:", iframeDoc ? "доступен" : "не доступен (нормально для cross-origin)");
-              } catch (e) {
-                console.log("📺 iframe cross-origin (нормально):", e.message);
-              }
+              console.log("✅ Видео URL установлен в iframe.src:", videoFrame.src);
+              console.log("📺 iframe элемент:", videoFrame);
+              console.log("📺 iframe видимый:", videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0);
+              console.log("📺 iframe computed style display:", window.getComputedStyle(videoFrame).display);
+              console.log("📺 iframe computed style visibility:", window.getComputedStyle(videoFrame).visibility);
+              console.log("📺 iframe computed style opacity:", window.getComputedStyle(videoFrame).opacity);
               
-              if (currentSrc && currentSrc.includes("youtube") && isVisible) {
-                console.log("✅ Видео успешно загружено в iframe и iframe видимый");
-                console.log("📺 Финальный src iframe:", currentSrc);
-                console.log("📺 iframe готов к воспроизведению");
-                console.log("ℹ️  Если видео не воспроизводится, попробуйте:");
-                console.log("   1. Нажать кнопку play в плеере YouTube");
-                console.log("   2. Проверить, не блокирует ли браузер автовоспроизведение");
-                console.log("   3. Проверить, доступно ли видео для встраивания");
+              // Проверяем через небольшую задержку
+              setTimeout(() => {
+                const currentSrc = videoFrame.src;
+                const isVisible = videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0;
+                console.log("📺 Проверка через 500мс:");
+                console.log("📺 currentSrc:", currentSrc);
+                console.log("📺 isVisible:", isVisible);
                 
-                // Видео должно автоматически начать воспроизведение
-                console.log("🎬 Видео должно начать воспроизведение автоматически (muted)");
-                
-                // Дополнительная попытка: перезагружаем iframe через небольшую задержку для гарантии
-                setTimeout(() => {
-                  const currentSrc = videoFrame.src;
-                  if (currentSrc && currentSrc.includes("youtube")) {
-                    // Перезагружаем iframe для принудительного запуска
-                    console.log("🔄 Перезагрузка iframe для принудительного запуска...");
-                    const tempSrc = videoFrame.src;
-                    videoFrame.src = "";
-                    setTimeout(() => {
-                      videoFrame.src = tempSrc;
-                      console.log("✅ iframe перезагружен:", tempSrc);
-                    }, 100);
-                  }
-                }, 1500);
-              } else {
-                console.error("❌ Проблема:");
-                console.error("  - src установлен:", currentSrc && currentSrc.includes("youtube"));
-                console.error("  - iframe видимый:", isVisible);
-                console.error("  - Текущий src iframe:", currentSrc);
-                if (!isVisible) {
-                  console.error("  - iframe не видимый! offsetWidth:", videoFrame.offsetWidth, "offsetHeight:", videoFrame.offsetHeight);
+                // Проверяем, загружен ли iframe
+                try {
+                  const iframeWindow = videoFrame.contentWindow;
+                  const iframeDoc = videoFrame.contentDocument || (iframeWindow && iframeWindow.document);
+                  console.log("📺 iframe contentWindow:", iframeWindow ? "доступен" : "не доступен");
+                  console.log("📺 iframe contentDocument:", iframeDoc ? "доступен" : "не доступен (нормально для cross-origin)");
+                } catch (e) {
+                  console.log("📺 iframe cross-origin (нормально):", e.message);
                 }
-                console.log("📺 Попытка установить src еще раз...");
-                videoFrame.src = finalUrl;
-              }
-            }, 500);
-            }, loadDelay);
-          } catch (err) {
-            console.error("❌ Ошибка при установке src:", err);
-          }
+                
+                if (currentSrc && currentSrc.includes("youtube") && isVisible) {
+                  console.log("✅ Видео успешно загружено в iframe и iframe видимый");
+                  console.log("📺 Финальный src iframe:", currentSrc);
+                  console.log("📺 iframe готов к воспроизведению");
+                  console.log("ℹ️  Если видео не воспроизводится, попробуйте:");
+                  console.log("   1. Нажать кнопку play в плеере YouTube");
+                  console.log("   2. Проверить, не блокирует ли браузер автовоспроизведение");
+                  console.log("   3. Проверить, доступно ли видео для встраивания");
+                  
+                  // Видео должно автоматически начать воспроизведение
+                  console.log("🎬 Видео должно начать воспроизведение автоматически (muted)");
+                  
+                  // Дополнительная попытка: перезагружаем iframe через небольшую задержку для гарантии
+                  setTimeout(() => {
+                    const currentSrc = videoFrame.src;
+                    if (currentSrc && currentSrc.includes("youtube")) {
+                      // Перезагружаем iframe для принудительного запуска
+                      console.log("🔄 Перезагрузка iframe для принудительного запуска...");
+                      const tempSrc = videoFrame.src;
+                      videoFrame.src = "";
+                      setTimeout(() => {
+                        videoFrame.src = tempSrc;
+                        console.log("✅ iframe перезагружен:", tempSrc);
+                      }, 100);
+                    }
+                  }, 1500);
+                } else {
+                  console.error("❌ Проблема:");
+                  console.error("  - src установлен:", currentSrc && currentSrc.includes("youtube"));
+                  console.error("  - iframe видимый:", isVisible);
+                  console.error("  - Текущий src iframe:", currentSrc);
+                  if (!isVisible) {
+                    console.error("  - iframe не видимый! offsetWidth:", videoFrame.offsetWidth, "offsetHeight:", videoFrame.offsetHeight);
+                  }
+                  console.log("📺 Попытка установить src еще раз...");
+                  videoFrame.src = finalUrl;
+                }
+              }, 500);
+            } catch (err) {
+              console.error("❌ Ошибка при установке src:", err);
+            }
+          }, loadDelay);
         });
       });
       
