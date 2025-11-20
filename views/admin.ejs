@@ -227,272 +227,286 @@
     </section>
   </main>
 
-  <footer class="footer">
-    <p>© 2025 EXTO Ecosystem</p>
-  </footer>
+ <footer class="footer">
+  <p>© 2025 EXTO Ecosystem</p>
+</footer>
 
-  <!-- Модальное окно для отклонения -->
-  <div id="rejectModal" class="modal" aria-hidden="true" style="display:none;">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Отклонить карточку">
-      <button class="close" data-close-reject aria-label="Закрыть">&times;</button>
-      <h3>Отклонить карточку</h3>
-      <form id="rejectForm">
-        <textarea name="reason" placeholder="Причина отклонения (необязательно)" rows="4" style="width:100%;padding:8px;border-radius:6px;border:1px solid #444;background:#2b2b2b;color:#fff;resize:vertical;"></textarea>
-        <button type="submit" class="btn" style="background:#f44336;color:#fff;margin-top:10px;">Отклонить</button>
-      </form>
+<!-- Модальное окно для отклонения -->
+<div id="rejectModal" class="modal" aria-hidden="true" style="display:none;">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-label="Отклонить карточку">
+    <button class="close" data-close-reject aria-label="Закрыть">&times;</button>
+    <h3>Отклонить карточку</h3>
+    <form id="rejectForm">
+      <textarea name="reason" placeholder="Причина отклонения (необязательно)" rows="4" style="width:100%;padding:8px;border-radius:6px;border:1px solid #444;background:#2b2b2b;color:#fff;resize:vertical;"></textarea>
+      <button type="submit" class="btn" style="background:#f44336;color:#fff;margin-top:10px;">Отклонить</button>
+    </form>
+  </div>
+</div>
+
+<!-- Модальное окно для видео -->
+<div id="videoModal" class="modal" aria-hidden="true" style="display:none;">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
+    <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
+    <div id="videoFrameContainer">
+      <div id="videoFrame"></div>
     </div>
   </div>
+</div>
 
-  <!-- Модальное окно для видео -->
-  <div id="videoModal" class="modal" aria-hidden="true" style="display:none;">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
-      <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
-      <div id="videoFrameContainer">
-        <div id="videoFrame"></div>
-      </div>
-    </div>
-  </div>
+<!-- YouTube API -->
+<script src="https://www.youtube.com/iframe_api"></script>
 
-  <!-- YouTube API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+<script>
+  let playerAdmin = null;
+  let playerReady = false; // флаг готовности
+  let currentVideoIdAdmin = null;
 
-  <script>
- let playerAdmin = null;
-let playerReady = false; // FIX: флаг готовности
-let currentVideoIdAdmin = null;
-
-function onPlayerReadyAdmin(event) {
-  console.log("✅ Плеер готов (admin)");
-  playerReady = true; // FIX: только отмечаем готовность, без автозагрузки
-}
-
-    // Локальная инициализация без переопределения глобальной onYouTubeIframeAPIReady
-    function initAdminPlayer() {
-      try {
-        playerAdmin = new YT.Player('videoFrame', {
-          width: '100%',
-          height: '480',
-          playerVars: { rel: 0, playsinline: 1 },
-          events: {
-            'onReady': onPlayerReadyAdmin,
-            'onError': (e) => console.error("❌ Ошибка плеера:", e.data)
-          }
-        });
-      } catch (err) {
-        console.error("❌ Ошибка создания плеера (admin):", err);
-      }
-    }
-
-    // Дождёмся, когда API поднимется
-    window.addEventListener("load", () => {
-      if (typeof YT !== "undefined" && YT.Player) {
-        initAdminPlayer();
-      } else {
-        const t = setInterval(() => {
-          if (typeof YT !== "undefined" && YT.Player) {
-            clearInterval(t);
-            initAdminPlayer();
-          }
-        }, 100);
-        setTimeout(() => clearInterval(t), 5000);
-      }
-    });
-  </script>
-
-  <script>
-    // Извлечение videoId из YouTube URL
-    function extractVideoId(url) {
-      if (!url) return null;
-      if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
-      if (url.includes('/shorts/')) return url.split('/shorts/')[1].split(/[?#]/)[0];
-      if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split(/[?#]/)[0];
-      const match = url.match(/[?&]v=([^&]+)/);
-      return match ? match[1] : null;
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      console.log("🔧 Инициализация админ-панели");
-
-      // Блокировка/Разблокировка карточек
-      const toggleBtns = document.querySelectorAll(".toggle-visibility-btn");
-      toggleBtns.forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const id = btn.getAttribute("data-id");
-          const currentStatus = btn.getAttribute("data-status");
-          const action = currentStatus === "approved" ? "заблокировать" : "разблокировать";
-          if (!confirm(`Вы уверены, что хотите ${action} эту карточку?`)) return;
-
-          try {
-            const res = await fetch(`/admin/product/${id}/toggle-visibility`, { method: "POST" });
-            const data = await res.json();
-            if (data.success) {
-              alert(data.message || "Статус карточки изменен");
-              location.reload();
-            } else {
-              alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-            }
-          } catch (err) {
-            console.error("❌ Ошибка блокировки:", err);
-            alert("Ошибка сети: " + err.message);
-          }
-        });
-      });
-
-      // Модерация: одобрение
-      const approveBtns = document.querySelectorAll(".approve-btn");
-      approveBtns.forEach(btn => {
-        btn.addEventListener("click", async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const id = btn.getAttribute("data-id");
-          if (!confirm("Одобрить эту карточку?")) return;
-          try {
-            const res = await fetch(`/admin/product/${id}/approve`, { method: "POST" });
-            const data = await res.json();
-            if (data.success) {
-              alert("Карточка одобрена!");
-              location.reload();
-            } else {
-              alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-            }
-          } catch (err) {
-            console.error("❌ Ошибка одобрения:", err);
-            alert("Ошибка сети: " + err.message);
-          }
-        });
-      });
-
-      // Модерация: отклонение
-      const rejectModal = document.getElementById("rejectModal");
-      const rejectForm = document.getElementById("rejectForm");
-      let currentRejectId = null;
-
-      document.querySelectorAll(".reject-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          currentRejectId = btn.getAttribute("data-id");
-          rejectModal.style.display = "block";
-          rejectModal.setAttribute("aria-hidden", "false");
-        });
-      });
-
-      const closeRejectBtn = document.querySelector("[data-close-reject]");
-      if (closeRejectBtn) {
-        closeRejectBtn.addEventListener("click", () => {
-          rejectModal.style.display = "none";
-          rejectModal.setAttribute("aria-hidden", "true");
-          rejectForm && rejectForm.reset();
-          currentRejectId = null;
-        });
-      }
-
-      if (rejectForm) {
-        rejectForm.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          if (!currentRejectId) return;
-          const reason = new FormData(rejectForm).get("reason") || "Несоответствие правилам публикации";
-          try {
-            const res = await fetch(`/admin/product/${currentRejectId}/reject`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ reason })
-            });
-            const data = await res.json();
-            if (data.success) {
-              alert("Карточка отклонена");
-              location.reload();
-            } else {
-              alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-            }
-          } catch (err) {
-            console.error("Ошибка отклонения:", err);
-            alert("Ошибка сети: " + err.message);
-          }
-        });
-      }
-
-      // Видео модалка
-      const videoModal = document.getElementById("videoModal");
-
-      // Открытие видео
-// Открытие видео
-document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.btn[data-video]');
-  if (!btn) return;
-  const url = btn.getAttribute('data-video');
-  const videoId = extractVideoId(url);
-  if (!videoId) return;
-
-  currentVideoIdAdmin = videoId;
-  videoModal.style.display = 'block';
-  videoModal.setAttribute('aria-hidden', 'false');
-
-  if (playerReady && playerAdmin) {
-    playerAdmin.loadVideoById(videoId);
-    playerAdmin.playVideo(); // FIX: запуск строго после клика
-  } else {
-    console.warn("⚠️ Плеер ещё не готов, повторим через 500мс");
-    setTimeout(() => {
-      if (playerReady && playerAdmin) {
-        playerAdmin.loadVideoById(currentVideoIdAdmin);
-        playerAdmin.playVideo();
-      }
-    }, 500);
+  function onPlayerReadyAdmin(event) {
+    console.log("✅ Плеер готов (admin)");
+    playerReady = true; // только отмечаем готовность, без автозагрузки
   }
-});
 
+  function onPlayerErrorAdmin(e) {
+    console.error("❌ Ошибка плеера:", e?.data);
+    // При необходимости можно добавить fallback по коду 153 (iOS)
+    // if (e?.data === 153 && currentVideoIdAdmin) {
+    //   const url = "https://www.youtube.com/watch?v=" + currentVideoIdAdmin;
+    //   window.open(url, "_blank", "noopener,noreferrer");
+    // }
+  }
 
-      // Закрытие видео
-      const closeVideoBtn = document.querySelector('[data-close-video]');
-      if (closeVideoBtn) {
-        closeVideoBtn.addEventListener('click', () => {
-          videoModal.style.display = 'none';
-          videoModal.setAttribute('aria-hidden', 'true');
-          if (playerAdmin && typeof playerAdmin.stopVideo === 'function') {
-            playerAdmin.stopVideo();
+  // Локальная инициализация без переопределения глобальной onYouTubeIframeAPIReady
+  function initAdminPlayer() {
+    try {
+      playerAdmin = new YT.Player('videoFrame', {
+        width: '100%',
+        height: '480',
+        playerVars: { rel: 0, playsinline: 1 }, // playsinline важен для iOS
+        events: {
+          'onReady': onPlayerReadyAdmin,
+          'onError': onPlayerErrorAdmin
+        }
+      });
+    } catch (err) {
+      console.error("❌ Ошибка создания плеера (admin):", err);
+    }
+  }
+
+  // Дождёмся, когда API поднимется
+  window.addEventListener("load", () => {
+    if (typeof YT !== "undefined" && YT.Player) {
+      initAdminPlayer();
+    } else {
+      const t = setInterval(() => {
+        if (typeof YT !== "undefined" && YT.Player) {
+          clearInterval(t);
+          initAdminPlayer();
+        }
+      }, 100);
+      setTimeout(() => clearInterval(t), 5000);
+    }
+  });
+</script>
+
+<script>
+  // Извлечение videoId из YouTube URL
+  function extractVideoId(url) {
+    if (!url) return null;
+    if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
+    if (url.includes('/shorts/')) return url.split('/shorts/')[1].split(/[?#]/)[0];
+    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split(/[?#]/)[0];
+    const match = url.match(/[?&]v=([^&]+)/);
+    return match ? match[1] : null;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("🔧 Инициализация админ-панели");
+
+    // Блокировка/Разблокировка карточек
+    const toggleBtns = document.querySelectorAll(".toggle-visibility-btn");
+    toggleBtns.forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.getAttribute("data-id");
+        const currentStatus = btn.getAttribute("data-status");
+        const action = currentStatus === "approved" ? "заблокировать" : "разблокировать";
+        if (!confirm(`Вы уверены, что хотите ${action} эту карточку?`)) return;
+
+        try {
+          const res = await fetch(`/admin/product/${id}/toggle-visibility`, { method: "POST" });
+          const data = await res.json();
+          if (data.success) {
+            alert(data.message || "Статус карточки изменен");
+            location.reload();
+          } else {
+            alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
           }
-        });
+        } catch (err) {
+          console.error("❌ Ошибка блокировки:", err);
+          alert("Ошибка сети: " + err.message);
+        }
+      });
+    });
+
+    // Модерация: одобрение
+    const approveBtns = document.querySelectorAll(".approve-btn");
+    approveBtns.forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.getAttribute("data-id");
+        if (!confirm("Одобрить эту карточку?")) return;
+        try {
+          const res = await fetch(`/admin/product/${id}/approve`, { method: "POST" });
+          const data = await res.json();
+          if (data.success) {
+            alert("Карточка одобрена!");
+            location.reload();
+          } else {
+            alert("Ошибка: " + (data.message или "Неизвестная ошибка"));
+          }
+        } catch (err) {
+          console.error("❌ Ошибка одобрения:", err);
+          alert("Ошибка сети: " + err.message);
+        }
+      });
+    });
+
+    // Модерация: отклонение
+    const rejectModal = document.getElementById("rejectModal");
+    const rejectForm = document.getElementById("rejectForm");
+    let currentRejectId = null;
+
+    document.querySelectorAll(".reject-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        currentRejectId = btn.getAttribute("data-id");
+        rejectModal.style.display = "block";
+        rejectModal.setAttribute("aria-hidden", "false");
+      });
+    });
+
+    const closeRejectBtn = document.querySelector("[data-close-reject]");
+    if (closeRejectBtn) {
+      closeRejectBtn.addEventListener("click", () => {
+        rejectModal.style.display = "none";
+        rejectModal.setAttribute("aria-hidden", "true");
+        rejectForm && rejectForm.reset();
+        currentRejectId = null;
+      });
+    }
+
+    if (rejectForm) {
+      rejectForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!currentRejectId) return;
+        const reason = new FormData(rejectForm).get("reason") || "Несоответствие правилам публикации";
+        try {
+          const res = await fetch(`/admin/product/${currentRejectId}/reject`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ reason })
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert("Карточка отклонена");
+            location.reload();
+          } else {
+            alert("Ошибка: " + (data.message или "Неизвестная ошибка"));
+          }
+        } catch (err) {
+          console.error("Ошибка отклонения:", err);
+          alert("Ошибка сети: " + err.message);
+        }
+      });
+    }
+
+    // Видео модалка
+    const videoModal = document.getElementById("videoModal");
+
+    // Открытие видео (iOS-safe: cue + play строго в клике, без таймеров за пределами клика)
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn[data-video]');
+      if (!btn) return;
+
+      const url = btn.getAttribute('data-video');
+      const videoId = extractVideoId(url);
+      if (!videoId) return;
+
+      currentVideoIdAdmin = videoId;
+      videoModal.style.display = 'block';
+      videoModal.setAttribute('aria-hidden', 'false');
+
+      // Если плеер не успел подняться — коротко ждём, оставаясь в контексте клика
+      if (!playerAdmin || !playerReady) {
+        console.warn("⚠️ Плеер ещё не готов, ждём...");
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      try {
+        if (playerAdmin) {
+          // Важно для iOS: cue вместо load
+          playerAdmin.cueVideoById(currentVideoIdAdmin);
+          // Запуск строго внутри клика
+          playerAdmin.playVideo();
+          console.log("🎬 Запуск видео:", currentVideoIdAdmin);
+        }
+      } catch (err) {
+        console.error("❌ Ошибка запуска, открываем в новой вкладке:", err);
+        window.open(url, '_blank', 'noopener,noreferrer');
       }
     });
-  </script>
 
-  <style>
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 2000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.8);
+    // Закрытие видео
+    const closeVideoBtn = document.querySelector('[data-close-video]');
+    if (closeVideoBtn) {
+      closeVideoBtn.addEventListener('click', () => {
+        videoModal.style.display = 'none';
+        videoModal.setAttribute('aria-hidden', 'true');
+        if (playerAdmin && typeof playerAdmin.stopVideo === 'function') {
+          playerAdmin.stopVideo();
+        }
+      });
     }
-    .modal-content {
-      background-color: #1a1a1a;
-      margin: 5% auto;
-      padding: 20px;
-      border: 1px solid #444;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 600px;
-      position: relative;
-    }
-    .close {
-      color: #aaa;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
-      cursor: pointer;
-      background: none;
-      border: none;
-      position: absolute;
-      right: 15px;
-      top: 10px;
-    }
-    .close:hover {
-      color: #fff;
-    }
-  </style>
+  });
+</script>
+
+<style>
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+  }
+  .modal-content {
+    background-color: #1a1a1a;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #444;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    position: relative;
+  }
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+  }
+  .close:hover {
+    color: #fff;
+  }
+</style>
 </body>
 </html>
