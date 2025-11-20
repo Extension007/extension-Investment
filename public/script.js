@@ -1,5 +1,13 @@
+// =======================
+// Глобальные переменные
+// =======================
 let player = null;
 let currentVideoId = null;
+let playerReady = false; // флаг готовности плеера
+
+// =======================
+// Вспомогательные функции
+// =======================
 
 // Извлечение videoId из разных форматов ссылок YouTube
 function extractVideoId(url) {
@@ -11,13 +19,14 @@ function extractVideoId(url) {
   return match ? match[1] : null;
 }
 
+// =======================
+// YouTube IFrame API
+// =======================
+
 // Событие готовности плеера
 function onPlayerReady(event) {
   console.log("✅ Плеер готов");
-  if (currentVideoId) {
-    event.target.loadVideoById(currentVideoId);
-    console.log("✅ Видео загружено автоматически:", currentVideoId);
-  }
+  playerReady = true;
 }
 
 // Инициализация YouTube IFrame API
@@ -66,7 +75,11 @@ window.onYouTubeIframeAPIReady = function () {
   }
 };
 
-// Обработчик клика по кнопке «Обзор»
+// =======================
+// Обработчики модалки видео
+// =======================
+
+// Клик по кнопке «Обзор»
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.btn[data-video]');
   if (!btn) return;
@@ -98,7 +111,7 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Обработчик закрытия модалки (делегирование событий)
+// Закрытие модалки
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-close-video]')) {
     const modal = document.getElementById('videoModal');
@@ -115,9 +128,10 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Логика модалки регистрации и формы + рейтинг
+// =======================
+// Модалка регистрации и форма
+// =======================
 document.addEventListener("DOMContentLoaded", () => {
-  // Модалка регистрации
   const registerModal = document.getElementById("registerModal");
   const openRegisterBtn = document.getElementById("openRegister");
   const closeRegisterBtn = document.querySelector("[data-close-register]");
@@ -191,7 +205,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Категории (dropdown) и рейтинг
+  // =======================
+  // Категории и рейтинг
+  // =======================
   document.addEventListener("click", async (e) => {
     // Если клик по кнопке видео — пусть обрабатывает другой обработчик
     const videoBtn = e.target.closest("[data-video]");
