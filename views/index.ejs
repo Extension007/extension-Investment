@@ -64,6 +64,11 @@
       width: 100%;
       height: 100%;
     }
+    /* FIX: Для iOS Safari - убеждаемся, что iframe имеет правильные атрибуты */
+    #videoFrame iframe {
+      width: 100% !important;
+      height: 100% !important;
+    }
   </style>
 </head>
 <body>
@@ -191,6 +196,7 @@
   <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
     <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
     <div id="videoFrameContainer">
+      <!-- FIX: Контейнер для YouTube IFrame API плеера (iOS Safari совместимый) -->
       <div id="videoFrame"></div>
     </div>
   </div>
