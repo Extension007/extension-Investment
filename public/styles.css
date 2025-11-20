@@ -280,28 +280,11 @@ body {
   }
 }
 
-#videoFrame {
-  width: 100% !important;
-  height: 480px !important;
-  min-height: 480px !important;
-  border: none !important;
-  border-radius: 8px;
-  background: #000;
-  position: relative;
-  z-index: 1;
-}
-
-/* Контейнер видим только когда модалка открыта */
-#videoModal[aria-hidden="false"] #videoFrame,
-#videoModal[style*="display: block"] #videoFrame {
+#videoModal[aria-hidden="false"] #videoFrame {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-}
-
-/* Контейнер скрыт когда модалка закрыта */
-#videoModal[aria-hidden="true"] #videoFrame:not([style*="display: block"]) {
-  display: none !important;
+  position: relative;
 }
 
 .modal .close {

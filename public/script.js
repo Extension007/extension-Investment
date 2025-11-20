@@ -2,45 +2,12 @@ let player = null;
 let currentVideoId = null;
 
 function extractVideoId(url) {
-  try {
-    if (!url || typeof url !== 'string') return null;
-    url = url.trim();
-    
-    if (url.includes('/embed/')) {
-      const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
-      if (embedId) {
-        return embedId.split('&')[0].split('#')[0].trim();
-      }
-    }
-    
-    const u = new URL(url);
-    const host = u.hostname.replace(/^www\./, "").toLowerCase();
-    let videoId = null;
-    
-    if (host.includes("youtube.com")) {
-      if (u.pathname === "/watch") {
-        videoId = u.searchParams.get("v");
-      } else if (u.pathname.startsWith("/embed/")) {
-        videoId = u.pathname.split("/embed/")[1]?.split("?")[0];
-      } else if (u.pathname.startsWith("/shorts/")) {
-        videoId = u.pathname.split("/shorts/")[1]?.split("?")[0];
-      } else if (u.pathname.startsWith("/v/")) {
-        videoId = u.pathname.split("/v/")[1]?.split("?")[0];
-      }
-    } else if (host === "youtu.be") {
-      videoId = u.pathname.slice(1).split("?")[0];
-    }
-    
-    if (videoId) {
-      videoId = videoId.split('&')[0].split('#')[0].trim();
-      return videoId || null;
-    }
-    
-    return null;
-  } catch (err) {
-    console.error("Ошибка извлечения videoId:", err);
-    return null;
-  }
+  if (!url) return null;
+  if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
+  if (url.includes('/shorts/')) return url.split('/shorts/')[1].split(/[?#]/)[0];
+  if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split(/[?#]/)[0];
+  const match = url.match(/[?&]v=([^&]+)/);
+  return match ? match[1] : null;
 }
 
 function onPlayerReady(event) {
@@ -59,62 +26,107 @@ function onPlayerReady(event) {
 
 window.onYouTubeIframeAPIReady = function () {
   console.log("✅ YouTube IFrame API готов");
-  const videoFrame = document.getElementById('videoFrame');
-  if (!videoFrame) {
-    console.error("❌ Контейнер videoFrame не найден");
-    return;
-  }
-  
-  // Контейнер находится в модалке, которая скрыта. Временно показываем модалку для инициализации
-  const modal = document.getElementById('videoModal');
-  const wasModalHidden = modal && modal.style.display === 'none';
-  
-  if (wasModalHidden && modal) {
-    // Временно показываем модалку (но невидимо для пользователя)
-    modal.style.display = 'block';
-    modal.style.visibility = 'hidden';
-    modal.style.position = 'absolute';
-    modal.style.left = '-9999px';
-    videoFrame.style.display = 'block';
-    videoFrame.style.visibility = 'visible';
-  }
-  
-  try {
-    player = new YT.Player('videoFrame', {
-      width: '100%',
-      height: '480',
-      playerVars: { rel: 0, playsinline: 1 },
-      events: {
-        'onReady': onPlayerReady,
-        'onError': (event) => {
-          console.error("❌ Ошибка плеера:", event.data);
-        },
-        'onStateChange': (event) => {
-          // Логируем изменения состояния для отладки
-          const states = ['UNSTARTED', 'ENDED', 'PLAYING', 'PAUSED', 'BUFFERING', 'CUED'];
-          if (event.data === YT.PlayerState.PLAYING) {
-            console.log("▶️ Видео воспроизводится");
-          }
-        }
-      }
-    });
-    console.log("✅ Плеер создан успешно");
-  } catch (err) {
-    console.error("❌ Ошибка создания плеера:", err);
-  }
-  
-  // После инициализации скрываем модалку обратно
-  if (wasModalHidden && modal) {
-    setTimeout(() => {
-      modal.style.display = 'none';
-      modal.style.visibility = '';
-      modal.style.position = '';
-      modal.style.left = '';
-      videoFrame.style.display = 'none';
-      videoFrame.style.visibility = '';
-    }, 100);
-  }
+  player = new YT.Player('videoFrame', {
+    width: '100%',
+    height: '480',
+    playerVars: { rel: 0, playsinline: 1 },
+    events: {
+      'onReady': onPlayerReady,
+      'onError': (e) => console.error("❌ Ошибка плеера:", e.data)
+    }
+  });
 };
+
+// 🔹 Обработчик клика для видео (делегирование событий)
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.btn[data-video]');
+  if (!btn) return;
+
+  const url = btn.getAttribute('data-video');
+  const videoId = extractVideoId(url);
+  if (!videoId) return;
+
+  currentVideoId = videoId;
+  console.log("🎬 Открытие видео:", url);
+
+  const modal = document.getElementById('videoModal');
+  const videoFrame = document.getElementById('videoFrame');
+  const videoFrameContainer = document.getElementById('videoFrameContainer');
+
+  // Перемещаем контейнер в модалку
+  if (videoFrame && videoFrameContainer) {
+    videoFrameContainer.appendChild(videoFrame);
+  }
+
+  modal.style.display = 'block';
+  modal.setAttribute('aria-hidden', 'false');
+
+  if (player && typeof player.loadVideoById === 'function') {
+    player.loadVideoById(videoId);
+    console.log("✅ Видео загружено:", videoId);
+  }
+});
+
+// 🔹 Обработчик закрытия модалки
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-close-video]')) {
+    const modal = document.getElementById('videoModal');
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+
+    if (player && typeof player.stopVideo === 'function') {
+      player.stopVideo();
+      console.log("✅ Видео остановлено");
+    }
+    currentVideoId = null;
+
+    // Возвращаем контейнер обратно в body
+    const videoFrame = document.getElementById('videoFrame');
+    if (videoFrame && document.body) {
+      document.body.appendChild(videoFrame);
+    }
+  }
+});
+
+// Закрытие по клику вне модалки
+document.addEventListener('click', (e) => {
+  const modal = document.getElementById('videoModal');
+  if (e.target === modal && modal.style.display === 'block') {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+
+    if (player && typeof player.stopVideo === 'function') {
+      player.stopVideo();
+      console.log("✅ Видео остановлено");
+    }
+    currentVideoId = null;
+
+    const videoFrame = document.getElementById('videoFrame');
+    if (videoFrame && document.body) {
+      document.body.appendChild(videoFrame);
+    }
+  }
+});
+
+// Закрытие по Escape
+document.addEventListener('keydown', (e) => {
+  const modal = document.getElementById('videoModal');
+  if (e.key === 'Escape' && modal.style.display === 'block') {
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
+
+    if (player && typeof player.stopVideo === 'function') {
+      player.stopVideo();
+      console.log("✅ Видео остановлено");
+    }
+    currentVideoId = null;
+
+    const videoFrame = document.getElementById('videoFrame');
+    if (videoFrame && document.body) {
+      document.body.appendChild(videoFrame);
+    }
+  }
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   // 🔹 Модалка регистрации
@@ -182,146 +194,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 🔹 Модальное окно для видео
-  const modal = document.getElementById("videoModal");
-  const videoFrame = document.getElementById("videoFrame");
-  const closeBtn = document.querySelector(".modal .close");
-
-  // Клик по кнопке «Обзор»
-  document.querySelectorAll('.btn[data-video]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const url = btn.getAttribute('data-video');
-      const videoId = extractVideoId(url);
-      if (!videoId) {
-        console.error("❌ Не удалось извлечь videoId из URL:", url);
-        return;
-      }
-
-      currentVideoId = videoId;
-      console.log("🎬 Открытие видео:", url);
-      console.log("✅ Video ID:", videoId);
-
-      // Открываем модальное окно ПЕРВЫМ, чтобы контейнер был видим
-      if (modal) {
-        modal.style.display = "block";
-        modal.setAttribute("aria-hidden", "false");
-        if (typeof trapFocus === "function") {
-          trapFocus(modal);
-        }
-      }
-
-      // Показываем контейнер (он уже в модалке)
-      if (videoFrame) {
-        videoFrame.style.display = "block";
-        videoFrame.style.visibility = "visible";
-        videoFrame.style.opacity = "1";
-      }
-
-      // Загружаем видео после небольшой задержки, чтобы контейнер успел стать видимым
-      setTimeout(() => {
-        if (player && typeof player.loadVideoById === 'function') {
-          try {
-            player.loadVideoById(videoId);
-            console.log("✅ Видео загружено в плеер:", videoId);
-            // Пытаемся запустить воспроизведение
-            setTimeout(() => {
-              if (player && typeof player.playVideo === 'function') {
-                try {
-                  player.playVideo();
-                  console.log("▶️ Попытка запустить воспроизведение");
-                } catch (err) {
-                  console.warn("⚠️ Не удалось запустить воспроизведение автоматически:", err);
-                }
-              }
-            }, 500);
-          } catch (err) {
-            console.error("❌ Ошибка загрузки видео:", err);
-          }
-        } else {
-          console.log("⏳ Плеер ещё не готов, videoId сохранён и загрузится при onReady");
-        }
-      }, 100);
-    });
-  });
-
-  if (modal && videoFrame) {
-
-    // Обработчик закрытия модального окна
-    const closeVideoBtn = document.querySelector("[data-close-video]");
-    if (closeVideoBtn) {
-      closeVideoBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        closeModal();
-    });
-    } else if (closeBtn) {
-      closeBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        closeModal();
-      });
-    }
-    
-    // Обработчик клика вне модального окна (только на overlay)
-    window.addEventListener("click", (e) => { 
-      // Проверяем, что клик именно на overlay (сам modal), а не на его содержимое
-      if (e.target === modal && modal.style.display === "block") {
-        closeModal();
-      }
-    });
-    
-    // Закрытие по Escape
-    window.addEventListener("keydown", (e) => { 
-      if (e.key === "Escape" && modal.style.display === "block") {
-        closeModal();
-      }
-    });
-
-    function closeModal() {
-      if (player && typeof player.stopVideo === 'function') {
-        player.stopVideo();
-        console.log("✅ Видео остановлено");
-      }
-      currentVideoId = null;
-      
-      // Скрываем контейнер
-      if (videoFrame) {
-        videoFrame.style.display = "none";
-        videoFrame.style.visibility = "hidden";
-      }
-      
-      modal.style.display = "none";
-      modal.setAttribute("aria-hidden", "true");
-      if (typeof releaseFocus === "function") {
-        releaseFocus();
-      }
-    }
-
-    let previousActive = null;
-    function trapFocus(container) {
-      previousActive = document.activeElement;
-      const focusables = container.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (first) first.focus();
-      container.addEventListener("keydown", handleTab);
-      function handleTab(e) {
-        if (e.key !== "Tab") return;
-        if (focusables.length === 0) return;
-        if (e.shiftKey) {
-          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
-        } else {
-          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
-        }
-      }
-    }
-
-    function releaseFocus() {
-      if (previousActive && typeof previousActive.focus === "function") previousActive.focus();
-    }
-  }
 
   // 🔹 Логика рейтинга (лайки/дизлайки → результат и общее количество голосов)
   document.addEventListener("click", async (e) => {
