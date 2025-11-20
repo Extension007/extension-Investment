@@ -27,10 +27,15 @@ if (HAS_MONGO) {
     console.error("❌ Неверный формат MONGODB_URI. Ожидается строка, начинающаяся с 'mongodb://' или 'mongodb+srv://'");
     console.warn("⚠️  Приложение будет работать без БД");
   } else {
+    // Увеличиваем таймауты для production (Vercel может быть медленнее)
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+    const serverTimeout = isProduction ? 30000 : 10000;
+    const connectTimeout = isProduction ? 30000 : 10000;
+    
     mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 10000, // Таймаут выбора сервера 10 секунд
+      serverSelectionTimeoutMS: serverTimeout, // Таймаут выбора сервера (30s для production)
       socketTimeoutMS: 45000, // Таймаут сокета 45 секунд
-      connectTimeoutMS: 10000, // Таймаут подключения 10 секунд
+      connectTimeoutMS: connectTimeout, // Таймаут подключения (30s для production)
       retryWrites: true,
       w: 'majority'
     })
