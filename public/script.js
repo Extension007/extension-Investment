@@ -1,6 +1,14 @@
 let player = null;
 let currentVideoId = null;
 
+function onPlayerReady(event) {
+  console.log("✅ Плеер готов");
+  if (currentVideoId && typeof event.target.loadVideoById === 'function') {
+    event.target.loadVideoById(currentVideoId);
+    console.log("✅ Видео загружено автоматически при готовности:", currentVideoId);
+  }
+}
+
 window.onYouTubeIframeAPIReady = function () {
   console.log("✅ YouTube IFrame API готов");
   player = new YT.Player('videoFrame', {
@@ -86,14 +94,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const modal = document.getElementById("videoModal");
   const videoFrame = document.getElementById("videoFrame");
   const closeBtn = document.querySelector(".modal .close");
-
-  function onPlayerReady(event) {
-    console.log("✅ Плеер готов");
-    if (currentVideoId && typeof event.target.loadVideoById === 'function') {
-      event.target.loadVideoById(currentVideoId);
-      console.log("✅ Видео загружено автоматически при готовности:", currentVideoId);
-    }
-  }
 
   // Клик по кнопке «Обзор»
   document.querySelectorAll('.btn[data-video]').forEach(btn => {

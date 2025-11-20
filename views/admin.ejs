@@ -252,39 +252,31 @@
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
-    // Глобальная функция для YouTube API
-    if (typeof window.onYouTubeIframeAPIReady === 'undefined') {
-      window.onYouTubeIframeAPIReady = function() {
-        console.log("✅ YouTube IFrame API готов (admin)");
-        
-        // Создаем плеер сразу при загрузке API
-        const videoFrame = document.getElementById("videoFrame");
-        if (videoFrame) {
-          try {
-            window.playerAdmin = new YT.Player('videoFrame', {
-              width: '100%',
-              height: '480',
-              playerVars: {
-                rel: 0,
-                playsinline: 1
-              },
-              events: {
-                'onReady': function(event) {
-                  console.log("✅ Плеер готов (admin)");
-                },
-                'onError': function(event) {
-                  console.error("❌ Ошибка плеера:", event.data);
-                  alert("Ошибка при загрузке видео.");
-                }
-              }
-            });
-            console.log("✅ Плеер создан в onYouTubeIframeAPIReady (admin)");
-          } catch (e) {
-            console.error("❌ Ошибка создания плеера в onYouTubeIframeAPIReady:", e);
+    let playerAdmin = null;
+    let currentVideoIdAdmin = null;
+
+    function onPlayerReadyAdmin(event) {
+      console.log("✅ Плеер готов (admin)");
+      if (currentVideoIdAdmin && typeof event.target.loadVideoById === 'function') {
+        event.target.loadVideoById(currentVideoIdAdmin);
+        console.log("✅ Видео загружено автоматически при готовности:", currentVideoIdAdmin);
+      }
+    }
+
+    window.onYouTubeIframeAPIReady = function() {
+      console.log("✅ YouTube IFrame API готов (admin)");
+      playerAdmin = new YT.Player('videoFrame', {
+        width: '100%',
+        height: '480',
+        playerVars: { rel: 0, playsinline: 1 },
+        events: {
+          'onReady': onPlayerReadyAdmin,
+          'onError': (event) => {
+            console.error("❌ Ошибка плеера:", event.data);
           }
         }
-      };
-    }
+      });
+    };
   </script>
 
   <script>
@@ -452,178 +444,64 @@
       // Видео модалка
       const videoModal = document.getElementById("videoModal");
       const videoFrame = document.getElementById("videoFrame");
-      console.log(`🎥 Модальное окно видео:`, videoModal ? "найдено" : "не найдено");
-      console.log(`🎥 iframe видео:`, videoFrame ? "найден" : "не найден");
 
-      // Флаг для предотвращения закрытия сразу после открытия
-      let isOpeningVideo = false;
-      let lastVideoButtonClick = null; // Храним информацию о последнем клике на кнопку
-
-      // Используем делегирование событий с capture phase для приоритета
-      document.addEventListener("click", (e) => {
-        const btn = e.target.closest("[data-video]");
-        if (!btn) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation(); // Останавливаем все последующие обработчики
-        
-        // Сохраняем информацию о клике
-        lastVideoButtonClick = {
-          time: Date.now(),
-          target: e.target,
-          button: btn
-        };
-        
-        console.log("🖱️ Клик по кнопке видео:", btn);
-        const url = btn.getAttribute("data-video");
-        console.log("📹 URL из атрибута:", url);
-        
-        if (!url) {
-          console.warn("⚠️ Кнопка с data-video не содержит URL");
-          return;
-        }
-        
-        const videoId = extractVideoId(url);
-        console.log("🎬 Video ID:", videoId);
-        
-        if (videoId && videoModal && videoFrame) {
-          // Устанавливаем флаг открытия ДО открытия модального окна
-          isOpeningVideo = true;
-          
-          // Останавливаем предыдущий плеер
-          if (playerAdmin) {
-            try {
-              playerAdmin.destroy();
-              playerAdmin = null;
-            } catch (e) {
-              console.warn("Ошибка при уничтожении предыдущего плеера:", e);
-            }
+      // Клик по кнопке «Обзор»
+      document.querySelectorAll('.btn[data-video]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const url = btn.getAttribute('data-video');
+          const videoId = (url.match(/[?&]v=([^&]+)/) || [])[1] || null;
+          if (!videoId) {
+            console.error("❌ Не удалось извлечь videoId из URL:", url);
+            return;
           }
+
+          currentVideoIdAdmin = videoId;
+          console.log("🎬 Открытие видео:", url);
+          console.log("✅ Video ID:", videoId);
 
           // Открываем модальное окно
-          videoModal.style.display = "block";
-          videoModal.setAttribute("aria-hidden", "false");
-          console.log("✅ Модальное окно открыто");
-
-          // Загружаем видео в существующий плеер
-          if (window.playerAdmin && typeof window.playerAdmin.loadVideoById === 'function') {
-            try {
-              window.playerAdmin.loadVideoById(videoId);
-              console.log("✅ Видео загружено в плеер (admin):", videoId);
-            } catch (e) {
-              console.error("❌ Ошибка загрузки видео:", e);
-              alert("Ошибка загрузки видео. Пожалуйста, попробуйте еще раз.");
-              closeVideoModal();
-            }
-          } else {
-            console.error("❌ Плеер не готов или не найден (admin)");
-            alert("Ошибка: видеоплеер не готов. Пожалуйста, обновите страницу.");
-            closeVideoModal();
+          if (videoModal) {
+            videoModal.style.display = "block";
+            videoModal.setAttribute("aria-hidden", "false");
           }
-          
-          // Сбрасываем флаг через большую задержку
-          setTimeout(() => {
-            isOpeningVideo = false;
-            if (videoModal.style.display === "block") {
-              console.log("✅ Модальное окно успешно открыто и готово к использованию");
-              setupCloseHandlers();
-            }
-          }, 800);
-        } else {
-          console.error("❌ Не удалось извлечь videoId из URL:", url);
-          alert("Некорректная ссылка на видео. Поддерживаются только ссылки YouTube.");
-          isOpeningVideo = false;
-        }
-      }, true); // Capture phase для приоритета
+
+          if (playerAdmin && typeof playerAdmin.loadVideoById === 'function') {
+            playerAdmin.loadVideoById(videoId);
+          } else {
+            console.log("⏳ Плеер ещё не готов, videoId сохранён и загрузится при onReady");
+          }
+        });
+      });
 
       // Функция закрытия модального окна
       function closeVideoModal() {
-        // Не закрываем, если модальное окно только что открылось
-        if (isOpeningVideo) {
-          console.log("⏸️ Пропуск закрытия - модальное окно только что открылось");
-          return;
+        if (playerAdmin && typeof playerAdmin.stopVideo === 'function') {
+          playerAdmin.stopVideo();
+          console.log("✅ Видео остановлено (admin)");
         }
-        
-        if (lastVideoButtonClick && Date.now() - lastVideoButtonClick.time < 1000) {
-          console.log("⏸️ Пропуск закрытия - недавний клик на кнопке видео");
-          return;
-        }
-        
-        console.log("❌ Закрытие модального окна видео");
-        if (window.playerAdmin && typeof window.playerAdmin.stopVideo === 'function') {
-          try {
-            window.playerAdmin.stopVideo();
-            console.log("✅ Видео остановлено (admin)");
-          } catch (e) {
-            console.warn("Ошибка при остановке видео:", e);
-          }
-        }
+        currentVideoIdAdmin = null;
         if (videoModal) {
           videoModal.style.display = "none";
-          setTimeout(() => {
-            if (videoModal.style.display === "none") {
-              videoModal.setAttribute("aria-hidden", "true");
-            }
-          }, 100);
+          videoModal.setAttribute("aria-hidden", "true");
         }
       }
 
-      // Обработчик кнопки закрытия - устанавливаем после загрузки DOM
-      function setupCloseHandlers() {
-        const closeBtn = document.querySelector("[data-close-video]");
-        if (closeBtn) {
-          // Удаляем старый обработчик, если есть
-          closeBtn.replaceWith(closeBtn.cloneNode(true));
-          const newCloseBtn = document.querySelector("[data-close-video]");
-          
-          newCloseBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation(); // Останавливаем все обработчики
-            closeVideoModal();
-          });
-        }
+      // Обработчики закрытия модального окна
+      const closeVideoBtn = document.querySelector("[data-close-video]");
+      if (closeVideoBtn) {
+        closeVideoBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          closeVideoModal();
+        });
       }
-      
-      // Устанавливаем обработчики после загрузки
-      setupCloseHandlers();
 
-      // Обработчик клика вне модального окна (только на overlay)
-      // Используем обычную фазу, чтобы не конфликтовать с обработчиком открытия
       window.addEventListener("click", (e) => {
-        // Пропускаем закрытие, если модальное окно только что открылось
-        if (isOpeningVideo) {
-          console.log("⏸️ Пропуск закрытия - модальное окно только что открылось");
-          return;
-        }
-        
-        // Пропускаем, если это был клик на кнопке видео (проверяем по времени и цели)
-        if (lastVideoButtonClick && 
-            Date.now() - lastVideoButtonClick.time < 1000 && 
-            (e.target === lastVideoButtonClick.target || e.target === lastVideoButtonClick.button || e.target.closest("[data-video]"))) {
-          console.log("⏸️ Пропуск закрытия - это клик на кнопке видео");
-          return;
-        }
-        
-        // Пропускаем, если клик был на кнопке видео или внутри модального окна
-        if (e.target.closest("[data-video]") || e.target.closest(".modal-content")) {
-          return;
-        }
-        
-        // Проверяем, что:
-        // 1. Клик именно на overlay (сам modal), а не на его содержимое
-        // 2. Модальное окно открыто
-        // 3. Клик не на кнопке закрытия
-        if (e.target === videoModal && 
-            videoModal.style.display === "block" &&
-            !e.target.closest("[data-close-video]")) {
-          console.log("❌ Закрытие модального окна по клику вне его");
+        if (e.target === videoModal && videoModal.style.display === "block") {
           closeVideoModal();
         }
-      }, false); // Обычная фаза, чтобы не конфликтовать
+      });
 
-      // Закрытие по Escape
       window.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && videoModal && videoModal.style.display === "block") {
           closeVideoModal();
