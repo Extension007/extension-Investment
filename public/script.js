@@ -142,23 +142,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       
-      // Формируем финальный URL с параметрами
+      // Формируем финальный URL с параметрами согласно требованиям
+      // Формат: https://www.youtube-nocookie.com/embed/{videoId}?rel=0&playsinline=1
       let finalUrl = embedUrl;
       const params = new URLSearchParams();
       params.set('rel', '0');
-      params.set('enablejsapi', '1');
       params.set('playsinline', '1'); // Обязательно для iOS
-      params.set('controls', '1');
       
-      // Для iOS: НЕ добавляем autoplay (iOS блокирует и вызывает ошибку 153)
-      // Пользователь должен нажать play вручную
-      // Для не-iOS добавляем muted (не autoplay, чтобы избежать блокировки)
-      if (!isIOS) {
-        params.set('mute', '1');
-      }
+      // НЕ добавляем autoplay, enablejsapi, controls, mute - согласно ограничениям
+      // Видео запускается только после клика пользователя
       
       finalUrl += (finalUrl.includes("?") ? "&" : "?") + params.toString();
-      console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay)" : "(с autoplay)");
+      console.log("🎥 Загрузка видео:", finalUrl, "(iOS - без autoplay, только после клика)");
       
       // Очищаем предыдущий src ПЕРЕД открытием модального окна
       videoFrame.src = "";
