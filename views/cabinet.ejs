@@ -125,7 +125,7 @@
               allowfullscreen
               playsinline
               webkit-playsinline
-              loading="eager"
+              loading="lazy"
               referrerpolicy="strict-origin-when-cross-origin"
               style="display: block; visibility: visible;"></iframe>
     </div>
@@ -292,34 +292,31 @@
           finalUrl += (finalUrl.includes("?") ? "&" : "?") + params.toString();
           console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay)" : "(с autoplay)");
           
-          // Очищаем предыдущий src
+          // Очищаем предыдущий src ПЕРЕД открытием модального окна
           videoFrame.src = "";
+          
+          // Принудительно делаем iframe видимым и настраиваем стили
+          videoFrame.style.display = "block";
+          videoFrame.style.visibility = "visible";
+          videoFrame.style.opacity = "1";
+          videoFrame.style.width = "100%";
+          videoFrame.style.height = "480px";
+          videoFrame.style.position = "relative";
+          videoFrame.style.zIndex = "1";
           
           // Открываем модальное окно
           videoModal.style.display = "block";
           videoModal.setAttribute("aria-hidden", "false");
           
-          // Убеждаемся, что iframe видим
-          videoFrame.style.display = "block";
-          videoFrame.style.visibility = "visible";
-          videoFrame.style.opacity = "1";
-          
-          // КРИТИЧНО для iOS: устанавливаем src СРАЗУ после клика пользователя (user gesture)
+          // КРИТИЧНО для iOS: устанавливаем src СИНХРОННО в том же обработчике клика
+          // requestAnimationFrame может разорвать связь с user gesture и вызвать ошибку 153
           if (isIOS) {
-            // Для iOS устанавливаем src сразу, без задержек
-            // Это важно для избежания ошибки 153
-            videoFrame.style.width = "100%";
-            videoFrame.style.height = "480px";
-            videoFrame.style.position = "relative";
-            videoFrame.style.zIndex = "1";
-            
-            // Устанавливаем src сразу после открытия модального окна
-            requestAnimationFrame(() => {
-              videoFrame.src = finalUrl;
-              console.log("✅ Видео URL установлен в iframe.src (iOS):", videoFrame.src);
-            });
+            // Для iOS устанавливаем src СРАЗУ синхронно, без requestAnimationFrame
+            // Это критично для избежания ошибки 153 на iOS Safari
+            videoFrame.src = finalUrl;
+            console.log("✅ Видео URL установлен в iframe.src (iOS, синхронно):", videoFrame.src);
           } else {
-            // Для не-iOS устройств можно использовать небольшую задержку
+            // Для не-iOS устройств можно использовать requestAnimationFrame
             requestAnimationFrame(() => {
               requestAnimationFrame(() => {
                 videoFrame.src = finalUrl;

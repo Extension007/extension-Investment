@@ -150,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
       params.set('playsinline', '1'); // Обязательно для iOS
       params.set('controls', '1');
       
-      // Для iOS и Shorts: НЕ добавляем autoplay (iOS блокирует и вызывает ошибку 153)
+      // Для iOS: НЕ добавляем autoplay (iOS блокирует и вызывает ошибку 153)
       // Пользователь должен нажать play вручную
       if (!isIOS) {
         params.set('autoplay', '1');
@@ -160,36 +160,31 @@ document.addEventListener("DOMContentLoaded", () => {
       finalUrl += (finalUrl.includes("?") ? "&" : "?") + params.toString();
       console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay)" : "(с autoplay)");
       
+      // Очищаем предыдущий src ПЕРЕД открытием модального окна
+      videoFrame.src = "";
+      
+      // Принудительно делаем iframe видимым и настраиваем стили
+      videoFrame.style.display = "block";
+      videoFrame.style.visibility = "visible";
+      videoFrame.style.opacity = "1";
+      videoFrame.style.width = "100%";
+      videoFrame.style.height = "480px";
+      videoFrame.style.position = "relative";
+      videoFrame.style.zIndex = "1";
+      
       // СНАЧАЛА открываем модальное окно
       modal.style.display = "block";
       modal.setAttribute("aria-hidden", "false");
       
-      // Принудительно делаем iframe видимым
-      videoFrame.style.display = "block";
-      videoFrame.style.visibility = "visible";
-      videoFrame.style.opacity = "1";
-      
-      // Очищаем предыдущий src
-      videoFrame.src = "";
-      
-      // КРИТИЧНО для iOS: устанавливаем src СРАЗУ после клика пользователя (user gesture)
-      // Это должно быть в том же синхронном стеке вызовов, инициированном пользователем
+      // КРИТИЧНО для iOS: устанавливаем src СИНХРОННО в том же обработчике клика
+      // requestAnimationFrame может разорвать связь с user gesture и вызвать ошибку 153
       if (isIOS) {
-        // Для iOS устанавливаем src сразу, без задержек
-        // Это важно для избежания ошибки 153
-        videoFrame.style.width = "100%";
-        videoFrame.style.height = "480px";
-        videoFrame.style.position = "relative";
-        videoFrame.style.zIndex = "1";
-        
-        // Устанавливаем src сразу после открытия модального окна
-        // Используем requestAnimationFrame только для гарантии отрисовки, но без задержек
-        requestAnimationFrame(() => {
-          videoFrame.src = finalUrl;
-          console.log("✅ Видео URL установлен в iframe.src (iOS):", videoFrame.src);
-        });
+        // Для iOS устанавливаем src СРАЗУ синхронно, без requestAnimationFrame
+        // Это критично для избежания ошибки 153 на iOS Safari
+        videoFrame.src = finalUrl;
+        console.log("✅ Видео URL установлен в iframe.src (iOS, синхронно):", videoFrame.src);
       } else {
-        // Для не-iOS устройств можно использовать небольшую задержку
+        // Для не-iOS устройств можно использовать requestAnimationFrame
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             videoFrame.src = finalUrl;
@@ -204,6 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Обработчик клика на кнопки с data-video (используем делегирование с capture phase)
+    // КРИТИЧНО: для iOS важно, чтобы openVideoModal вызывалась синхронно в обработчике клика
     document.addEventListener("click", (e) => {
       // Проверяем, кликнули ли на кнопку с data-video или внутри неё
       const btn = e.target.closest("[data-video]");
@@ -222,6 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       console.log("📹 URL из атрибута:", rawUrl);
+      // Вызываем синхронно - это важно для iOS (user gesture должен быть сохранен)
       openVideoModal(rawUrl);
     }, true); // Используем capture phase для приоритета
 
