@@ -58,6 +58,16 @@ window.onYouTubeIframeAPIReady = function () {
     console.error("❌ Контейнер videoFrame не найден");
     return;
   }
+  
+  // Временно показываем контейнер для инициализации плеера
+  const wasHidden = videoFrame.style.display === 'none';
+  if (wasHidden) {
+    videoFrame.style.display = 'block';
+    videoFrame.style.position = 'absolute';
+    videoFrame.style.left = '-9999px';
+    videoFrame.style.visibility = 'hidden';
+  }
+  
   player = new YT.Player('videoFrame', {
     width: '100%',
     height: '480',
@@ -69,6 +79,16 @@ window.onYouTubeIframeAPIReady = function () {
       }
     }
   });
+  
+  // После инициализации скрываем контейнер обратно
+  if (wasHidden) {
+    setTimeout(() => {
+      videoFrame.style.display = 'none';
+      videoFrame.style.position = '';
+      videoFrame.style.left = '';
+      videoFrame.style.visibility = '';
+    }, 100);
+  }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -140,6 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🔹 Модальное окно для видео
   const modal = document.getElementById("videoModal");
   const videoFrame = document.getElementById("videoFrame");
+  const videoFrameContainer = document.getElementById("videoFrameContainer");
   const closeBtn = document.querySelector(".modal .close");
 
   // Клик по кнопке «Обзор»
@@ -155,6 +176,12 @@ document.addEventListener("DOMContentLoaded", () => {
       currentVideoId = videoId;
       console.log("🎬 Открытие видео:", url);
       console.log("✅ Video ID:", videoId);
+
+      // Показываем контейнер и перемещаем его в модалку
+      if (videoFrame && videoFrameContainer) {
+        videoFrame.style.display = "block";
+        videoFrameContainer.appendChild(videoFrame);
+      }
 
       // Открываем модальное окно
       if (modal) {
@@ -212,6 +239,13 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("✅ Видео остановлено");
       }
       currentVideoId = null;
+      
+      // Возвращаем контейнер обратно в body и скрываем
+      if (videoFrame && document.body) {
+        document.body.appendChild(videoFrame);
+        videoFrame.style.display = "none";
+      }
+      
       modal.style.display = "none";
       modal.setAttribute("aria-hidden", "true");
       if (typeof releaseFocus === "function") {

@@ -113,11 +113,14 @@
     <p>© 2025 EXTO Ecosystem</p>
   </footer>
 
+  <!-- Контейнер для плеера (всегда в DOM, вне модалки) -->
+  <div id="videoFrame" style="display: none;"></div>
+
   <!-- Модальное окно для видео -->
   <div id="videoModal" class="modal" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
       <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
-      <div id="videoFrame"></div>
+      <div id="videoFrameContainer"></div>
     </div>
   </div>
 
@@ -143,6 +146,16 @@
         console.error("❌ Контейнер videoFrame не найден (cabinet)");
         return;
       }
+      
+      // Временно показываем контейнер для инициализации плеера
+      const wasHidden = videoFrame.style.display === 'none';
+      if (wasHidden) {
+        videoFrame.style.display = 'block';
+        videoFrame.style.position = 'absolute';
+        videoFrame.style.left = '-9999px';
+        videoFrame.style.visibility = 'hidden';
+      }
+      
       playerCabinet = new YT.Player('videoFrame', {
         width: '100%',
         height: '480',
@@ -154,6 +167,16 @@
           }
         }
       });
+      
+      // После инициализации скрываем контейнер обратно
+      if (wasHidden) {
+        setTimeout(() => {
+          videoFrame.style.display = 'none';
+          videoFrame.style.position = '';
+          videoFrame.style.left = '';
+          videoFrame.style.visibility = '';
+        }, 100);
+      }
     };
   </script>
 
@@ -267,6 +290,7 @@
       // Видео модалка
       const videoModal = document.getElementById("videoModal");
       const videoFrame = document.getElementById("videoFrame");
+      const videoFrameContainer = document.getElementById("videoFrameContainer");
 
       // Клик по кнопке «Обзор»
       document.querySelectorAll('.btn[data-video]').forEach(btn => {
@@ -281,6 +305,12 @@
           currentVideoIdCabinet = videoId;
           console.log("🎬 Открытие видео:", url);
           console.log("✅ Video ID:", videoId);
+
+          // Показываем контейнер и перемещаем его в модалку
+          if (videoFrame && videoFrameContainer) {
+            videoFrame.style.display = "block";
+            videoFrameContainer.appendChild(videoFrame);
+          }
 
           // Открываем модальное окно
           if (videoModal) {
@@ -303,6 +333,13 @@
           console.log("✅ Видео остановлено (cabinet)");
         }
         currentVideoIdCabinet = null;
+        
+        // Возвращаем контейнер обратно в body и скрываем
+        if (videoFrame && document.body) {
+          document.body.appendChild(videoFrame);
+          videoFrame.style.display = "none";
+        }
+        
         if (videoModal) {
           videoModal.style.display = "none";
           videoModal.setAttribute("aria-hidden", "true");
