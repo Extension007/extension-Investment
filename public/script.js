@@ -1,7 +1,6 @@
 let player = null;
 let currentVideoId = null;
 
-// YouTube вызывает эту функцию после загрузки API
 window.onYouTubeIframeAPIReady = function () {
   console.log("✅ YouTube IFrame API готов");
   player = new YT.Player('videoFrame', {
@@ -90,9 +89,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function onPlayerReady(event) {
     console.log("✅ Плеер готов");
-    if (currentVideoId) {
+    if (currentVideoId && typeof event.target.loadVideoById === 'function') {
       event.target.loadVideoById(currentVideoId);
-      console.log("✅ Видео загружено:", currentVideoId);
+      console.log("✅ Видео загружено автоматически при готовности:", currentVideoId);
     }
   }
 
