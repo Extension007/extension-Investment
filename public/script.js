@@ -64,8 +64,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 🔹 Функция преобразования YouTube URL (определяем глобально)
-  function toYouTubeEmbed(url) {
+  // 🔹 Функция извлечения videoId из YouTube URL
+  function extractVideoId(url) {
     try {
       if (!url || typeof url !== 'string') return null;
       
@@ -75,8 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (url.includes('/embed/')) {
         const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
         if (embedId) {
-          // Используем youtube-nocookie.com для приватности
-          return `https://www.youtube-nocookie.com/embed/${embedId}`;
+          return embedId.split('&')[0].split('#')[0].trim();
         }
       }
       
@@ -100,19 +99,25 @@ document.addEventListener("DOMContentLoaded", () => {
       
       if (videoId) {
         videoId = videoId.split('&')[0].split('#')[0].trim();
-        if (videoId) {
-          // Для Shorts и обычных видео используем embed формат с youtube-nocookie.com
-          // playsinline=1 будет добавлен позже в параметрах URL
-          return `https://www.youtube-nocookie.com/embed/${videoId}`;
-        }
+        return videoId || null;
       }
       
       return null;
     } catch (err) {
-      console.error("Ошибка преобразования YouTube URL:", err);
+      console.error("Ошибка извлечения videoId:", err);
       return null;
     }
   }
+
+  // 🔹 YouTube IFrame Player API
+  let player = null;
+  let currentVideoId = null;
+
+  // Глобальная функция, вызываемая YouTube API при загрузке
+  window.onYouTubeIframeAPIReady = function() {
+    console.log("✅ YouTube IFrame API готов");
+    // Плеер будет создан при открытии модального окна
+  };
 
   // 🔹 Модальное окно для видео
   const modal = document.getElementById("videoModal");
@@ -129,68 +134,109 @@ document.addEventListener("DOMContentLoaded", () => {
       
       console.log("🎬 Открытие видео:", videoUrl);
       
-      const embedUrl = toYouTubeEmbed(videoUrl);
-      if (!embedUrl) {
-        console.error("❌ Не удалось преобразовать URL видео:", videoUrl);
+      // Извлекаем videoId из URL
+      const videoId = extractVideoId(videoUrl);
+      if (!videoId) {
+        console.error("❌ Не удалось извлечь videoId из URL:", videoUrl);
         alert("Некорректная ссылка на видео. Поддерживаются только ссылки YouTube.");
         return;
       }
 
-      console.log("✅ Embed URL:", embedUrl);
+      console.log("✅ Video ID:", videoId);
+      currentVideoId = videoId;
 
-      // Определяем, является ли устройство iOS
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      
-      // Формируем финальный URL с параметрами согласно требованиям
-      // Формат: https://www.youtube-nocookie.com/embed/{videoId}?rel=0&playsinline=1
-      let finalUrl = embedUrl;
-      const params = new URLSearchParams();
-      params.set('rel', '0');
-      params.set('playsinline', '1'); // Обязательно для iOS
-      
-      // НЕ добавляем autoplay, enablejsapi, controls, mute - согласно ограничениям
-      // Видео запускается только после клика пользователя
-      
-      finalUrl += (finalUrl.includes("?") ? "&" : "?") + params.toString();
-      console.log("🎥 Загрузка видео:", finalUrl, "(iOS - без autoplay, только после клика)");
-      
-      // Очищаем предыдущий src ПЕРЕД открытием модального окна
-      videoFrame.src = "";
-      
-      // Принудительно делаем iframe видимым и настраиваем стили
-      videoFrame.style.display = "block";
-      videoFrame.style.visibility = "visible";
-      videoFrame.style.opacity = "1";
-      videoFrame.style.width = "100%";
-      videoFrame.style.height = "480px";
-      videoFrame.style.position = "relative";
-      videoFrame.style.zIndex = "1";
-      
-      // СНАЧАЛА открываем модальное окно
+      // Останавливаем предыдущий плеер, если он существует
+      if (player) {
+        try {
+          player.destroy();
+          player = null;
+        } catch (e) {
+          console.warn("Ошибка при уничтожении предыдущего плеера:", e);
+        }
+      }
+
+      // Очищаем контейнер
+      videoFrame.innerHTML = "";
+
+      // Открываем модальное окно
       modal.style.display = "block";
       modal.setAttribute("aria-hidden", "false");
-      
-      // КРИТИЧНО для iOS: устанавливаем src СИНХРОННО в том же обработчике клика
-      // requestAnimationFrame может разорвать связь с user gesture и вызвать ошибку 153
-      if (isIOS) {
-        // Для iOS устанавливаем src СРАЗУ синхронно, без requestAnimationFrame
-        // Это критично для избежания ошибки 153 на iOS Safari
-        videoFrame.src = finalUrl;
-        console.log("✅ Видео URL установлен в iframe.src (iOS, синхронно):", videoFrame.src);
+
+      // Создаем новый плеер
+      if (typeof YT !== 'undefined' && YT.Player) {
+        // API уже загружен
+        createPlayer(videoId);
       } else {
-        // Для не-iOS устройств можно использовать requestAnimationFrame
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            videoFrame.src = finalUrl;
-            console.log("✅ Видео URL установлен в iframe.src:", videoFrame.src);
-          });
-        });
+        // Ждем загрузки API
+        const checkAPI = setInterval(() => {
+          if (typeof YT !== 'undefined' && YT.Player) {
+            clearInterval(checkAPI);
+            createPlayer(videoId);
+          }
+        }, 100);
+        
+        // Таймаут на случай, если API не загрузится
+        setTimeout(() => {
+          clearInterval(checkAPI);
+          if (typeof YT === 'undefined' || !YT.Player) {
+            console.error("❌ YouTube IFrame API не загружен");
+            alert("Ошибка загрузки YouTube API. Пожалуйста, обновите страницу.");
+            closeModal();
+          }
+        }, 5000);
       }
       
       if (typeof trapFocus === "function") {
         trapFocus(modal);
       }
+    }
+
+    // Функция создания плеера
+    function createPlayer(videoId) {
+      try {
+        player = new YT.Player('videoFrame', {
+          videoId: videoId,
+          width: '100%',
+          height: '480',
+          playerVars: {
+            rel: 0,
+            playsinline: 1,
+            modestbranding: 1,
+            controls: 1
+          },
+          events: {
+            'onReady': onPlayerReady,
+            'onError': onPlayerError
+          }
+        });
+        console.log("✅ Плеер создан для videoId:", videoId);
+      } catch (e) {
+        console.error("❌ Ошибка создания плеера:", e);
+        alert("Ошибка создания видеоплеера. Пожалуйста, попробуйте еще раз.");
+        closeModal();
+      }
+    }
+
+    // Обработчик готовности плеера
+    function onPlayerReady(event) {
+      console.log("✅ Плеер готов");
+      // Видео не запускается автоматически - пользователь должен нажать play вручную
+      // Это соответствует требованиям (без autoplay)
+    }
+
+    // Обработчик ошибок плеера
+    function onPlayerError(event) {
+      console.error("❌ Ошибка плеера:", event.data);
+      let errorMsg = "Произошла ошибка при загрузке видео.";
+      switch(event.data) {
+        case 2: errorMsg = "Некорректный videoId."; break;
+        case 5: errorMsg = "HTML5 плеер не может воспроизвести видео."; break;
+        case 100: errorMsg = "Видео не найдено или недоступно."; break;
+        case 101:
+        case 150: errorMsg = "Владелец видео запретил встраивание на других сайтах."; break;
+      }
+      alert(errorMsg);
+      closeModal();
     }
 
     // Обработчик клика на кнопки с data-video (используем делегирование с capture phase)
@@ -249,21 +295,20 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function closeModal() {
-      // Останавливаем видео перед закрытием модалки
-      try {
-        // Очищаем src для полной остановки видео
-        videoFrame.src = "";
-        // Дополнительно пытаемся остановить через contentWindow (если доступен)
-        if (videoFrame.contentWindow) {
-          try {
-            videoFrame.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
-          } catch (e) {
-            // Игнорируем ошибки cross-origin
-          }
+      // Останавливаем и уничтожаем плеер перед закрытием модалки
+      if (player) {
+        try {
+          player.stopVideo();
+          player.destroy();
+          player = null;
+        } catch (e) {
+          console.warn("Ошибка при остановке плеера:", e);
         }
-      } catch (e) {
-        console.warn("Ошибка при остановке видео:", e);
       }
+      
+      // Очищаем контейнер
+      videoFrame.innerHTML = "";
+      currentVideoId = null;
       
       // Закрываем модальное окно
       modal.style.display = "none";

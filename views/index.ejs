@@ -134,17 +134,11 @@
   <div id="videoModal" class="modal" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
       <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
-      <iframe id="videoFrame" 
-              width="100%" 
-              height="480" 
-              frameborder="0" 
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowfullscreen
-              playsinline
-              webkit-playsinline
-              referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div id="videoFrame"></div>
     </div>
   </div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
 
   <!-- Модальное окно регистрации -->
   <div id="registerModal" class="modal" aria-hidden="true">

@@ -117,68 +117,64 @@
   <div id="videoModal" class="modal" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
       <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
-      <iframe id="videoFrame" 
-              width="100%" 
-              height="480" 
-              frameborder="0" 
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-              allowfullscreen
-              playsinline
-              webkit-playsinline
-              referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      <div id="videoFrame"></div>
     </div>
   </div>
 
+  <script src="https://www.youtube.com/iframe_api"></script>
+
   <script>
-    // Загружаем функцию toYouTubeEmbed из глобального скрипта, если она там есть
-    // Если нет, определяем локально (упрощенная версия для избежания ошибки 153)
-    if (typeof toYouTubeEmbed === 'undefined') {
-      function toYouTubeEmbed(url) {
-        try {
-          if (!url || typeof url !== 'string') return null;
-          url = url.trim();
-          
-          // Если уже embed URL, извлекаем video ID
-          if (url.includes('/embed/')) {
-            const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
-            if (embedId) {
-              // Используем youtube-nocookie.com для приватности
-              return `https://www.youtube-nocookie.com/embed/${embedId}`;
-            }
+    // Функция извлечения videoId из YouTube URL
+    function extractVideoId(url) {
+      try {
+        if (!url || typeof url !== 'string') return null;
+        url = url.trim();
+        
+        if (url.includes('/embed/')) {
+          const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
+          if (embedId) {
+            return embedId.split('&')[0].split('#')[0].trim();
           }
-          
-          const u = new URL(url);
-          const host = u.hostname.replace(/^www\./, "").toLowerCase();
-          let videoId = null;
-          
-          if (host.includes("youtube.com")) {
-            if (u.pathname === "/watch") {
-              videoId = u.searchParams.get("v");
-            } else if (u.pathname.startsWith("/embed/")) {
-              videoId = u.pathname.split("/embed/")[1]?.split("?")[0];
-            } else if (u.pathname.startsWith("/shorts/")) {
-              videoId = u.pathname.split("/shorts/")[1]?.split("?")[0];
-            } else if (u.pathname.startsWith("/v/")) {
-              videoId = u.pathname.split("/v/")[1]?.split("?")[0];
-            }
-          } else if (host === "youtu.be") {
-            videoId = u.pathname.slice(1).split("?")[0];
-          }
-          
-          if (videoId) {
-            videoId = videoId.split('&')[0].split('#')[0].trim();
-            if (videoId) {
-              // Используем youtube-nocookie.com для приватности
-              return `https://www.youtube-nocookie.com/embed/${videoId}`;
-            }
-          }
-          
-          return null;
-        } catch (err) {
-          console.error("Ошибка преобразования YouTube URL:", err);
-          return null;
         }
+        
+        const u = new URL(url);
+        const host = u.hostname.replace(/^www\./, "").toLowerCase();
+        let videoId = null;
+        
+        if (host.includes("youtube.com")) {
+          if (u.pathname === "/watch") {
+            videoId = u.searchParams.get("v");
+          } else if (u.pathname.startsWith("/embed/")) {
+            videoId = u.pathname.split("/embed/")[1]?.split("?")[0];
+          } else if (u.pathname.startsWith("/shorts/")) {
+            videoId = u.pathname.split("/shorts/")[1]?.split("?")[0];
+          } else if (u.pathname.startsWith("/v/")) {
+            videoId = u.pathname.split("/v/")[1]?.split("?")[0];
+          }
+        } else if (host === "youtu.be") {
+          videoId = u.pathname.slice(1).split("?")[0];
+        }
+        
+        if (videoId) {
+          videoId = videoId.split('&')[0].split('#')[0].trim();
+          return videoId || null;
+        }
+        
+        return null;
+      } catch (err) {
+        console.error("Ошибка извлечения videoId:", err);
+        return null;
       }
+    }
+
+    // YouTube IFrame Player API
+    let playerCabinet = null;
+    
+    // Глобальная функция для YouTube API
+    if (typeof window.onYouTubeIframeAPIReady === 'undefined') {
+      window.onYouTubeIframeAPIReady = function() {
+        console.log("✅ YouTube IFrame API готов (cabinet)");
+      };
     }
 
     document.addEventListener("DOMContentLoaded", () => {
@@ -264,72 +260,99 @@
           return;
         }
         
-        const embedUrl = toYouTubeEmbed(url);
-        console.log("🎬 Embed URL:", embedUrl);
+        const videoId = extractVideoId(url);
+        console.log("🎬 Video ID:", videoId);
         
-        if (embedUrl && videoModal && videoFrame) {
-          // Определяем, является ли устройство iOS
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-          
-          // Формируем финальный URL с параметрами
-          // Формируем финальный URL с параметрами согласно требованиям
-          // Формат: https://www.youtube-nocookie.com/embed/{videoId}?rel=0&playsinline=1
-          let finalUrl = embedUrl;
-          const params = new URLSearchParams();
-          params.set('rel', '0');
-          params.set('playsinline', '1'); // Обязательно для iOS
-          
-          // НЕ добавляем autoplay, enablejsapi, controls, mute - согласно ограничениям
-          // Видео запускается только после клика пользователя
-          
-          finalUrl += (finalUrl.includes("?") ? "&" : "?") + params.toString();
-          console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay)" : "(с autoplay)");
-          
-          // Очищаем предыдущий src ПЕРЕД открытием модального окна
-          videoFrame.src = "";
-          
-          // Принудительно делаем iframe видимым и настраиваем стили
-          videoFrame.style.display = "block";
-          videoFrame.style.visibility = "visible";
-          videoFrame.style.opacity = "1";
-          videoFrame.style.width = "100%";
-          videoFrame.style.height = "480px";
-          videoFrame.style.position = "relative";
-          videoFrame.style.zIndex = "1";
-          
+        if (videoId && videoModal && videoFrame) {
+          // Останавливаем предыдущий плеер
+          if (playerCabinet) {
+            try {
+              playerCabinet.destroy();
+              playerCabinet = null;
+            } catch (e) {
+              console.warn("Ошибка при уничтожении предыдущего плеера:", e);
+            }
+          }
+
+          // Очищаем контейнер
+          videoFrame.innerHTML = "";
+
           // Открываем модальное окно
           videoModal.style.display = "block";
           videoModal.setAttribute("aria-hidden", "false");
-          
-          // КРИТИЧНО для iOS: устанавливаем src СИНХРОННО в том же обработчике клика
-          // requestAnimationFrame может разорвать связь с user gesture и вызвать ошибку 153
-          if (isIOS) {
-            // Для iOS устанавливаем src СРАЗУ синхронно, без requestAnimationFrame
-            // Это критично для избежания ошибки 153 на iOS Safari
-            videoFrame.src = finalUrl;
-            console.log("✅ Видео URL установлен в iframe.src (iOS, синхронно):", videoFrame.src);
+
+          // Создаем новый плеер
+          if (typeof YT !== 'undefined' && YT.Player) {
+            createPlayerCabinet(videoId);
           } else {
-            // Для не-iOS устройств можно использовать requestAnimationFrame
-            requestAnimationFrame(() => {
-              requestAnimationFrame(() => {
-                videoFrame.src = finalUrl;
-                console.log("✅ Видео URL установлен в iframe.src:", videoFrame.src);
-              });
-            });
+            const checkAPI = setInterval(() => {
+              if (typeof YT !== 'undefined' && YT.Player) {
+                clearInterval(checkAPI);
+                createPlayerCabinet(videoId);
+              }
+            }, 100);
+            
+            setTimeout(() => {
+              clearInterval(checkAPI);
+              if (typeof YT === 'undefined' || !YT.Player) {
+                console.error("❌ YouTube IFrame API не загружен");
+                alert("Ошибка загрузки YouTube API. Пожалуйста, обновите страницу.");
+                closeVideoModal();
+              }
+            }, 5000);
           }
         } else {
-          console.error("❌ Не удалось преобразовать URL видео:", url);
+          console.error("❌ Не удалось извлечь videoId из URL:", url);
           alert("Некорректная ссылка на видео. Поддерживаются только ссылки YouTube.");
         }
       }, true); // Capture phase для приоритета
 
+      // Функция создания плеера
+      function createPlayerCabinet(videoId) {
+        try {
+          playerCabinet = new YT.Player('videoFrame', {
+            videoId: videoId,
+            width: '100%',
+            height: '480',
+            playerVars: {
+              rel: 0,
+              playsinline: 1,
+              modestbranding: 1,
+              controls: 1
+            },
+            events: {
+              'onReady': function(event) {
+                console.log("✅ Плеер готов (cabinet)");
+              },
+              'onError': function(event) {
+                console.error("❌ Ошибка плеера:", event.data);
+                alert("Ошибка при загрузке видео.");
+                closeVideoModal();
+              }
+            }
+          });
+          console.log("✅ Плеер создан для videoId:", videoId);
+        } catch (e) {
+          console.error("❌ Ошибка создания плеера:", e);
+          alert("Ошибка создания видеоплеера.");
+          closeVideoModal();
+        }
+      }
+
       // Функция закрытия модального окна
       function closeVideoModal() {
         console.log("❌ Закрытие модального окна видео");
+        if (playerCabinet) {
+          try {
+            playerCabinet.stopVideo();
+            playerCabinet.destroy();
+            playerCabinet = null;
+          } catch (e) {
+            console.warn("Ошибка при остановке плеера:", e);
+          }
+        }
         if (videoModal) {
           videoModal.style.display = "none";
-          // Убираем aria-hidden только после того, как элемент потерял фокус
           setTimeout(() => {
             if (videoModal.style.display === "none") {
               videoModal.setAttribute("aria-hidden", "true");
@@ -337,21 +360,7 @@
           }, 100);
         }
         if (videoFrame) {
-          // Останавливаем видео перед закрытием модалки
-          try {
-            // Очищаем src для полной остановки видео
-            videoFrame.src = "";
-            // Дополнительно пытаемся остановить через contentWindow (если доступен)
-            if (videoFrame.contentWindow) {
-              try {
-                videoFrame.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
-              } catch (e) {
-                // Игнорируем ошибки cross-origin
-              }
-            }
-          } catch (e) {
-            console.warn("Ошибка при остановке видео:", e);
-          }
+          videoFrame.innerHTML = "";
         }
       }
       
