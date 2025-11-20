@@ -101,7 +101,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (videoId) {
         videoId = videoId.split('&')[0].split('#')[0].trim();
         if (videoId) {
-          // Используем обычный youtube.com для лучшей совместимости
+          // Для Shorts и обычных видео используем embed формат
+          // playsinline=1 будет добавлен позже в параметрах URL
           return `https://www.youtube.com/embed/${videoId}`;
         }
       }
@@ -142,138 +143,60 @@ document.addEventListener("DOMContentLoaded", () => {
                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       
       // Формируем финальный URL с параметрами
-      // На iOS автовоспроизведение часто блокируется, но iframe должен работать
       let finalUrl = embedUrl;
       const params = new URLSearchParams();
       params.set('rel', '0');
       params.set('enablejsapi', '1');
-      params.set('playsinline', '1');
+      params.set('playsinline', '1'); // Обязательно для iOS
       params.set('controls', '1');
       
-      // На iOS не добавляем autoplay, так как он часто блокируется
-      // Пользователь должен нажать play вручную, но iframe будет работать
+      // Для iOS и Shorts: НЕ добавляем autoplay (iOS блокирует и вызывает ошибку 153)
+      // Пользователь должен нажать play вручную
       if (!isIOS) {
         params.set('autoplay', '1');
         params.set('mute', '1');
       }
       
       finalUrl += (finalUrl.includes("?") ? "&" : "?") + params.toString();
-      console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay, но в модальном окне)" : "(с autoplay)");
+      console.log("🎥 Загрузка видео:", finalUrl, isIOS ? "(iOS - без autoplay)" : "(с autoplay)");
       
       // СНАЧАЛА открываем модальное окно
       modal.style.display = "block";
       modal.setAttribute("aria-hidden", "false");
-      console.log("✅ Модальное окно открыто, display:", modal.style.display);
-      console.log("📺 modal offsetWidth:", modal.offsetWidth, "offsetHeight:", modal.offsetHeight);
-      console.log("📺 modal computed display:", window.getComputedStyle(modal).display);
       
       // Принудительно делаем iframe видимым
       videoFrame.style.display = "block";
       videoFrame.style.visibility = "visible";
       videoFrame.style.opacity = "1";
       
-      console.log("📺 videoFrame до загрузки:", videoFrame);
-      console.log("📺 videoFrame offsetWidth:", videoFrame.offsetWidth, "offsetHeight:", videoFrame.offsetHeight);
-      console.log("📺 videoFrame computed display:", window.getComputedStyle(videoFrame).display);
-      
       // Очищаем предыдущий src
       videoFrame.src = "";
       
-      // На iOS нужна дополнительная задержка для правильной отрисовки модального окна
-      const loadDelay = isIOS ? 300 : 0;
-      
-      // Используем requestAnimationFrame для гарантии, что модальное окно отобразилось
-      requestAnimationFrame(() => {
+      // КРИТИЧНО для iOS: устанавливаем src СРАЗУ после клика пользователя (user gesture)
+      // Это должно быть в том же синхронном стеке вызовов, инициированном пользователем
+      if (isIOS) {
+        // Для iOS устанавливаем src сразу, без задержек
+        // Это важно для избежания ошибки 153
+        videoFrame.style.width = "100%";
+        videoFrame.style.height = "480px";
+        videoFrame.style.position = "relative";
+        videoFrame.style.zIndex = "1";
+        
+        // Устанавливаем src сразу после открытия модального окна
+        // Используем requestAnimationFrame только для гарантии отрисовки, но без задержек
         requestAnimationFrame(() => {
-          // Двойной requestAnimationFrame гарантирует, что браузер отрисовал модальное окно
-          setTimeout(() => {
-            try {
-              console.log("🎬 Установка src в iframe...");
-              console.log("📺 videoFrame перед установкой src - offsetWidth:", videoFrame.offsetWidth, "offsetHeight:", videoFrame.offsetHeight);
-              
-              // На iOS убеждаемся, что iframe полностью видим перед загрузкой
-              if (isIOS) {
-                // Принудительно устанавливаем стили для iOS
-                videoFrame.style.display = "block";
-                videoFrame.style.visibility = "visible";
-                videoFrame.style.opacity = "1";
-                videoFrame.style.width = "100%";
-                videoFrame.style.height = "480px";
-                videoFrame.style.position = "relative";
-                videoFrame.style.zIndex = "1";
-              }
-              
-              videoFrame.src = finalUrl;
-              
-              console.log("✅ Видео URL установлен в iframe.src:", videoFrame.src);
-              console.log("📺 iframe элемент:", videoFrame);
-              console.log("📺 iframe видимый:", videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0);
-              console.log("📺 iframe computed style display:", window.getComputedStyle(videoFrame).display);
-              console.log("📺 iframe computed style visibility:", window.getComputedStyle(videoFrame).visibility);
-              console.log("📺 iframe computed style opacity:", window.getComputedStyle(videoFrame).opacity);
-              
-              // Проверяем через небольшую задержку
-              setTimeout(() => {
-                const currentSrc = videoFrame.src;
-                const isVisible = videoFrame.offsetWidth > 0 && videoFrame.offsetHeight > 0;
-                console.log("📺 Проверка через 500мс:");
-                console.log("📺 currentSrc:", currentSrc);
-                console.log("📺 isVisible:", isVisible);
-                
-                // Проверяем, загружен ли iframe
-                try {
-                  const iframeWindow = videoFrame.contentWindow;
-                  const iframeDoc = videoFrame.contentDocument || (iframeWindow && iframeWindow.document);
-                  console.log("📺 iframe contentWindow:", iframeWindow ? "доступен" : "не доступен");
-                  console.log("📺 iframe contentDocument:", iframeDoc ? "доступен" : "не доступен (нормально для cross-origin)");
-                } catch (e) {
-                  console.log("📺 iframe cross-origin (нормально):", e.message);
-                }
-                
-                if (currentSrc && currentSrc.includes("youtube") && isVisible) {
-                  console.log("✅ Видео успешно загружено в iframe и iframe видимый");
-                  console.log("📺 Финальный src iframe:", currentSrc);
-                  console.log("📺 iframe готов к воспроизведению");
-                  console.log("ℹ️  Если видео не воспроизводится, попробуйте:");
-                  console.log("   1. Нажать кнопку play в плеере YouTube");
-                  console.log("   2. Проверить, не блокирует ли браузер автовоспроизведение");
-                  console.log("   3. Проверить, доступно ли видео для встраивания");
-                  
-                  // Видео должно автоматически начать воспроизведение
-                  console.log("🎬 Видео должно начать воспроизведение автоматически (muted)");
-                  
-                  // Дополнительная попытка: перезагружаем iframe через небольшую задержку для гарантии
-                  setTimeout(() => {
-                    const currentSrc = videoFrame.src;
-                    if (currentSrc && currentSrc.includes("youtube")) {
-                      // Перезагружаем iframe для принудительного запуска
-                      console.log("🔄 Перезагрузка iframe для принудительного запуска...");
-                      const tempSrc = videoFrame.src;
-                      videoFrame.src = "";
-                      setTimeout(() => {
-                        videoFrame.src = tempSrc;
-                        console.log("✅ iframe перезагружен:", tempSrc);
-                      }, 100);
-                    }
-                  }, 1500);
-                } else {
-                  console.error("❌ Проблема:");
-                  console.error("  - src установлен:", currentSrc && currentSrc.includes("youtube"));
-                  console.error("  - iframe видимый:", isVisible);
-                  console.error("  - Текущий src iframe:", currentSrc);
-                  if (!isVisible) {
-                    console.error("  - iframe не видимый! offsetWidth:", videoFrame.offsetWidth, "offsetHeight:", videoFrame.offsetHeight);
-                  }
-                  console.log("📺 Попытка установить src еще раз...");
-                  videoFrame.src = finalUrl;
-                }
-              }, 500);
-            } catch (err) {
-              console.error("❌ Ошибка при установке src:", err);
-            }
-          }, loadDelay);
+          videoFrame.src = finalUrl;
+          console.log("✅ Видео URL установлен в iframe.src (iOS):", videoFrame.src);
         });
-      });
+      } else {
+        // Для не-iOS устройств можно использовать небольшую задержку
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            videoFrame.src = finalUrl;
+            console.log("✅ Видео URL установлен в iframe.src:", videoFrame.src);
+          });
+        });
+      }
       
       if (typeof trapFocus === "function") {
         trapFocus(modal);
