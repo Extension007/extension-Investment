@@ -187,6 +187,7 @@
 </footer>
 
 <!-- Модальное окно для видео (ВАЖНО: убрано display:none, используется класс .show) -->
+<!-- FIX: Модалка для YouTube видео с поддержкой iOS Safari -->
 <div id="videoModal" class="modal" aria-hidden="true">
   <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
     <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
@@ -196,7 +197,7 @@
   </div>
 </div>
 
-<!-- YouTube API -->
+<!-- FIX: Подключение YouTube IFrame API для работы на iOS Safari -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <!-- окно регистрации -->

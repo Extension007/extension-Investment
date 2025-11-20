@@ -1,9 +1,12 @@
 // =======================
 // Глобальные переменные
 // =======================
+// FIX: Добавлены переменные для отслеживания состояния плеера и таймаута fallback
 let player = null;
 let currentVideoId = null;
 let playerReady = false; // флаг готовности плеера
+let fallbackTimeout = null; // таймаут для fallback на открытие в новой вкладке
+let isVideoModalOpen = false; // флаг открытия модалки видео
 
 // =======================
 // Вспомогательные функции
@@ -23,6 +26,7 @@ function extractVideoId(url) {
 // YouTube IFrame API
 // =======================
 
+// FIX: Инициализация YouTube IFrame API с параметрами для iOS Safari
 // Инициализация YouTube IFrame API — создаём плеер в контейнере videoFrame
 window.onYouTubeIframeAPIReady = function () {
   try {
@@ -30,18 +34,41 @@ window.onYouTubeIframeAPIReady = function () {
       width: '100%',
       height: '100%',
       videoId: '',
-      playerVars: { rel: 0, playsinline: 1, modestbranding: 1 },
+      // FIX: Добавлены параметры для iOS Safari: enablejsapi=1, playsinline=1
+      playerVars: { 
+        rel: 0, 
+        playsinline: 1, // FIX: Воспроизведение inline на iOS
+        modestbranding: 1,
+        enablejsapi: 1, // FIX: Включение JavaScript API для управления плеером
+        autoplay: 0, // FIX: Автозапуск отключен, запуск только по клику пользователя
+        controls: 1,
+        fs: 1,
+        iv_load_policy: 3
+      },
       events: {
         'onReady': function (event) {
           playerReady = true;
           console.log('✅ Плеер готов');
 
+          // FIX: Если до инициализации уже был выбран videoId — загрузим его с небольшой задержкой
           // Если до инициализации уже был выбран videoId — загрузим его с небольшой задержкой
-          if (currentVideoId) {
+          if (currentVideoId && isVideoModalOpen) {
             // даём браузеру один кадр на рендер модалки
             setTimeout(() => {
               try {
+                // FIX: Запуск видео только после готовности плеера (iOS Safari)
                 player.loadVideoById(currentVideoId);
+                // FIX: Пытаемся запустить воспроизведение после загрузки
+                setTimeout(() => {
+                  try {
+                    if (player && typeof player.playVideo === 'function') {
+                      player.playVideo();
+                      console.log('🎬 Видео запущено после готовности плеера:', currentVideoId);
+                    }
+                  } catch (err) {
+                    console.warn('⚠️ Не удалось запустить видео после загрузки:', err);
+                  }
+                }, 300);
                 console.log('🎬 Автозапуск после готовности:', currentVideoId);
               } catch (err) {
                 console.warn('⚠️ Не удалось автозагрузить видео после готовности плеера:', err);
@@ -51,6 +78,25 @@ window.onYouTubeIframeAPIReady = function () {
         },
         'onError': function (e) {
           console.error('❌ Ошибка плеера:', e && e.data ? e.data : e);
+          // FIX: При ошибке плеера открываем видео в новой вкладке
+          if (currentVideoId && isVideoModalOpen) {
+            const videoUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
+            console.log('⚠️ Открытие видео в новой вкладке из-за ошибки плеера');
+            window.open(videoUrl, '_blank', 'noopener,noreferrer');
+          }
+        },
+        // FIX: Обработчик состояния плеера для отслеживания воспроизведения
+        'onStateChange': function (event) {
+          if (event.data === YT.PlayerState.PLAYING) {
+            console.log('▶️ Видео начало воспроизведение');
+            // FIX: Отменяем fallback, если видео успешно запустилось
+            if (fallbackTimeout) {
+              clearTimeout(fallbackTimeout);
+              fallbackTimeout = null;
+            }
+          } else if (event.data === YT.PlayerState.ENDED) {
+            console.log('⏹️ Видео завершено');
+          }
         }
       }
     });
@@ -64,7 +110,9 @@ window.onYouTubeIframeAPIReady = function () {
 // Обработчики модалки видео (универсальные, iOS-friendly)
 // =======================
 
+// FIX: Обработчик кликов для открытия и закрытия видео с поддержкой iOS Safari
 document.addEventListener('click', (e) => {
+  // FIX: Открытие видео по клику на кнопку "Обзор" (только по действию пользователя)
   // Открытие по кнопке data-video
   const openBtn = e.target.closest('.btn[data-video]');
   if (openBtn) {
@@ -75,6 +123,9 @@ document.addEventListener('click', (e) => {
       return;
     }
 
+    // FIX: Логирование открытия видео
+    console.log('🎬 Открытие видео:', videoId);
+    isVideoModalOpen = true;
     currentVideoId = videoId;
     const modal = document.getElementById('videoModal');
     if (!modal) {
@@ -82,23 +133,72 @@ document.addEventListener('click', (e) => {
       return;
     }
 
+    // FIX: Отменяем предыдущий fallback таймаут, если он был
+    if (fallbackTimeout) {
+      clearTimeout(fallbackTimeout);
+      fallbackTimeout = null;
+    }
+
     // Показываем модалку без использования display:none
     modal.classList.add('show');
     modal.setAttribute('aria-hidden', 'false');
 
+    // FIX: iOS Safari требует задержки и проверки готовности плеера
     // iOS Safari требует небольшой задержки перед инициализацией/загрузкой видео
     setTimeout(() => {
       if (player && typeof player.loadVideoById === 'function' && playerReady) {
         try {
+          // FIX: Загружаем видео по ID
           player.loadVideoById(currentVideoId);
-          console.log('✅ Видео загружено:', currentVideoId);
+          console.log('✅ Видео загружено в плеер:', currentVideoId);
+          
+          // FIX: Пытаемся запустить воспроизведение после загрузки (iOS Safari)
+          setTimeout(() => {
+            try {
+              if (player && typeof player.playVideo === 'function') {
+                player.playVideo();
+                console.log('▶️ Попытка запуска воспроизведения видео');
+              }
+            } catch (err) {
+              console.warn('⚠️ Не удалось запустить видео:', err);
+            }
+          }, 300);
+
+          // FIX: Устанавливаем fallback таймаут на случай, если видео не запустится
+          fallbackTimeout = setTimeout(() => {
+            // Проверяем, запустилось ли видео (если плеер доступен)
+            try {
+              if (player && typeof player.getPlayerState === 'function') {
+                const state = player.getPlayerState();
+                // YT.PlayerState.PLAYING = 1
+                if (state !== 1 && isVideoModalOpen) {
+                  console.warn('⚠️ Видео не запустилось, открываем в новой вкладке');
+                  const videoUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
+                  window.open(videoUrl, '_blank', 'noopener,noreferrer');
+                }
+              }
+            } catch (err) {
+              console.warn('⚠️ Не удалось проверить состояние плеера, открываем в новой вкладке');
+              const videoUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
+              window.open(videoUrl, '_blank', 'noopener,noreferrer');
+            }
+          }, 2000); // FIX: 2 секунды на запуск видео
         } catch (err) {
           console.error('❌ Ошибка при loadVideoById:', err);
-          // Фоллбэк: откроем ссылку в новой вкладке
-          window.open(url, '_blank', 'noopener,noreferrer');
+          // FIX: Фоллбэк: откроем ссылку в новой вкладке при ошибке
+          const videoUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
+          window.open(videoUrl, '_blank', 'noopener,noreferrer');
         }
       } else {
         console.warn('⚠️ Плеер ещё не готов — видео будет загружено при onReady');
+        // FIX: Устанавливаем fallback таймаут на случай, если плеер не готов
+        fallbackTimeout = setTimeout(() => {
+          if (!playerReady && isVideoModalOpen) {
+            console.warn('⚠️ Плеер не готов, открываем видео в новой вкладке');
+            const videoUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
+            window.open(videoUrl, '_blank', 'noopener,noreferrer');
+          }
+        }, 3000); // FIX: 3 секунды на инициализацию плеера
         // плеер загрузит видео при onReady (см. onReady выше)
       }
     }, 160);
@@ -106,13 +206,26 @@ document.addEventListener('click', (e) => {
     return;
   }
 
+  // FIX: Закрытие видео с логированием и очисткой состояния
   // Закрытие по кнопке [data-close-video] или по клику вне контента
   if (e.target.closest('[data-close-video]') || (e.target.id === 'videoModal')) {
     const modal = document.getElementById('videoModal');
     if (!modal) return;
+
+    // FIX: Логирование закрытия видео
+    console.log('🔒 Закрытие видео');
+    isVideoModalOpen = false;
+
+    // FIX: Отменяем fallback таймаут при закрытии
+    if (fallbackTimeout) {
+      clearTimeout(fallbackTimeout);
+      fallbackTimeout = null;
+    }
+
     modal.classList.remove('show');
     modal.setAttribute('aria-hidden', 'true');
 
+    // FIX: Останавливаем видео при закрытии модалки
     // Остановим видео
     if (player && typeof player.stopVideo === 'function') {
       try {
