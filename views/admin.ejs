@@ -240,14 +240,11 @@
     </div>
   </div>
 
-  <!-- Контейнер для плеера (всегда в DOM, вне модалки) -->
-  <div id="videoFrame" style="display: none;"></div>
-
   <!-- Модальное окно для видео -->
   <div id="videoModal" class="modal" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
       <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
-      <div id="videoFrameContainer"></div>
+      <div id="videoFrame"></div>
     </div>
   </div>
 
@@ -274,13 +271,18 @@
         return;
       }
       
-      // Временно показываем контейнер для инициализации плеера
-      const wasHidden = videoFrame.style.display === 'none';
-      if (wasHidden) {
+      // Контейнер находится в модалке, которая скрыта. Временно показываем модалку для инициализации
+      const modal = document.getElementById('videoModal');
+      const wasModalHidden = modal && modal.style.display === 'none';
+      
+      if (wasModalHidden && modal) {
+        // Временно показываем модалку (но невидимо для пользователя)
+        modal.style.display = 'block';
+        modal.style.visibility = 'hidden';
+        modal.style.position = 'absolute';
+        modal.style.left = '-9999px';
         videoFrame.style.display = 'block';
-        videoFrame.style.position = 'absolute';
-        videoFrame.style.left = '-9999px';
-        videoFrame.style.visibility = 'hidden';
+        videoFrame.style.visibility = 'visible';
       }
       
       playerAdmin = new YT.Player('videoFrame', {
@@ -291,16 +293,23 @@
           'onReady': onPlayerReadyAdmin,
           'onError': (event) => {
             console.error("❌ Ошибка плеера:", event.data);
+          },
+          'onStateChange': (event) => {
+            if (event.data === YT.PlayerState.PLAYING) {
+              console.log("▶️ Видео воспроизводится (admin)");
+            }
           }
         }
       });
       
-      // После инициализации скрываем контейнер обратно
-      if (wasHidden) {
+      // После инициализации скрываем модалку обратно
+      if (wasModalHidden && modal) {
         setTimeout(() => {
+          modal.style.display = 'none';
+          modal.style.visibility = '';
+          modal.style.position = '';
+          modal.style.left = '';
           videoFrame.style.display = 'none';
-          videoFrame.style.position = '';
-          videoFrame.style.left = '';
           videoFrame.style.visibility = '';
         }, 100);
       }
@@ -472,7 +481,6 @@
       // Видео модалка
       const videoModal = document.getElementById("videoModal");
       const videoFrame = document.getElementById("videoFrame");
-      const videoFrameContainer = document.getElementById("videoFrameContainer");
 
       // Клик по кнопке «Обзор»
       document.querySelectorAll('.btn[data-video]').forEach(btn => {
@@ -488,23 +496,43 @@
           console.log("🎬 Открытие видео:", url);
           console.log("✅ Video ID:", videoId);
 
-          // Показываем контейнер и перемещаем его в модалку
-          if (videoFrame && videoFrameContainer) {
-            videoFrame.style.display = "block";
-            videoFrameContainer.appendChild(videoFrame);
-          }
-
-          // Открываем модальное окно
+          // Открываем модальное окно ПЕРВЫМ, чтобы контейнер был видим
           if (videoModal) {
             videoModal.style.display = "block";
             videoModal.setAttribute("aria-hidden", "false");
           }
 
-          if (playerAdmin && typeof playerAdmin.loadVideoById === 'function') {
-            playerAdmin.loadVideoById(videoId);
-          } else {
-            console.log("⏳ Плеер ещё не готов, videoId сохранён и загрузится при onReady");
+          // Показываем контейнер (он уже в модалке)
+          if (videoFrame) {
+            videoFrame.style.display = "block";
+            videoFrame.style.visibility = "visible";
+            videoFrame.style.opacity = "1";
           }
+
+          // Загружаем видео после небольшой задержки, чтобы контейнер успел стать видимым
+          setTimeout(() => {
+            if (playerAdmin && typeof playerAdmin.loadVideoById === 'function') {
+              try {
+                playerAdmin.loadVideoById(videoId);
+                console.log("✅ Видео загружено в плеер (admin):", videoId);
+                // Пытаемся запустить воспроизведение
+                setTimeout(() => {
+                  if (playerAdmin && typeof playerAdmin.playVideo === 'function') {
+                    try {
+                      playerAdmin.playVideo();
+                      console.log("▶️ Попытка запустить воспроизведение (admin)");
+                    } catch (err) {
+                      console.warn("⚠️ Не удалось запустить воспроизведение автоматически (admin):", err);
+                    }
+                  }
+                }, 500);
+              } catch (err) {
+                console.error("❌ Ошибка загрузки видео (admin):", err);
+              }
+            } else {
+              console.log("⏳ Плеер ещё не готов, videoId сохранён и загрузится при onReady");
+            }
+          }, 100);
         });
       });
 
@@ -516,10 +544,10 @@
         }
         currentVideoIdAdmin = null;
         
-        // Возвращаем контейнер обратно в body и скрываем
-        if (videoFrame && document.body) {
-          document.body.appendChild(videoFrame);
+        // Скрываем контейнер
+        if (videoFrame) {
           videoFrame.style.display = "none";
+          videoFrame.style.visibility = "hidden";
         }
         
         if (videoModal) {

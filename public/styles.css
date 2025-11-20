@@ -287,23 +287,21 @@ body {
   border: none !important;
   border-radius: 8px;
   background: #000;
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
   position: relative;
   z-index: 1;
 }
 
-#videoModal[aria-hidden="false"] #videoFrame {
-  opacity: 1 !important;
-  visibility: visible !important;
+/* Контейнер видим только когда модалка открыта */
+#videoModal[aria-hidden="false"] #videoFrame,
+#videoModal[style*="display: block"] #videoFrame {
   display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
-#videoModal[style*="display: block"] #videoFrame {
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: block !important;
+/* Контейнер скрыт когда модалка закрыта */
+#videoModal[aria-hidden="true"] #videoFrame:not([style*="display: block"]) {
+  display: none !important;
 }
 
 .modal .close {

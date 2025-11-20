@@ -65,13 +65,18 @@ window.onYouTubeIframeAPIReady = function () {
     return;
   }
   
-  // Временно показываем контейнер для инициализации плеера
-  const wasHidden = videoFrame.style.display === 'none';
-  if (wasHidden) {
+  // Контейнер находится в модалке, которая скрыта. Временно показываем модалку для инициализации
+  const modal = document.getElementById('videoModal');
+  const wasModalHidden = modal && modal.style.display === 'none';
+  
+  if (wasModalHidden && modal) {
+    // Временно показываем модалку (но невидимо для пользователя)
+    modal.style.display = 'block';
+    modal.style.visibility = 'hidden';
+    modal.style.position = 'absolute';
+    modal.style.left = '-9999px';
     videoFrame.style.display = 'block';
-    videoFrame.style.position = 'absolute';
-    videoFrame.style.left = '-9999px';
-    videoFrame.style.visibility = 'hidden';
+    videoFrame.style.visibility = 'visible';
   }
   
   try {
@@ -98,12 +103,14 @@ window.onYouTubeIframeAPIReady = function () {
     console.error("❌ Ошибка создания плеера:", err);
   }
   
-  // После инициализации скрываем контейнер обратно
-  if (wasHidden) {
+  // После инициализации скрываем модалку обратно
+  if (wasModalHidden && modal) {
     setTimeout(() => {
+      modal.style.display = 'none';
+      modal.style.visibility = '';
+      modal.style.position = '';
+      modal.style.left = '';
       videoFrame.style.display = 'none';
-      videoFrame.style.position = '';
-      videoFrame.style.left = '';
       videoFrame.style.visibility = '';
     }, 100);
   }
@@ -178,7 +185,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🔹 Модальное окно для видео
   const modal = document.getElementById("videoModal");
   const videoFrame = document.getElementById("videoFrame");
-  const videoFrameContainer = document.getElementById("videoFrameContainer");
   const closeBtn = document.querySelector(".modal .close");
 
   // Клик по кнопке «Обзор»
@@ -195,13 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("🎬 Открытие видео:", url);
       console.log("✅ Video ID:", videoId);
 
-      // Показываем контейнер и перемещаем его в модалку
-      if (videoFrame && videoFrameContainer) {
-        videoFrame.style.display = "block";
-        videoFrameContainer.appendChild(videoFrame);
-      }
-
-      // Открываем модальное окно
+      // Открываем модальное окно ПЕРВЫМ, чтобы контейнер был видим
       if (modal) {
         modal.style.display = "block";
         modal.setAttribute("aria-hidden", "false");
@@ -210,16 +210,37 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      if (player && typeof player.loadVideoById === 'function') {
-        try {
-          player.loadVideoById(videoId);
-          console.log("✅ Видео загружено в плеер:", videoId);
-        } catch (err) {
-          console.error("❌ Ошибка загрузки видео:", err);
-        }
-      } else {
-        console.log("⏳ Плеер ещё не готов, videoId сохранён и загрузится при onReady");
+      // Показываем контейнер (он уже в модалке)
+      if (videoFrame) {
+        videoFrame.style.display = "block";
+        videoFrame.style.visibility = "visible";
+        videoFrame.style.opacity = "1";
       }
+
+      // Загружаем видео после небольшой задержки, чтобы контейнер успел стать видимым
+      setTimeout(() => {
+        if (player && typeof player.loadVideoById === 'function') {
+          try {
+            player.loadVideoById(videoId);
+            console.log("✅ Видео загружено в плеер:", videoId);
+            // Пытаемся запустить воспроизведение
+            setTimeout(() => {
+              if (player && typeof player.playVideo === 'function') {
+                try {
+                  player.playVideo();
+                  console.log("▶️ Попытка запустить воспроизведение");
+                } catch (err) {
+                  console.warn("⚠️ Не удалось запустить воспроизведение автоматически:", err);
+                }
+              }
+            }, 500);
+          } catch (err) {
+            console.error("❌ Ошибка загрузки видео:", err);
+          }
+        } else {
+          console.log("⏳ Плеер ещё не готов, videoId сохранён и загрузится при onReady");
+        }
+      }, 100);
     });
   });
 
@@ -263,10 +284,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       currentVideoId = null;
       
-      // Возвращаем контейнер обратно в body и скрываем
-      if (videoFrame && document.body) {
-        document.body.appendChild(videoFrame);
+      // Скрываем контейнер
+      if (videoFrame) {
         videoFrame.style.display = "none";
+        videoFrame.style.visibility = "hidden";
       }
       
       modal.style.display = "none";
