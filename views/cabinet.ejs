@@ -60,7 +60,6 @@
                 <div class="no-image">Нет изображения</div>
               <% } %>
               <div class="product-bottom">
-                <!-- Статус карточки -->
                 <div style="text-align:center;margin-bottom:10px;">
                   <% if (p.status === "pending") { %>
                     <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
@@ -85,10 +84,10 @@
                   <strong class="price" data-id="<%= p._id %>"><%= p.price %></strong>
                 </div>
                 <% if (p.status === "approved" || p.status === "pending") { %>
-                <form class="priceForm" data-id="<%= p._id %>">
-                  <input type="number" name="price" min="0" step="1" placeholder="Новая цена" required>
-                  <button type="submit" class="btn small">Обновить цену</button>
-                </form>
+                  <form class="priceForm" data-id="<%= p._id %>">
+                    <input type="number" name="price" min="0" step="1" placeholder="Новая цена" required>
+                    <button type="submit" class="btn small">Обновить цену</button>
+                  </form>
                 <% } %>
                 <p class="product-desc"><%= p.description || "—" %></p>
                 <div class="product-actions">
@@ -114,11 +113,10 @@
   </footer>
 
   <!-- Модальное окно для видео -->
-  <div id="videoModal" class="modal" aria-hidden="true">
+  <div id="videoModal" class="modal" aria-hidden="true" style="display:none;">
     <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
       <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
       <div id="videoFrameContainer">
-        <!-- Контейнер для плеера (всегда в DOM) -->
         <div id="videoFrame"></div>
       </div>
     </div>
@@ -132,30 +130,46 @@
     let currentVideoIdCabinet = null;
 
     function onPlayerReadyCabinet(event) {
-      console.log("✅ Плеер готов (cabinet)");
       if (currentVideoIdCabinet && typeof event.target.loadVideoById === 'function') {
         event.target.loadVideoById(currentVideoIdCabinet);
-        console.log("✅ Видео загружено автоматически:", currentVideoIdCabinet);
       }
     }
 
-    window.onYouTubeIframeAPIReady = function() {
-      console.log("✅ YouTube IFrame API готов (cabinet)");
-      playerCabinet = new YT.Player('videoFrame', {
-        width: '100%',
-        height: '480',
-        playerVars: { rel: 0, playsinline: 1 },
-        events: {
-          'onReady': onPlayerReadyCabinet,
-          'onError': (e) => console.error("❌ Ошибка плеера:", e.data)
-        }
-      });
-    };
+    // Инициализация плеера без конфликта с глобальным onYouTubeIframeAPIReady
+    function initCabinetPlayer() {
+      try {
+        playerCabinet = new YT.Player('videoFrame', {
+          width: '100%',
+          height: '480',
+          playerVars: { rel: 0, playsinline: 1 },
+          events: {
+            'onReady': onPlayerReadyCabinet,
+            'onError': (e) => console.error("❌ Ошибка плеера:", e.data)
+          }
+        });
+      } catch (err) {
+        console.error("❌ Ошибка создания плеера (cabinet):", err);
+      }
+    }
+    // Ждём полной загрузки, чтобы YT.Player был доступен
+    window.addEventListener("load", () => {
+      if (typeof YT !== "undefined" && YT.Player) {
+        initCabinetPlayer();
+      } else {
+        // Если API ещё грузится, подстрахуемся небольшим ожиданием
+        const t = setInterval(() => {
+          if (typeof YT !== "undefined" && YT.Player) {
+            clearInterval(t);
+            initCabinetPlayer();
+          }
+        }, 100);
+        setTimeout(() => clearInterval(t), 5000);
+      }
+    });
   </script>
 
   <script>
-
-    // Функция извлечения videoId из YouTube URL
+    // Извлечение videoId из разных форматов YouTube URL
     function extractVideoId(url) {
       if (!url) return null;
       if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
@@ -168,102 +182,84 @@
     document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("createProductForm");
       const msg = document.getElementById("createProductMsg");
-      
-      if (!form) {
-        console.error("❌ Форма создания карточки не найдена!");
-        return;
-      }
-      
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log("📤 Отправка формы создания карточки (перехвачено JavaScript)");
-        
-        const formData = new FormData(form);
-        console.log("Данные формы:", {
-          name: formData.get("name"),
-          price: formData.get("price"),
-          category: formData.get("category"),
-          hasImage: !!formData.get("image")
-        });
-        
-        try {
-        const res = await fetch("/cabinet/product", { method: "POST", body: formData });
-        const json = await res.json();
-          console.log("Ответ сервера:", json);
-          
-        if (json.success) {
-          msg.textContent = "Карточка отправлена на модерацию.";
-          msg.style.color = "green";
-          setTimeout(() => location.reload(), 800);
-        } else {
-          msg.textContent = json.message || "Ошибка";
-            msg.style.color = "#b00020";
-            console.error("Ошибка создания карточки:", json.message);
-          }
-        } catch (err) {
-          console.error("Ошибка сети:", err);
-          msg.textContent = "Ошибка сети: " + err.message;
-          msg.style.color = "#b00020";
-        }
-      });
 
+      // Отправка формы создания карточки (AJAX)
+      if (form) {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = new FormData(form);
+          try {
+            const res = await fetch("/cabinet/product", { method: "POST", body: formData });
+            const json = await res.json();
+            if (json.success) {
+              msg.textContent = "Карточка отправлена на модерацию.";
+              msg.style.color = "green";
+              setTimeout(() => location.reload(), 800);
+            } else {
+              msg.textContent = json.message || "Ошибка";
+              msg.style.color = "#b00020";
+            }
+          } catch (err) {
+            msg.textContent = "Ошибка сети: " + err.message;
+            msg.style.color = "#b00020";
+          }
+        });
+      }
+
+      // Обновление цены карточки
       document.querySelectorAll(".priceForm").forEach((f) => {
         f.addEventListener("submit", async (e) => {
           e.preventDefault();
           const id = f.getAttribute("data-id");
           const price = f.querySelector("input[name='price']").value;
-          const res = await fetch(`/cabinet/product/${id}/price`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ price })
-          });
-          const json = await res.json();
-          if (json.success) {
-            document.querySelector(`.price[data-id='${id}']`).textContent = json.price;
-          } else {
-            alert(json.message || "Ошибка обновления цены");
+          try {
+            const res = await fetch(`/cabinet/product/${id}/price`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ price })
+            });
+            const json = await res.json();
+            if (json.success) {
+              const priceEl = document.querySelector(`.price[data-id='${id}']`);
+              if (priceEl) priceEl.textContent = json.price;
+            } else {
+              alert(json.message || "Ошибка обновления цены");
+            }
+          } catch (err) {
+            alert("Ошибка сети: " + err.message);
           }
         });
       });
 
       // Видео модалка
       const videoModal = document.getElementById("videoModal");
-      const videoFrame = document.getElementById("videoFrame");
 
-      // Клик по кнопке «Обзор»
+      // Открытие видео
       document.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn[data-video]');
         if (!btn) return;
-
         const url = btn.getAttribute('data-video');
         const videoId = extractVideoId(url);
         if (!videoId) return;
-
         currentVideoIdCabinet = videoId;
-        console.log("🎬 Открытие видео:", url);
-
-        const videoModal = document.getElementById('videoModal');
         videoModal.style.display = 'block';
         videoModal.setAttribute('aria-hidden', 'false');
-
         if (playerCabinet && typeof playerCabinet.loadVideoById === 'function') {
           playerCabinet.loadVideoById(videoId);
-          console.log("✅ Видео загружено:", videoId);
         }
       });
 
-      // Обработчик закрытия модалки
-      document.querySelector('[data-close-video]').addEventListener('click', () => {
-        const videoModal = document.getElementById('videoModal');
-        videoModal.style.display = 'none';
-        videoModal.setAttribute('aria-hidden', 'true');
-
-        if (playerCabinet && typeof playerCabinet.stopVideo === 'function') {
-          playerCabinet.stopVideo();
-          console.log("✅ Видео остановлено (cabinet)");
-        }
-      });
+      // Закрытие видео
+      const closeBtn = document.querySelector('[data-close-video]');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          videoModal.style.display = 'none';
+          videoModal.setAttribute('aria-hidden', 'true');
+          if (playerCabinet && typeof playerCabinet.stopVideo === 'function') {
+            playerCabinet.stopVideo();
+          }
+        });
+      }
     });
   </script>
 
@@ -311,5 +307,3 @@
   </style>
 </body>
 </html>
-
-

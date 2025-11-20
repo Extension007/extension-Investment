@@ -26,11 +26,11 @@
           <% if (isAdmin) { %>
             <a class="btn outline" href="/admin">Админ-панель</a>
           <% } else { %>
-        <a class="btn outline" href="/cabinet">Личный кабинет</a>
+            <a class="btn outline" href="/cabinet">Личный кабинет</a>
           <% } %>
         <% } else { %>
           <a class="btn outline" href="/user/login">Вход</a>
-        <button id="openRegister" type="button" class="btn outline">Регистрация</button>
+          <button id="openRegister" type="button" class="btn outline">Регистрация</button>
         <% } %>
       </div>
     </div>
@@ -131,7 +131,8 @@
   </footer>
 
   <!-- Модальное окно для видео -->
-  <div id="videoModal" class="modal" aria-hidden="true">
+  <!-- FIX: добавлен style="display:none;" чтобы инициализация YouTube плеера корректно распознавала скрытое состояние и не падала на iOS -->
+  <div id="videoModal" class="modal" aria-hidden="true" style="display:none;">
     <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
       <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
       <div id="videoFrameContainer">

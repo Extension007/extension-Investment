@@ -1,6 +1,7 @@
 let player = null;
 let currentVideoId = null;
 
+// Извлечение videoId из разных форматов ссылок YouTube
 function extractVideoId(url) {
   if (!url) return null;
   if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
@@ -10,6 +11,7 @@ function extractVideoId(url) {
   return match ? match[1] : null;
 }
 
+// Событие готовности плеера
 function onPlayerReady(event) {
   console.log("✅ Плеер готов");
   if (currentVideoId) {
@@ -18,16 +20,17 @@ function onPlayerReady(event) {
   }
 }
 
+// Инициализация YouTube IFrame API
 window.onYouTubeIframeAPIReady = function () {
   console.log("✅ YouTube IFrame API готов");
   const videoFrame = document.getElementById('videoFrame');
   const modal = document.getElementById('videoModal');
-  
+
   if (!videoFrame) {
     console.error("❌ Контейнер videoFrame не найден");
     return;
   }
-  
+
   // Временно показываем модалку для инициализации (невидимо для пользователя)
   const wasHidden = modal && modal.style.display === 'none';
   if (wasHidden && modal) {
@@ -36,7 +39,7 @@ window.onYouTubeIframeAPIReady = function () {
     modal.style.position = 'absolute';
     modal.style.left = '-9999px';
   }
-  
+
   try {
     player = new YT.Player('videoFrame', {
       width: '100%',
@@ -51,7 +54,7 @@ window.onYouTubeIframeAPIReady = function () {
   } catch (err) {
     console.error("❌ Ошибка создания плеера:", err);
   }
-  
+
   // Скрываем модалку обратно после инициализации
   if (wasHidden && modal) {
     setTimeout(() => {
@@ -63,6 +66,7 @@ window.onYouTubeIframeAPIReady = function () {
   }
 };
 
+// Обработчик клика по кнопке «Обзор»
 document.addEventListener('click', (e) => {
   const btn = e.target.closest('.btn[data-video]');
   if (!btn) return;
@@ -99,7 +103,7 @@ document.addEventListener('click', (e) => {
   if (e.target.closest('[data-close-video]')) {
     const modal = document.getElementById('videoModal');
     if (!modal) return;
-    
+
     modal.style.display = 'none';
     modal.setAttribute('aria-hidden', 'true');
 
@@ -111,8 +115,9 @@ document.addEventListener('click', (e) => {
   }
 });
 
+// Логика модалки регистрации и формы + рейтинг
 document.addEventListener("DOMContentLoaded", () => {
-  // 🔹 Модалка регистрации
+  // Модалка регистрации
   const registerModal = document.getElementById("registerModal");
   const openRegisterBtn = document.getElementById("openRegister");
   const closeRegisterBtn = document.querySelector("[data-close-register]");
@@ -125,95 +130,104 @@ document.addEventListener("DOMContentLoaded", () => {
       registerModal.style.display = "block";
       registerModal.setAttribute("aria-hidden", "false");
     });
-    closeRegisterBtn?.addEventListener("click", () => {
-      registerModal.style.display = "none";
-      registerModal.setAttribute("aria-hidden", "true");
-      registerError && (registerError.style.display = "none");
+
+    if (closeRegisterBtn) {
+      closeRegisterBtn.addEventListener("click", () => {
+        registerModal.style.display = "none";
+        registerModal.setAttribute("aria-hidden", "true");
+        if (registerError) registerError.style.display = "none";
+      });
+    }
+
+    window.addEventListener("click", (e) => {
+      if (e.target === registerModal) {
+        registerModal.style.display = "none";
+        registerModal.setAttribute("aria-hidden", "true");
+      }
     });
-    window.addEventListener("click", (e) => { if (e.target === registerModal) { registerModal.style.display = "none"; registerModal.setAttribute("aria-hidden", "true"); } });
   }
 
-  registerForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const formData = Object.fromEntries(new FormData(registerForm).entries());
-    
-    // Скрываем предыдущие сообщения
-    if (registerError) { registerError.style.display = "none"; }
-    if (registerSuccess) { registerSuccess.style.display = "none"; }
-    
-    try {
-      const res = await fetch("/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (data.success) {
-        // Показываем сообщение об успешной регистрации без редиректа
-        if (registerError) { registerError.style.display = "none"; }
-        if (registerSuccess) {
-          registerSuccess.textContent = "Регистрация завершена. Теперь вы можете открыть личный кабинет.";
-          registerSuccess.style.display = "block";
+  if (registerForm) {
+    registerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const formData = Object.fromEntries(new FormData(registerForm).entries());
+
+      if (registerError) registerError.style.display = "none";
+      if (registerSuccess) registerSuccess.style.display = "none";
+
+      try {
+        const res = await fetch("/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          if (registerError) registerError.style.display = "none";
+          if (registerSuccess) {
+            registerSuccess.textContent = "Регистрация завершена. Теперь вы можете открыть личный кабинет.";
+            registerSuccess.style.display = "block";
+          } else {
+            alert("Регистрация завершена");
+          }
+          registerForm.reset();
         } else {
-          alert("Регистрация завершена");
+          if (registerError) {
+            registerError.textContent = data.message || "Ошибка регистрации";
+            registerError.style.display = "block";
+          } else {
+            alert(data.message || "Ошибка регистрации");
+          }
         }
-        // Очищаем форму
-        registerForm.reset();
-      } else {
+      } catch (err) {
         if (registerError) {
-          registerError.textContent = data.message || "Ошибка регистрации";
+          registerError.textContent = "Сеть недоступна или сервер не отвечает";
           registerError.style.display = "block";
         } else {
-          alert(data.message || "Ошибка регистрации");
+          alert("Сеть недоступна или сервер не отвечает");
         }
       }
-    } catch (err) {
-      if (registerError) {
-        registerError.textContent = "Сеть недоступна или сервер не отвечает";
-        registerError.style.display = "block";
-      } else {
-        alert("Сеть недоступна или сервер не отвечает");
-      }
-    }
-  });
+    });
+  }
 
-
-  // 🔹 Логика рейтинга (лайки/дизлайки → результат и общее количество голосов)
+  // Категории (dropdown) и рейтинг
   document.addEventListener("click", async (e) => {
-    // Сначала проверяем, не кликнули ли на кнопку видео (приоритет выше)
-    // Проверяем и саму кнопку, и её родительские элементы
+    // Если клик по кнопке видео — пусть обрабатывает другой обработчик
     const videoBtn = e.target.closest("[data-video]");
-    if (videoBtn) {
-      return; // Обработчик видео уже обработал этот клик
-    }
+    if (videoBtn) return;
 
-    // Категории (dropdown)
+    // Категории (открытие/закрытие/выбор)
     const openCat = e.target.closest("#openCategories");
     const dropdown = document.getElementById("categoriesMenu");
+
     if (openCat && dropdown) {
       const opened = dropdown.classList.toggle("open");
       dropdown.setAttribute("aria-hidden", opened ? "false" : "true");
       return;
     }
+
     const catItem = e.target.closest(".dropdown-item");
     if (catItem && dropdown) {
       const cat = catItem.getAttribute("data-category");
       const url = new URL(window.location.href);
-      if (cat === "all") url.searchParams.delete("category"); else url.searchParams.set("category", cat);
+      if (cat === "all") url.searchParams.delete("category");
+      else url.searchParams.set("category", cat);
       window.location.href = url.toString();
       return;
     }
+
     if (dropdown && !e.target.closest(".category-dropdown")) {
       dropdown.classList.remove("open");
       dropdown.setAttribute("aria-hidden", "true");
     }
 
+    // Рейтинг (лайк/дизлайк)
     const likeBtn = e.target.closest(".like-btn");
     const dislikeBtn = e.target.closest(".dislike-btn");
 
     if (likeBtn || dislikeBtn) {
       if (!window.IS_AUTH) {
-        // Предложим регистрацию
         const modal = document.getElementById("registerModal");
         if (modal) {
           modal.style.display = "block";
@@ -226,10 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const ratingBlock = e.target.closest(".product-rating");
       if (!ratingBlock) return;
-      if (ratingBlock.dataset.voted === "true") {
-        // Уже голосовал — блокируем повтор
-        return;
-      }
+      if (ratingBlock.dataset.voted === "true") return;
 
       const resultEl = ratingBlock.querySelector(".result");
       const votesEl = ratingBlock.querySelector(".votes");
@@ -245,13 +256,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
 
         if (data.success) {
-          // 🔹 обновляем результат (лайки − дизлайки)
-          resultEl.textContent = String(data.result);
-          // 🔹 обновляем количество голосов
-          votesEl.textContent = `(${data.total} голосов)`;
-          // 🔹 помечаем, что голос отдан
+          // обновляем результат (лайки − дизлайки)
+          if (resultEl) resultEl.textContent = String(data.result);
+          // обновляем количество голосов
+          if (votesEl) votesEl.textContent = `(${data.total} голосов)`;
+          // помечаем, что голос отдан и блокируем повтор
           ratingBlock.dataset.voted = "true";
-          ratingBlock.querySelectorAll("button").forEach(b => b.disabled = true);
+          ratingBlock.querySelectorAll("button").forEach((b) => {
+            b.disabled = true;
+          });
         } else {
           console.warn("⚠️ Сервер вернул ошибку:", data.message || data.error);
           if (res.status === 401) {
@@ -259,7 +272,9 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           if (res.status === 409) {
             ratingBlock.dataset.voted = "true";
-            ratingBlock.querySelectorAll("button").forEach(b => b.disabled = true);
+            ratingBlock.querySelectorAll("button").forEach((b) => {
+              b.disabled = true;
+            });
           }
         }
       } catch (err) {
