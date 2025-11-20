@@ -272,7 +272,7 @@
       document.querySelectorAll('.btn[data-video]').forEach(btn => {
         btn.addEventListener('click', () => {
           const url = btn.getAttribute('data-video');
-          const videoId = (url.match(/[?&]v=([^&]+)/) || [])[1] || null;
+          const videoId = extractVideoId(url);
           if (!videoId) {
             console.error("❌ Не удалось извлечь videoId из URL:", url);
             return;

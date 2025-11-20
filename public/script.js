@@ -1,6 +1,48 @@
 let player = null;
 let currentVideoId = null;
 
+function extractVideoId(url) {
+  try {
+    if (!url || typeof url !== 'string') return null;
+    url = url.trim();
+    
+    if (url.includes('/embed/')) {
+      const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
+      if (embedId) {
+        return embedId.split('&')[0].split('#')[0].trim();
+      }
+    }
+    
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    let videoId = null;
+    
+    if (host.includes("youtube.com")) {
+      if (u.pathname === "/watch") {
+        videoId = u.searchParams.get("v");
+      } else if (u.pathname.startsWith("/embed/")) {
+        videoId = u.pathname.split("/embed/")[1]?.split("?")[0];
+      } else if (u.pathname.startsWith("/shorts/")) {
+        videoId = u.pathname.split("/shorts/")[1]?.split("?")[0];
+      } else if (u.pathname.startsWith("/v/")) {
+        videoId = u.pathname.split("/v/")[1]?.split("?")[0];
+      }
+    } else if (host === "youtu.be") {
+      videoId = u.pathname.slice(1).split("?")[0];
+    }
+    
+    if (videoId) {
+      videoId = videoId.split('&')[0].split('#')[0].trim();
+      return videoId || null;
+    }
+    
+    return null;
+  } catch (err) {
+    console.error("Ошибка извлечения videoId:", err);
+    return null;
+  }
+}
+
 function onPlayerReady(event) {
   console.log("✅ Плеер готов");
   if (currentVideoId && typeof event.target.loadVideoById === 'function') {
@@ -104,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll('.btn[data-video]').forEach(btn => {
     btn.addEventListener('click', () => {
       const url = btn.getAttribute('data-video');
-      const videoId = (url.match(/[?&]v=([^&]+)/) || [])[1] || null;
+      const videoId = extractVideoId(url);
       if (!videoId) {
         console.error("❌ Не удалось извлечь videoId из URL:", url);
         return;
