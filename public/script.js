@@ -1,3 +1,14 @@
+// 🔹 YouTube IFrame Player API - глобальные переменные и функции
+let player = null;
+let currentVideoId = null;
+
+// Глобальная функция, вызываемая YouTube API при загрузке
+// ДОЛЖНА быть определена ДО загрузки YouTube API скрипта
+window.onYouTubeIframeAPIReady = function() {
+  console.log("✅ YouTube IFrame API готов");
+  // Плеер будет создан при открытии модального окна
+};
+
 document.addEventListener("DOMContentLoaded", () => {
   // 🔹 Модалка регистрации
   const registerModal = document.getElementById("registerModal");
@@ -108,16 +119,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return null;
     }
   }
-
-  // 🔹 YouTube IFrame Player API
-  let player = null;
-  let currentVideoId = null;
-
-  // Глобальная функция, вызываемая YouTube API при загрузке
-  window.onYouTubeIframeAPIReady = function() {
-    console.log("✅ YouTube IFrame API готов");
-    // Плеер будет создан при открытии модального окна
-  };
 
   // 🔹 Модальное окно для видео
   const modal = document.getElementById("videoModal");

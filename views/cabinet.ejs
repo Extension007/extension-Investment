@@ -121,9 +121,22 @@
     </div>
   </div>
 
+  <script>
+    // Глобальная функция для YouTube API - должна быть определена ДО загрузки API
+    if (typeof window.onYouTubeIframeAPIReady === 'undefined') {
+      window.onYouTubeIframeAPIReady = function() {
+        console.log("✅ YouTube IFrame API готов (cabinet)");
+      };
+    }
+
+    // YouTube IFrame Player API - глобальные переменные
+    let playerCabinet = null;
+  </script>
+
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
+
     // Функция извлечения videoId из YouTube URL
     function extractVideoId(url) {
       try {
@@ -165,16 +178,6 @@
         console.error("Ошибка извлечения videoId:", err);
         return null;
       }
-    }
-
-    // YouTube IFrame Player API
-    let playerCabinet = null;
-    
-    // Глобальная функция для YouTube API
-    if (typeof window.onYouTubeIframeAPIReady === 'undefined') {
-      window.onYouTubeIframeAPIReady = function() {
-        console.log("✅ YouTube IFrame API готов (cabinet)");
-      };
     }
 
     document.addEventListener("DOMContentLoaded", () => {
