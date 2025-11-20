@@ -20,15 +20,47 @@ function onPlayerReady(event) {
 
 window.onYouTubeIframeAPIReady = function () {
   console.log("✅ YouTube IFrame API готов");
-  player = new YT.Player('videoFrame', {
-    width: '100%',
-    height: '480',
-    playerVars: { rel: 0, playsinline: 1 },
-    events: {
-      'onReady': onPlayerReady,
-      'onError': (e) => console.error("❌ Ошибка плеера:", e.data)
-    }
-  });
+  const videoFrame = document.getElementById('videoFrame');
+  const modal = document.getElementById('videoModal');
+  
+  if (!videoFrame) {
+    console.error("❌ Контейнер videoFrame не найден");
+    return;
+  }
+  
+  // Временно показываем модалку для инициализации (невидимо для пользователя)
+  const wasHidden = modal && modal.style.display === 'none';
+  if (wasHidden && modal) {
+    modal.style.display = 'block';
+    modal.style.visibility = 'hidden';
+    modal.style.position = 'absolute';
+    modal.style.left = '-9999px';
+  }
+  
+  try {
+    player = new YT.Player('videoFrame', {
+      width: '100%',
+      height: '480',
+      playerVars: { rel: 0, playsinline: 1 },
+      events: {
+        'onReady': onPlayerReady,
+        'onError': (e) => console.error("❌ Ошибка плеера:", e.data)
+      }
+    });
+    console.log("✅ Плеер создан успешно");
+  } catch (err) {
+    console.error("❌ Ошибка создания плеера:", err);
+  }
+  
+  // Скрываем модалку обратно после инициализации
+  if (wasHidden && modal) {
+    setTimeout(() => {
+      modal.style.display = 'none';
+      modal.style.visibility = '';
+      modal.style.position = '';
+      modal.style.left = '';
+    }, 100);
+  }
 };
 
 document.addEventListener('click', (e) => {
@@ -37,29 +69,45 @@ document.addEventListener('click', (e) => {
 
   const url = btn.getAttribute('data-video');
   const videoId = extractVideoId(url);
-  if (!videoId) return;
+  if (!videoId) {
+    console.error("❌ Не удалось извлечь videoId из URL:", url);
+    return;
+  }
 
   currentVideoId = videoId;
   console.log("🎬 Открытие видео:", url);
 
   const modal = document.getElementById('videoModal');
+  if (!modal) {
+    console.error("❌ Модалка не найдена");
+    return;
+  }
+
   modal.style.display = 'block';
   modal.setAttribute('aria-hidden', 'false');
 
   if (player && typeof player.loadVideoById === 'function') {
     player.loadVideoById(videoId);
     console.log("✅ Видео загружено:", videoId);
+  } else {
+    console.warn("⚠️ Плеер ещё не готов, videoId сохранён и загрузится при onReady");
   }
 });
 
-document.querySelector('[data-close-video]').addEventListener('click', () => {
-  const modal = document.getElementById('videoModal');
-  modal.style.display = 'none';
-  modal.setAttribute('aria-hidden', 'true');
+// Обработчик закрытия модалки (делегирование событий)
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-close-video]')) {
+    const modal = document.getElementById('videoModal');
+    if (!modal) return;
+    
+    modal.style.display = 'none';
+    modal.setAttribute('aria-hidden', 'true');
 
-  if (player && typeof player.stopVideo === 'function') {
-    player.stopVideo();
-    console.log("✅ Видео остановлено");
+    if (player && typeof player.stopVideo === 'function') {
+      player.stopVideo();
+      console.log("✅ Видео остановлено");
+    }
+    currentVideoId = null;
   }
 });
 
