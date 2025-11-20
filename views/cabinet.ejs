@@ -113,15 +113,14 @@
     <p>© 2025 EXTO Ecosystem</p>
   </footer>
 
-  <!-- Контейнер для плеера (всегда в DOM, вне модалки) -->
-  <div id="videoFrame"></div>
-
   <!-- Модальное окно для видео -->
   <div id="videoModal" class="modal" aria-hidden="true">
     <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
       <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
-      <!-- Внутри модалки просто ссылка на контейнер -->
-      <div id="videoFrameContainer"></div>
+      <div id="videoFrameContainer">
+        <!-- Контейнер для плеера (всегда в DOM) -->
+        <div id="videoFrame"></div>
+      </div>
     </div>
   </div>
 
@@ -245,14 +244,6 @@
         console.log("🎬 Открытие видео:", url);
 
         const videoModal = document.getElementById('videoModal');
-        const videoFrame = document.getElementById('videoFrame');
-        const videoFrameContainer = document.getElementById('videoFrameContainer');
-
-        // Перемещаем контейнер в модалку
-        if (videoFrame && videoFrameContainer) {
-          videoFrameContainer.appendChild(videoFrame);
-        }
-
         videoModal.style.display = 'block';
         videoModal.setAttribute('aria-hidden', 'false');
 
@@ -263,62 +254,14 @@
       });
 
       // Обработчик закрытия модалки
-      document.addEventListener('click', (e) => {
-        if (e.target.closest('[data-close-video]')) {
-          const videoModal = document.getElementById('videoModal');
-          videoModal.style.display = 'none';
-          videoModal.setAttribute('aria-hidden', 'true');
-
-          if (playerCabinet && typeof playerCabinet.stopVideo === 'function') {
-            playerCabinet.stopVideo();
-            console.log("✅ Видео остановлено (cabinet)");
-          }
-          currentVideoIdCabinet = null;
-
-          const videoFrame = document.getElementById('videoFrame');
-          if (videoFrame && document.body) {
-            document.body.appendChild(videoFrame);
-          }
-        }
-      });
-
-      // Закрытие по клику вне модалки
-      document.addEventListener('click', (e) => {
+      document.querySelector('[data-close-video]').addEventListener('click', () => {
         const videoModal = document.getElementById('videoModal');
-        if (e.target === videoModal && videoModal.style.display === 'block') {
-          videoModal.style.display = 'none';
-          videoModal.setAttribute('aria-hidden', 'true');
+        videoModal.style.display = 'none';
+        videoModal.setAttribute('aria-hidden', 'true');
 
-          if (playerCabinet && typeof playerCabinet.stopVideo === 'function') {
-            playerCabinet.stopVideo();
-            console.log("✅ Видео остановлено (cabinet)");
-          }
-          currentVideoIdCabinet = null;
-
-          const videoFrame = document.getElementById('videoFrame');
-          if (videoFrame && document.body) {
-            document.body.appendChild(videoFrame);
-          }
-        }
-      });
-
-      // Закрытие по Escape
-      document.addEventListener('keydown', (e) => {
-        const videoModal = document.getElementById('videoModal');
-        if (e.key === 'Escape' && videoModal.style.display === 'block') {
-          videoModal.style.display = 'none';
-          videoModal.setAttribute('aria-hidden', 'true');
-
-          if (playerCabinet && typeof playerCabinet.stopVideo === 'function') {
-            playerCabinet.stopVideo();
-            console.log("✅ Видео остановлено (cabinet)");
-          }
-          currentVideoIdCabinet = null;
-
-          const videoFrame = document.getElementById('videoFrame');
-          if (videoFrame && document.body) {
-            document.body.appendChild(videoFrame);
-          }
+        if (playerCabinet && typeof playerCabinet.stopVideo === 'function') {
+          playerCabinet.stopVideo();
+          console.log("✅ Видео остановлено (cabinet)");
         }
       });
     });
