@@ -46,8 +46,14 @@ function extractVideoId(url) {
 function onPlayerReady(event) {
   console.log("✅ Плеер готов");
   if (currentVideoId && typeof event.target.loadVideoById === 'function') {
-    event.target.loadVideoById(currentVideoId);
-    console.log("✅ Видео загружено автоматически:", currentVideoId);
+    try {
+      event.target.loadVideoById(currentVideoId);
+      console.log("✅ Видео загружено автоматически:", currentVideoId);
+    } catch (err) {
+      console.error("❌ Ошибка автоматической загрузки видео:", err);
+    }
+  } else {
+    console.log("ℹ️ Плеер готов, но currentVideoId не установлен (ожидается клик пользователя)");
   }
 }
 
@@ -68,17 +74,29 @@ window.onYouTubeIframeAPIReady = function () {
     videoFrame.style.visibility = 'hidden';
   }
   
-  player = new YT.Player('videoFrame', {
-    width: '100%',
-    height: '480',
-    playerVars: { rel: 0, playsinline: 1 },
-    events: {
-      'onReady': onPlayerReady,
-      'onError': (event) => {
-        console.error("❌ Ошибка плеера:", event.data);
+  try {
+    player = new YT.Player('videoFrame', {
+      width: '100%',
+      height: '480',
+      playerVars: { rel: 0, playsinline: 1 },
+      events: {
+        'onReady': onPlayerReady,
+        'onError': (event) => {
+          console.error("❌ Ошибка плеера:", event.data);
+        },
+        'onStateChange': (event) => {
+          // Логируем изменения состояния для отладки
+          const states = ['UNSTARTED', 'ENDED', 'PLAYING', 'PAUSED', 'BUFFERING', 'CUED'];
+          if (event.data === YT.PlayerState.PLAYING) {
+            console.log("▶️ Видео воспроизводится");
+          }
+        }
       }
-    }
-  });
+    });
+    console.log("✅ Плеер создан успешно");
+  } catch (err) {
+    console.error("❌ Ошибка создания плеера:", err);
+  }
   
   // После инициализации скрываем контейнер обратно
   if (wasHidden) {
@@ -193,7 +211,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       if (player && typeof player.loadVideoById === 'function') {
-        player.loadVideoById(videoId);
+        try {
+          player.loadVideoById(videoId);
+          console.log("✅ Видео загружено в плеер:", videoId);
+        } catch (err) {
+          console.error("❌ Ошибка загрузки видео:", err);
+        }
       } else {
         console.log("⏳ Плеер ещё не готов, videoId сохранён и загрузится при onReady");
       }
