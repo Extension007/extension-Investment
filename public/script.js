@@ -5,12 +5,17 @@ function onPlayerReady(event) {
   console.log("✅ Плеер готов");
   if (currentVideoId && typeof event.target.loadVideoById === 'function') {
     event.target.loadVideoById(currentVideoId);
-    console.log("✅ Видео загружено автоматически при готовности:", currentVideoId);
+    console.log("✅ Видео загружено автоматически:", currentVideoId);
   }
 }
 
 window.onYouTubeIframeAPIReady = function () {
   console.log("✅ YouTube IFrame API готов");
+  const videoFrame = document.getElementById('videoFrame');
+  if (!videoFrame) {
+    console.error("❌ Контейнер videoFrame не найден");
+    return;
+  }
   player = new YT.Player('videoFrame', {
     width: '100%',
     height: '480',

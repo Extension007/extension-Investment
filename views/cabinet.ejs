@@ -132,12 +132,17 @@
       console.log("✅ Плеер готов (cabinet)");
       if (currentVideoIdCabinet && typeof event.target.loadVideoById === 'function') {
         event.target.loadVideoById(currentVideoIdCabinet);
-        console.log("✅ Видео загружено автоматически при готовности:", currentVideoIdCabinet);
+        console.log("✅ Видео загружено автоматически:", currentVideoIdCabinet);
       }
     }
 
     window.onYouTubeIframeAPIReady = function() {
       console.log("✅ YouTube IFrame API готов (cabinet)");
+      const videoFrame = document.getElementById('videoFrame');
+      if (!videoFrame) {
+        console.error("❌ Контейнер videoFrame не найден (cabinet)");
+        return;
+      }
       playerCabinet = new YT.Player('videoFrame', {
         width: '100%',
         height: '480',

@@ -259,12 +259,17 @@
       console.log("✅ Плеер готов (admin)");
       if (currentVideoIdAdmin && typeof event.target.loadVideoById === 'function') {
         event.target.loadVideoById(currentVideoIdAdmin);
-        console.log("✅ Видео загружено автоматически при готовности:", currentVideoIdAdmin);
+        console.log("✅ Видео загружено автоматически:", currentVideoIdAdmin);
       }
     }
 
     window.onYouTubeIframeAPIReady = function() {
       console.log("✅ YouTube IFrame API готов (admin)");
+      const videoFrame = document.getElementById('videoFrame');
+      if (!videoFrame) {
+        console.error("❌ Контейнер videoFrame не найден (admin)");
+        return;
+      }
       playerAdmin = new YT.Player('videoFrame', {
         width: '100%',
         height: '480',
