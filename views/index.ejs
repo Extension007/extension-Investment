@@ -158,7 +158,7 @@
     const videoModal = document.getElementById("videoModal");
 
     // Открытие видео
-    document.addEventListener('click', async (e) => {
+    document.addEventListener('click', (e) => {
       const btn = e.target.closest('.btn[data-video]');
       if (!btn) return;
 
@@ -166,19 +166,18 @@
       const videoId = extractVideoId(url);
       if (!videoId) return;
 
-      currentVideoIdIndex = videoId;
+      currentVideoId = videoId;
       videoModal.style.display = 'block';
       videoModal.setAttribute('aria-hidden', 'false');
 
-      if (!playerIndex || !playerReadyIndex) {
-        console.warn("⚠️ Плеер ещё не готов, ждём...");
-        await new Promise(r => setTimeout(r, 200));
-      }
-
       try {
-        playerIndex.cueVideoById(currentVideoIdIndex);
-        playerIndex.playVideo();
-        console.log("🎬 Запуск видео:", currentVideoIdIndex);
+        // Важно: вызов строго внутри клика (для iOS Safari)
+        if (player && playerReady) {
+          player.loadVideoById(currentVideoId);
+          console.log("🎬 Запуск видео:", currentVideoId);
+        } else {
+          console.warn("⚠️ Плеер ещё не готов");
+        }
       } catch (err) {
         console.error("❌ Ошибка запуска, открываем в новой вкладке:", err);
         window.open(url, '_blank', 'noopener,noreferrer');
@@ -191,8 +190,8 @@
       closeBtn.addEventListener('click', () => {
         videoModal.style.display = 'none';
         videoModal.setAttribute('aria-hidden', 'true');
-        if (playerIndex && typeof playerIndex.stopVideo === 'function') {
-          playerIndex.stopVideo();
+        if (player && typeof player.stopVideo === 'function') {
+          player.stopVideo();
           console.log("✅ Видео остановлено");
         }
       });
