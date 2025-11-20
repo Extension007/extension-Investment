@@ -248,12 +248,12 @@
               width="100%" 
               height="480" 
               frameborder="0" 
-              allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" 
+              allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; web-share" 
               allowfullscreen
               playsinline
               webkit-playsinline
               loading="lazy"
-              referrerpolicy="strict-origin-when-cross-origin"
+              referrerpolicy="no-referrer-when-downgrade"
               style="display: block; visibility: visible;"></iframe>
     </div>
   </div>
@@ -273,8 +273,8 @@
         if (url.includes('/embed/')) {
           const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
           if (embedId) {
-            // Используем обычный youtube.com для лучшей совместимости
-            const result = `https://www.youtube.com/embed/${embedId}`;
+            // Используем youtube-nocookie.com для приватности
+            const result = `https://www.youtube-nocookie.com/embed/${embedId}`;
             console.log("✅ Embed URL (уже embed, упрощенный):", result);
             return result;
           }
@@ -318,15 +318,15 @@
           console.log("🔍 Video ID из youtu.be:", videoId);
         }
         
-        if (videoId) {
-          videoId = videoId.split('&')[0].split('#')[0].trim();
           if (videoId) {
-            // Используем обычный youtube.com для лучшей совместимости
-            const result = `https://www.youtube.com/embed/${videoId}`;
-            console.log("✅ Embed URL создан (упрощенный):", result);
-            return result;
+            videoId = videoId.split('&')[0].split('#')[0].trim();
+            if (videoId) {
+              // Используем youtube-nocookie.com для приватности
+              const result = `https://www.youtube-nocookie.com/embed/${videoId}`;
+              console.log("✅ Embed URL создан (упрощенный):", result);
+              return result;
+            }
           }
-        }
         
         console.error("❌ Не удалось извлечь video ID из URL:", url);
         return null;
@@ -499,8 +499,8 @@
           
           // Для iOS: НЕ добавляем autoplay (iOS блокирует и вызывает ошибку 153)
           // Пользователь должен нажать play вручную
+          // Для не-iOS добавляем muted (не autoplay, чтобы избежать блокировки)
           if (!isIOS) {
-            params.set('autoplay', '1');
             params.set('mute', '1');
           }
           
@@ -585,7 +585,21 @@
           }, 100);
         }
         if (videoFrame) {
-          videoFrame.src = "";
+          // Останавливаем видео перед закрытием модалки
+          try {
+            // Очищаем src для полной остановки видео
+            videoFrame.src = "";
+            // Дополнительно пытаемся остановить через contentWindow (если доступен)
+            if (videoFrame.contentWindow) {
+              try {
+                videoFrame.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+              } catch (e) {
+                // Игнорируем ошибки cross-origin
+              }
+            }
+          } catch (e) {
+            console.warn("Ошибка при остановке видео:", e);
+          }
         }
       }
 

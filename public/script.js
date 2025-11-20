@@ -75,8 +75,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (url.includes('/embed/')) {
         const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
         if (embedId) {
-          // Используем обычный youtube.com для лучшей совместимости
-          return `https://www.youtube.com/embed/${embedId}`;
+          // Используем youtube-nocookie.com для приватности
+          return `https://www.youtube-nocookie.com/embed/${embedId}`;
         }
       }
       
@@ -101,9 +101,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (videoId) {
         videoId = videoId.split('&')[0].split('#')[0].trim();
         if (videoId) {
-          // Для Shorts и обычных видео используем embed формат
+          // Для Shorts и обычных видео используем embed формат с youtube-nocookie.com
           // playsinline=1 будет добавлен позже в параметрах URL
-          return `https://www.youtube.com/embed/${videoId}`;
+          return `https://www.youtube-nocookie.com/embed/${videoId}`;
         }
       }
       
@@ -152,8 +152,8 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Для iOS: НЕ добавляем autoplay (iOS блокирует и вызывает ошибку 153)
       // Пользователь должен нажать play вручную
+      // Для не-iOS добавляем muted (не autoplay, чтобы избежать блокировки)
       if (!isIOS) {
-        params.set('autoplay', '1');
         params.set('mute', '1');
       }
       
@@ -254,11 +254,28 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function closeModal() {
+      // Останавливаем видео перед закрытием модалки
+      try {
+        // Очищаем src для полной остановки видео
+        videoFrame.src = "";
+        // Дополнительно пытаемся остановить через contentWindow (если доступен)
+        if (videoFrame.contentWindow) {
+          try {
+            videoFrame.contentWindow.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+          } catch (e) {
+            // Игнорируем ошибки cross-origin
+          }
+        }
+      } catch (e) {
+        console.warn("Ошибка при остановке видео:", e);
+      }
+      
+      // Закрываем модальное окно
       modal.style.display = "none";
       modal.setAttribute("aria-hidden", "true");
-      videoFrame.src = "";
+      
       if (typeof releaseFocus === "function") {
-      releaseFocus();
+        releaseFocus();
       }
     }
 
