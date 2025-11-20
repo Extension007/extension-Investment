@@ -108,202 +108,219 @@
     </section>
   </main>
 
-  <footer class="footer">
-    <p>© 2025 EXTO Ecosystem</p>
-  </footer>
+<footer class="footer">
+  <p>© 2025 EXTO Ecosystem</p>
+</footer>
 
-  <!-- Модальное окно для видео -->
-  <div id="videoModal" class="modal" aria-hidden="true" style="display:none;">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
-      <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
-      <div id="videoFrameContainer">
-        <div id="videoFrame"></div>
-      </div>
+<!-- Модальное окно для видео -->
+<div id="videoModal" class="modal" aria-hidden="true" style="display:none;">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
+    <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
+    <div id="videoFrameContainer">
+      <div id="videoFrame"></div>
     </div>
   </div>
+</div>
 
-  <!-- YouTube API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+<!-- YouTube API -->
+<script src="https://www.youtube.com/iframe_api"></script>
 
-  <script>
-    let playerCabinet = null;
-    let currentVideoIdCabinet = null;
+<script>
+  let playerCabinet = null;
+  let playerReadyCabinet = false; // флаг готовности
+  let currentVideoIdCabinet = null;
 
-    function onPlayerReadyCabinet(event) {
-      if (currentVideoIdCabinet && typeof event.target.loadVideoById === 'function') {
-        event.target.loadVideoById(currentVideoIdCabinet);
-      }
+  function onPlayerReadyCabinet(event) {
+    console.log("✅ Плеер готов (cabinet)");
+    playerReadyCabinet = true; // только отмечаем готовность, без автозагрузки
+  }
+
+  function onPlayerErrorCabinet(e) {
+    console.error("❌ Ошибка плеера (cabinet):", e?.data);
+    if (e?.data === 153 && currentVideoIdCabinet) {
+      const url = "https://www.youtube.com/watch?v=" + currentVideoIdCabinet;
+      window.open(url, "_blank", "noopener,noreferrer");
     }
+  }
 
-    // Инициализация плеера без конфликта с глобальным onYouTubeIframeAPIReady
-    function initCabinetPlayer() {
-      try {
-        playerCabinet = new YT.Player('videoFrame', {
-          width: '100%',
-          height: '480',
-          playerVars: { rel: 0, playsinline: 1 },
-          events: {
-            'onReady': onPlayerReadyCabinet,
-            'onError': (e) => console.error("❌ Ошибка плеера:", e.data)
-          }
-        });
-      } catch (err) {
-        console.error("❌ Ошибка создания плеера (cabinet):", err);
-      }
-    }
-    // Ждём полной загрузки, чтобы YT.Player был доступен
-    window.addEventListener("load", () => {
-      if (typeof YT !== "undefined" && YT.Player) {
-        initCabinetPlayer();
-      } else {
-        // Если API ещё грузится, подстрахуемся небольшим ожиданием
-        const t = setInterval(() => {
-          if (typeof YT !== "undefined" && YT.Player) {
-            clearInterval(t);
-            initCabinetPlayer();
-          }
-        }, 100);
-        setTimeout(() => clearInterval(t), 5000);
-      }
-    });
-  </script>
-
-  <script>
-    // Извлечение videoId из разных форматов YouTube URL
-    function extractVideoId(url) {
-      if (!url) return null;
-      if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
-      if (url.includes('/shorts/')) return url.split('/shorts/')[1].split(/[?#]/)[0];
-      if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split(/[?#]/)[0];
-      const match = url.match(/[?&]v=([^&]+)/);
-      return match ? match[1] : null;
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const form = document.getElementById("createProductForm");
-      const msg = document.getElementById("createProductMsg");
-
-      // Отправка формы создания карточки (AJAX)
-      if (form) {
-        form.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const formData = new FormData(form);
-          try {
-            const res = await fetch("/cabinet/product", { method: "POST", body: formData });
-            const json = await res.json();
-            if (json.success) {
-              msg.textContent = "Карточка отправлена на модерацию.";
-              msg.style.color = "green";
-              setTimeout(() => location.reload(), 800);
-            } else {
-              msg.textContent = json.message || "Ошибка";
-              msg.style.color = "#b00020";
-            }
-          } catch (err) {
-            msg.textContent = "Ошибка сети: " + err.message;
-            msg.style.color = "#b00020";
-          }
-        });
-      }
-
-      // Обновление цены карточки
-      document.querySelectorAll(".priceForm").forEach((f) => {
-        f.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const id = f.getAttribute("data-id");
-          const price = f.querySelector("input[name='price']").value;
-          try {
-            const res = await fetch(`/cabinet/product/${id}/price`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ price })
-            });
-            const json = await res.json();
-            if (json.success) {
-              const priceEl = document.querySelector(`.price[data-id='${id}']`);
-              if (priceEl) priceEl.textContent = json.price;
-            } else {
-              alert(json.message || "Ошибка обновления цены");
-            }
-          } catch (err) {
-            alert("Ошибка сети: " + err.message);
-          }
-        });
-      });
-
-      // Видео модалка
-      const videoModal = document.getElementById("videoModal");
-
-      // Открытие видео
-      document.addEventListener('click', (e) => {
-        const btn = e.target.closest('.btn[data-video]');
-        if (!btn) return;
-        const url = btn.getAttribute('data-video');
-        const videoId = extractVideoId(url);
-        if (!videoId) return;
-        currentVideoIdCabinet = videoId;
-        videoModal.style.display = 'block';
-        videoModal.setAttribute('aria-hidden', 'false');
-        if (playerCabinet && typeof playerCabinet.loadVideoById === 'function') {
-          playerCabinet.loadVideoById(videoId);
+  function initCabinetPlayer() {
+    try {
+      playerCabinet = new YT.Player('videoFrame', {
+        width: '100%',
+        height: '480',
+        playerVars: { rel: 0, playsinline: 1 },
+        events: {
+          'onReady': onPlayerReadyCabinet,
+          'onError': onPlayerErrorCabinet
         }
       });
+    } catch (err) {
+      console.error("❌ Ошибка создания плеера (cabinet):", err);
+    }
+  }
 
-      // Закрытие видео
-      const closeBtn = document.querySelector('[data-close-video]');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          videoModal.style.display = 'none';
-          videoModal.setAttribute('aria-hidden', 'true');
-          if (playerCabinet && typeof playerCabinet.stopVideo === 'function') {
-            playerCabinet.stopVideo();
+  window.addEventListener("load", () => {
+    if (typeof YT !== "undefined" && YT.Player) {
+      initCabinetPlayer();
+    } else {
+      const t = setInterval(() => {
+        if (typeof YT !== "undefined" && YT.Player) {
+          clearInterval(t);
+          initCabinetPlayer();
+        }
+      }, 100);
+      setTimeout(() => clearInterval(t), 5000);
+    }
+  });
+</script>
+
+<script>
+  function extractVideoId(url) {
+    if (!url) return null;
+    if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
+    if (url.includes('/shorts/')) return url.split('/shorts/')[1].split(/[?#]/)[0];
+    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split(/[?#]/)[0];
+    const match = url.match(/[?&]v=([^&]+)/);
+    return match ? match[1] : null;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("createProductForm");
+    const msg = document.getElementById("createProductMsg");
+
+    if (form) {
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        try {
+          const res = await fetch("/cabinet/product", { method: "POST", body: formData });
+          const json = await res.json();
+          if (json.success) {
+            msg.textContent = "Карточка отправлена на модерацию.";
+            msg.style.color = "green";
+            setTimeout(() => location.reload(), 800);
+          } else {
+            msg.textContent = json.message || "Ошибка";
+            msg.style.color = "#b00020";
           }
-        });
+        } catch (err) {
+          msg.textContent = "Ошибка сети: " + err.message;
+          msg.style.color = "#b00020";
+        }
+      });
+    }
+
+    document.querySelectorAll(".priceForm").forEach((f) => {
+      f.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const id = f.getAttribute("data-id");
+        const price = f.querySelector("input[name='price']").value;
+        try {
+          const res = await fetch(`/cabinet/product/${id}/price`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ price })
+          });
+          const json = await res.json();
+          if (json.success) {
+            const priceEl = document.querySelector(`.price[data-id='${id}']`);
+            if (priceEl) priceEl.textContent = json.price;
+          } else {
+            alert(json.message || "Ошибка обновления цены");
+          }
+        } catch (err) {
+          alert("Ошибка сети: " + err.message);
+        }
+      });
+    });
+
+    const videoModal = document.getElementById("videoModal");
+
+    // Открытие видео (iOS-safe)
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn[data-video]');
+      if (!btn) return;
+
+      const url = btn.getAttribute('data-video');
+      const videoId = extractVideoId(url);
+      if (!videoId) return;
+
+      currentVideoIdCabinet = videoId;
+      videoModal.style.display = 'block';
+      videoModal.setAttribute('aria-hidden', 'false');
+
+      if (!playerCabinet || !playerReadyCabinet) {
+        console.warn("⚠️ Плеер ещё не готов, ждём...");
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      try {
+        if (playerCabinet) {
+          playerCabinet.cueVideoById(currentVideoIdCabinet);
+          playerCabinet.playVideo();
+          console.log("🎬 Запуск видео:", currentVideoIdCabinet);
+        }
+      } catch (err) {
+        console.error("❌ Ошибка запуска, открываем в новой вкладке:", err);
+        window.open(url, '_blank', 'noopener,noreferrer');
       }
     });
-  </script>
 
-  <style>
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 2000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.8);
+    const closeBtn = document.querySelector('[data-close-video]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        videoModal.style.display = 'none';
+        videoModal.setAttribute('aria-hidden', 'true');
+        if (playerCabinet && typeof playerCabinet.stopVideo === 'function') {
+          playerCabinet.stopVideo();
+        }
+      });
     }
-    .modal-content {
-      background-color: #1a1a1a;
-      margin: 5% auto;
-      padding: 20px;
-      border: 1px solid #444;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 800px;
-      position: relative;
-    }
-    .close {
-      color: #aaa;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
-      cursor: pointer;
-      background: none;
-      border: none;
-      position: absolute;
-      right: 15px;
-      top: 10px;
-    }
-    .close:hover {
-      color: #fff;
-    }
-    #videoFrame {
-      width: 100%;
-      height: 480px;
-      border-radius: 8px;
-    }
-  </style>
+  });
+</script>
+
+<style>
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.8);
+  }
+  .modal-content {
+    background-color: #1a1a1a;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #444;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    position: relative;
+  }
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    background: none;
+    border: none;
+    position: absolute;
+    right: 15px;
+    top: 10px;
+  }
+  .close:hover {
+    color: #fff;
+  }
+  #videoFrame {
+    width: 100%;
+    height: 480px;
+    border-radius: 8px;
+  }
+</style>
 </body>
 </html>
+

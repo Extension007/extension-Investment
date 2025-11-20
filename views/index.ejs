@@ -126,43 +126,146 @@
     </section>
   </main>
 
-  <footer class="footer">
-    <p>© 2025 EXTO Ecosystem</p>
-  </footer>
+ <footer class="footer">
+  <p>© 2025 EXTO Ecosystem</p>
+</footer>
 
-  <!-- Модальное окно для видео -->
-  <!-- FIX: добавлен style="display:none;" чтобы инициализация YouTube плеера корректно распознавала скрытое состояние и не падала на iOS -->
-  <div id="videoModal" class="modal" aria-hidden="true" style="display:none;">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
-      <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
-      <div id="videoFrameContainer">
-        <!-- Контейнер для плеера (всегда в DOM) -->
-        <div id="videoFrame"></div>
-      </div>
+<!-- Модальное окно для видео -->
+<div id="videoModal" class="modal" aria-hidden="true" style="display:none;">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
+    <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
+    <div id="videoFrameContainer">
+      <div id="videoFrame"></div>
     </div>
   </div>
+</div>
 
-  <!-- YouTube API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+<!-- YouTube API -->
+<script src="https://www.youtube.com/iframe_api"></script>
 
-  <!-- Модальное окно регистрации -->
-  <div id="registerModal" class="modal" aria-hidden="true">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Регистрация">
-      <button class="close" data-close-register aria-label="Закрыть">&times;</button>
-      <h3>Регистрация</h3>
-      <form id="registerForm">
-        <input type="text" name="username" placeholder="Никнейм" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Пароль" minlength="6" required>
-        <button type="submit">Создать аккаунт</button>
-      </form>
-      <div id="registerError" class="error" style="color:#b00020;margin-top:10px;display:none;"></div>
-      <div id="registerSuccess" style="color:green;margin-top:10px;display:none;"></div>
-    </div>
+<script>
+  let playerIndex = null;
+  let playerReadyIndex = false; // флаг готовности
+  let currentVideoIdIndex = null;
+
+  function onPlayerReadyIndex(event) {
+    console.log("✅ Плеер готов (index)");
+    playerReadyIndex = true; // только отмечаем готовность
+  }
+
+  function onPlayerErrorIndex(e) {
+    console.error("❌ Ошибка плеера (index):", e?.data);
+    if (e?.data === 153 && currentVideoIdIndex) {
+      const url = "https://www.youtube.com/watch?v=" + currentVideoIdIndex;
+      window.open(url, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  function initIndexPlayer() {
+    try {
+      playerIndex = new YT.Player('videoFrame', {
+        width: '100%',
+        height: '480',
+        playerVars: { rel: 0, playsinline: 1 },
+        events: {
+          'onReady': onPlayerReadyIndex,
+          'onError': onPlayerErrorIndex
+        }
+      });
+    } catch (err) {
+      console.error("❌ Ошибка создания плеера (index):", err);
+    }
+  }
+
+  window.addEventListener("load", () => {
+    if (typeof YT !== "undefined" && YT.Player) {
+      initIndexPlayer();
+    } else {
+      const t = setInterval(() => {
+        if (typeof YT !== "undefined" && YT.Player) {
+          clearInterval(t);
+          initIndexPlayer();
+        }
+      }, 100);
+      setTimeout(() => clearInterval(t), 5000);
+    }
+  });
+
+  function extractVideoId(url) {
+    if (!url) return null;
+    if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
+    if (url.includes('/shorts/')) return url.split('/shorts/')[1].split(/[?#]/)[0];
+    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split(/[?#]/)[0];
+    const match = url.match(/[?&]v=([^&]+)/);
+    return match ? match[1] : null;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const videoModal = document.getElementById("videoModal");
+
+    // Открытие видео (iOS-safe)
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn[data-video]');
+      if (!btn) return;
+
+      const url = btn.getAttribute('data-video');
+      const videoId = extractVideoId(url);
+      if (!videoId) return;
+
+      currentVideoIdIndex = videoId;
+      videoModal.style.display = 'block';
+      videoModal.setAttribute('aria-hidden', 'false');
+
+      if (!playerIndex || !playerReadyIndex) {
+        console.warn("⚠️ Плеер ещё не готов, ждём...");
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      try {
+        if (playerIndex) {
+          playerIndex.cueVideoById(currentVideoIdIndex);
+          playerIndex.playVideo();
+          console.log("🎬 Запуск видео:", currentVideoIdIndex);
+        }
+      } catch (err) {
+        console.error("❌ Ошибка запуска, открываем в новой вкладке:", err);
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    });
+
+    // Закрытие видео
+    const closeBtn = document.querySelector('[data-close-video]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        videoModal.style.display = 'none';
+        videoModal.setAttribute('aria-hidden', 'true');
+        if (playerIndex && typeof playerIndex.stopVideo === 'function') {
+          playerIndex.stopVideo();
+        }
+      });
+    }
+  });
+</script>
+
+<!-- Модальное окно регистрации -->
+<div id="registerModal" class="modal" aria-hidden="true">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-label="Регистрация">
+    <button class="close" data-close-register aria-label="Закрыть">&times;</button>
+    <h3>Регистрация</h3>
+    <form id="registerForm">
+      <input type="text" name="username" placeholder="Никнейм" required>
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="password" name="password" placeholder="Пароль" minlength="6" required>
+      <button type="submit">Создать аккаунт</button>
+    </form>
+    <div id="registerError" class="error" style="color:#b00020;margin-top:10px;display:none;"></div>
+    <div id="registerSuccess" style="color:green;margin-top:10px;display:none;"></div>
   </div>
+</div>
 
-  <script>window.IS_AUTH = <%= JSON.stringify(isAuth) %>;</script>
-  <!-- Основной скрипт -->
-  <script src="/script.js"></script>
+<script>window.IS_AUTH = <%= JSON.stringify(isAuth) %>;</script>
+<!-- Основной скрипт -->
+<script src="/script.js"></script>
 </body>
 </html>
+
