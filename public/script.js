@@ -1,9 +1,9 @@
-let player;
+let player = null;
 let currentVideoId = null;
 
-// YouTube вызывает эту функцию сам после загрузки API
+// YouTube вызывает эту функцию после загрузки API
 window.onYouTubeIframeAPIReady = function () {
-  console.log("✅ YouTube API загружен");
+  console.log("✅ YouTube IFrame API готов");
   player = new YT.Player('videoFrame', {
     width: '100%',
     height: '480',
@@ -83,102 +83,51 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // 🔹 Функция извлечения videoId из YouTube URL
-  function extractVideoId(url) {
-    try {
-      if (!url || typeof url !== 'string') return null;
-      
-      url = url.trim();
-      
-      // Если уже embed URL, извлекаем video ID
-      if (url.includes('/embed/')) {
-        const embedId = url.match(/embed\/([^?&#]+)/)?.[1];
-        if (embedId) {
-          return embedId.split('&')[0].split('#')[0].trim();
-        }
-      }
-      
-      const u = new URL(url);
-      const host = u.hostname.replace(/^www\./, "").toLowerCase();
-      let videoId = null;
-      
-      if (host.includes("youtube.com")) {
-        if (u.pathname === "/watch") {
-          videoId = u.searchParams.get("v");
-        } else if (u.pathname.startsWith("/embed/")) {
-          videoId = u.pathname.split("/embed/")[1]?.split("?")[0];
-        } else if (u.pathname.startsWith("/shorts/")) {
-          videoId = u.pathname.split("/shorts/")[1]?.split("?")[0];
-        } else if (u.pathname.startsWith("/v/")) {
-          videoId = u.pathname.split("/v/")[1]?.split("?")[0];
-        }
-      } else if (host === "youtu.be") {
-        videoId = u.pathname.slice(1).split("?")[0];
-      }
-      
-      if (videoId) {
-        videoId = videoId.split('&')[0].split('#')[0].trim();
-        return videoId || null;
-      }
-      
-      return null;
-    } catch (err) {
-      // Если не удалось распарсить URL, пробуем простой способ
-      const match = url.match(/[?&]v=([^&]+)/);
-      return match ? match[1].split('#')[0].trim() : null;
-    }
-  }
-
   // 🔹 Модальное окно для видео
   const modal = document.getElementById("videoModal");
   const videoFrame = document.getElementById("videoFrame");
   const closeBtn = document.querySelector(".modal .close");
 
-  if (modal && videoFrame) {
-    function onPlayerReady(event) {
-      console.log("✅ Плеер готов");
-      if (currentVideoId && typeof event.target.loadVideoById === 'function') {
-        event.target.loadVideoById(currentVideoId);
-      }
+  function onPlayerReady(event) {
+    console.log("✅ Плеер готов");
+    if (currentVideoId) {
+      event.target.loadVideoById(currentVideoId);
+      console.log("✅ Видео загружено:", currentVideoId);
     }
+  }
 
-    // Обработчик клика на кнопки с data-video
-    document.addEventListener("click", (e) => {
-      const btn = e.target.closest("[data-video]");
-      if (!btn) return;
-      
-      e.preventDefault();
-      e.stopPropagation();
-
-      const url = btn.getAttribute("data-video")?.trim();
-      if (!url) return;
-
-      const videoId = extractVideoId(url);
+  // Клик по кнопке «Обзор»
+  document.querySelectorAll('.btn[data-video]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const url = btn.getAttribute('data-video');
+      const videoId = (url.match(/[?&]v=([^&]+)/) || [])[1] || null;
       if (!videoId) {
         console.error("❌ Не удалось извлечь videoId из URL:", url);
         return;
       }
 
       currentVideoId = videoId;
-
       console.log("🎬 Открытие видео:", url);
       console.log("✅ Video ID:", videoId);
 
       // Открываем модальное окно
-      modal.style.display = "block";
-      modal.setAttribute("aria-hidden", "false");
+      if (modal) {
+        modal.style.display = "block";
+        modal.setAttribute("aria-hidden", "false");
+        if (typeof trapFocus === "function") {
+          trapFocus(modal);
+        }
+      }
 
-      // Загружаем видео в существующий плеер
       if (player && typeof player.loadVideoById === 'function') {
         player.loadVideoById(videoId);
       } else {
-        console.warn("⏳ Плеер ещё не готов, попробуйте снова через пару секунд");
+        console.log("⏳ Плеер ещё не готов, videoId сохранён и загрузится при onReady");
       }
-      
-      if (typeof trapFocus === "function") {
-        trapFocus(modal);
-      }
-    }, true);
+    });
+  });
+
+  if (modal && videoFrame) {
 
     // Обработчик закрытия модального окна
     const closeVideoBtn = document.querySelector("[data-close-video]");
@@ -214,6 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function closeModal() {
       if (player && typeof player.stopVideo === 'function') {
         player.stopVideo();
+        console.log("✅ Видео остановлено");
       }
       currentVideoId = null;
       modal.style.display = "none";
