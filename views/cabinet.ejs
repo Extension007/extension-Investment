@@ -121,21 +121,43 @@
     </div>
   </div>
 
+  <script src="https://www.youtube.com/iframe_api"></script>
+
   <script>
-    // Глобальная функция для YouTube API - должна быть определена ДО загрузки API
+    // Глобальная функция для YouTube API
     if (typeof window.onYouTubeIframeAPIReady === 'undefined') {
       window.onYouTubeIframeAPIReady = function() {
         console.log("✅ YouTube IFrame API готов (cabinet)");
-        window.youtubeAPIReadyCabinet = true;
+        
+        // Создаем плеер сразу при загрузке API
+        const videoFrame = document.getElementById("videoFrame");
+        if (videoFrame) {
+          try {
+            window.playerCabinet = new YT.Player('videoFrame', {
+              width: '100%',
+              height: '480',
+              playerVars: {
+                rel: 0,
+                playsinline: 1
+              },
+              events: {
+                'onReady': function(event) {
+                  console.log("✅ Плеер готов (cabinet)");
+                },
+                'onError': function(event) {
+                  console.error("❌ Ошибка плеера:", event.data);
+                  alert("Ошибка при загрузке видео.");
+                }
+              }
+            });
+            console.log("✅ Плеер создан в onYouTubeIframeAPIReady (cabinet)");
+          } catch (e) {
+            console.error("❌ Ошибка создания плеера в onYouTubeIframeAPIReady:", e);
+          }
+        }
       };
     }
-
-    // YouTube IFrame Player API - глобальные переменные
-    let playerCabinet = null;
-    window.youtubeAPIReadyCabinet = false;
   </script>
-
-  <script src="https://www.youtube.com/iframe_api"></script>
 
   <script>
 
@@ -279,33 +301,24 @@
             }
           }
 
-          // Очищаем контейнер
-          videoFrame.innerHTML = "";
-
           // Открываем модальное окно
           videoModal.style.display = "block";
           videoModal.setAttribute("aria-hidden", "false");
 
-          // Создаем новый плеер
-          if (window.youtubeAPIReadyCabinet && typeof YT !== 'undefined' && YT.Player) {
-            createPlayerCabinet(videoId);
+          // Загружаем видео в существующий плеер
+          if (window.playerCabinet && typeof window.playerCabinet.loadVideoById === 'function') {
+            try {
+              window.playerCabinet.loadVideoById(videoId);
+              console.log("✅ Видео загружено в плеер (cabinet):", videoId);
+            } catch (e) {
+              console.error("❌ Ошибка загрузки видео:", e);
+              alert("Ошибка загрузки видео. Пожалуйста, попробуйте еще раз.");
+              closeVideoModal();
+            }
           } else {
-            let attempts = 0;
-            const maxAttempts = 50;
-            
-            const checkAPI = setInterval(() => {
-              attempts++;
-              
-              if (window.youtubeAPIReadyCabinet && typeof YT !== 'undefined' && YT.Player) {
-                clearInterval(checkAPI);
-                createPlayerCabinet(videoId);
-              } else if (attempts >= maxAttempts) {
-                clearInterval(checkAPI);
-                console.error("❌ YouTube IFrame API не загружен");
-                alert("Ошибка загрузки YouTube API. Пожалуйста, обновите страницу.");
-                closeVideoModal();
-              }
-            }, 100);
+            console.error("❌ Плеер не готов или не найден (cabinet)");
+            alert("Ошибка: видеоплеер не готов. Пожалуйста, обновите страницу.");
+            closeVideoModal();
           }
         } else {
           console.error("❌ Не удалось извлечь videoId из URL:", url);
@@ -313,53 +326,15 @@
         }
       }, true); // Capture phase для приоритета
 
-      // Функция создания плеера
-      function createPlayerCabinet(videoId) {
-        try {
-          if (typeof YT === 'undefined' || !YT.Player) {
-            console.error("❌ YT.Player недоступен при создании плеера");
-            alert("Ошибка: YouTube API не загружен. Пожалуйста, обновите страницу.");
-            closeVideoModal();
-            return;
-          }
-          
-          playerCabinet = new YT.Player('videoFrame', {
-            videoId: videoId,
-            width: '100%',
-            height: '480',
-            playerVars: {
-              rel: 0,
-              playsinline: 1
-            },
-            events: {
-              'onReady': function(event) {
-                console.log("✅ Плеер готов (cabinet)");
-              },
-              'onError': function(event) {
-                console.error("❌ Ошибка плеера:", event.data);
-                alert("Ошибка при загрузке видео.");
-                closeVideoModal();
-              }
-            }
-          });
-          console.log("✅ Плеер создан для videoId:", videoId);
-        } catch (e) {
-          console.error("❌ Ошибка создания плеера:", e);
-          alert("Ошибка создания видеоплеера.");
-          closeVideoModal();
-        }
-      }
-
       // Функция закрытия модального окна
       function closeVideoModal() {
         console.log("❌ Закрытие модального окна видео");
-        if (playerCabinet) {
+        if (window.playerCabinet && typeof window.playerCabinet.stopVideo === 'function') {
           try {
-            playerCabinet.stopVideo();
-            playerCabinet.destroy();
-            playerCabinet = null;
+            window.playerCabinet.stopVideo();
+            console.log("✅ Видео остановлено (cabinet)");
           } catch (e) {
-            console.warn("Ошибка при остановке плеера:", e);
+            console.warn("Ошибка при остановке видео:", e);
           }
         }
         if (videoModal) {
@@ -369,9 +344,6 @@
               videoModal.setAttribute("aria-hidden", "true");
             }
           }, 100);
-        }
-        if (videoFrame) {
-          videoFrame.innerHTML = "";
         }
       }
       

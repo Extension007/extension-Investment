@@ -138,16 +138,6 @@
     </div>
   </div>
 
-  <script>
-    // Глобальная функция для YouTube API - должна быть определена ДО загрузки API
-    // (определяется также в script.js, но здесь для гарантии)
-    if (typeof window.onYouTubeIframeAPIReady === 'undefined') {
-      window.onYouTubeIframeAPIReady = function() {
-        console.log("✅ YouTube IFrame API готов (index)");
-      };
-    }
-  </script>
-
   <script src="https://www.youtube.com/iframe_api"></script>
 
   <!-- Модальное окно регистрации -->
