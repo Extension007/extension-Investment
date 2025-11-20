@@ -23,115 +23,115 @@ function extractVideoId(url) {
 // YouTube IFrame API
 // =======================
 
-// Событие готовности плеера
-function onPlayerReady(event) {
-  console.log("✅ Плеер готов");
-  playerReady = true;
-}
-
-// Инициализация YouTube IFrame API
+// Инициализация YouTube IFrame API — создаём плеер в контейнере videoFrame
 window.onYouTubeIframeAPIReady = function () {
-  console.log("✅ YouTube IFrame API готов");
-  const videoFrame = document.getElementById('videoFrame');
-  const modal = document.getElementById('videoModal');
-
-  if (!videoFrame) {
-    console.error("❌ Контейнер videoFrame не найден");
-    return;
-  }
-
-  // Временно показываем модалку для инициализации (невидимо для пользователя)
-  const wasHidden = modal && modal.style.display === 'none';
-  if (wasHidden && modal) {
-    modal.style.display = 'block';
-    modal.style.visibility = 'hidden';
-    modal.style.position = 'absolute';
-    modal.style.left = '-9999px';
-  }
-
   try {
     player = new YT.Player('videoFrame', {
       width: '100%',
-      height: '480',
-      playerVars: { rel: 0, playsinline: 1 },
+      height: '100%',
+      videoId: '',
+      playerVars: { rel: 0, playsinline: 1, modestbranding: 1 },
       events: {
-        'onReady': onPlayerReady,
-        'onError': (e) => console.error("❌ Ошибка плеера:", e.data)
+        'onReady': function (event) {
+          playerReady = true;
+          console.log('✅ Плеер готов');
+
+          // Если до инициализации уже был выбран videoId — загрузим его с небольшой задержкой
+          if (currentVideoId) {
+            // даём браузеру один кадр на рендер модалки
+            setTimeout(() => {
+              try {
+                player.loadVideoById(currentVideoId);
+                console.log('🎬 Автозапуск после готовности:', currentVideoId);
+              } catch (err) {
+                console.warn('⚠️ Не удалось автозагрузить видео после готовности плеера:', err);
+              }
+            }, 160);
+          }
+        },
+        'onError': function (e) {
+          console.error('❌ Ошибка плеера:', e && e.data ? e.data : e);
+        }
       }
     });
-    console.log("✅ Плеер создан успешно");
+    console.log('✅ YouTube Player создан');
   } catch (err) {
-    console.error("❌ Ошибка создания плеера:", err);
-  }
-
-  // Скрываем модалку обратно после инициализации
-  if (wasHidden && modal) {
-    setTimeout(() => {
-      modal.style.display = 'none';
-      modal.style.visibility = '';
-      modal.style.position = '';
-      modal.style.left = '';
-    }, 100);
+    console.error('❌ Ошибка при создании YouTube Player:', err);
   }
 };
 
 // =======================
-// Обработчики модалки видео
+// Обработчики модалки видео (универсальные, iOS-friendly)
 // =======================
 
-// Клик по кнопке «Обзор»
 document.addEventListener('click', (e) => {
-  const btn = e.target.closest('.btn[data-video]');
-  if (!btn) return;
+  // Открытие по кнопке data-video
+  const openBtn = e.target.closest('.btn[data-video]');
+  if (openBtn) {
+    const url = openBtn.getAttribute('data-video');
+    const videoId = extractVideoId(url);
+    if (!videoId) {
+      console.error('❌ Не удалось извлечь videoId из URL:', url);
+      return;
+    }
 
-  const url = btn.getAttribute('data-video');
-  const videoId = extractVideoId(url);
-  if (!videoId) {
-    console.error("❌ Не удалось извлечь videoId из URL:", url);
+    currentVideoId = videoId;
+    const modal = document.getElementById('videoModal');
+    if (!modal) {
+      console.error('❌ Модалка videoModal не найдена');
+      return;
+    }
+
+    // Показываем модалку без использования display:none
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+
+    // iOS Safari требует небольшой задержки перед инициализацией/загрузкой видео
+    setTimeout(() => {
+      if (player && typeof player.loadVideoById === 'function' && playerReady) {
+        try {
+          player.loadVideoById(currentVideoId);
+          console.log('✅ Видео загружено:', currentVideoId);
+        } catch (err) {
+          console.error('❌ Ошибка при loadVideoById:', err);
+          // Фоллбэк: откроем ссылку в новой вкладке
+          window.open(url, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        console.warn('⚠️ Плеер ещё не готов — видео будет загружено при onReady');
+        // плеер загрузит видео при onReady (см. onReady выше)
+      }
+    }, 160);
+
     return;
   }
 
-  currentVideoId = videoId;
-  console.log("🎬 Открытие видео:", url);
-
-  const modal = document.getElementById('videoModal');
-  if (!modal) {
-    console.error("❌ Модалка не найдена");
-    return;
-  }
-
-  modal.style.display = 'block';
-  modal.setAttribute('aria-hidden', 'false');
-
-  if (player && typeof player.loadVideoById === 'function') {
-    player.loadVideoById(videoId);
-    console.log("✅ Видео загружено:", videoId);
-  } else {
-    console.warn("⚠️ Плеер ещё не готов, videoId сохранён и загрузится при onReady");
-  }
-});
-
-// Закрытие модалки
-document.addEventListener('click', (e) => {
-  if (e.target.closest('[data-close-video]')) {
+  // Закрытие по кнопке [data-close-video] или по клику вне контента
+  if (e.target.closest('[data-close-video]') || (e.target.id === 'videoModal')) {
     const modal = document.getElementById('videoModal');
     if (!modal) return;
-
-    modal.style.display = 'none';
+    modal.classList.remove('show');
     modal.setAttribute('aria-hidden', 'true');
 
+    // Остановим видео
     if (player && typeof player.stopVideo === 'function') {
-      player.stopVideo();
-      console.log("✅ Видео остановлено");
+      try {
+        player.stopVideo();
+        console.log('✅ Видео остановлено');
+      } catch (err) {
+        console.warn('⚠️ Ошибка при остановке видео:', err);
+      }
     }
     currentVideoId = null;
+    return;
   }
 });
 
 // =======================
-// Модалка регистрации и форма
+// DOMContentLoaded: регистрация, категории, рейтинг (сохраняем твою логику)
 // =======================
 document.addEventListener("DOMContentLoaded", () => {
+  // ====== Регистрация ======
   const registerModal = document.getElementById("registerModal");
   const openRegisterBtn = document.getElementById("openRegister");
   const closeRegisterBtn = document.querySelector("[data-close-register]");
@@ -141,6 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (openRegisterBtn && registerModal) {
     openRegisterBtn.addEventListener("click", () => {
+      // регистрационная модалка может оставаться через display (не влияет на видео)
       registerModal.style.display = "block";
       registerModal.setAttribute("aria-hidden", "false");
     });
@@ -205,11 +206,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // =======================
-  // Категории и рейтинг
-  // =======================
+  // ====== Категории и рейтинг ======
   document.addEventListener("click", async (e) => {
-    // Если клик по кнопке видео — пусть обрабатывает другой обработчик
+    // Если клик по кнопке видео — уже обработано выше
     const videoBtn = e.target.closest("[data-video]");
     if (videoBtn) return;
 

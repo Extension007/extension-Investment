@@ -9,6 +9,62 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
+
+  <!-- Небольшой локальный CSS-фикс для модалки видео (ВАЖНО для iOS) -->
+  <style>
+    /* Видео-модалка: НЕ использовать display:none — Safari ломает iframe */
+    #videoModal {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity .20s ease;
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.7);
+      z-index: 9999;
+    }
+    #videoModal.show {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+    #videoModal .modal-content {
+      width: 90%;
+      max-width: 900px;
+      aspect-ratio: 16/9;
+      background: #000;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    #videoModal .close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(255,255,255,0.06);
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      cursor: pointer;
+      z-index: 2;
+    }
+    #videoFrameContainer {
+      width: 100%;
+      height: 100%;
+    }
+    /* Содержимое iframe занимает весь контейнер */
+    #videoFrame {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
 </head>
 <body>
   <header class="main-header">
@@ -130,8 +186,8 @@
   <p>© 2025 EXTO Ecosystem</p>
 </footer>
 
-<!-- Модальное окно для видео -->
-<div id="videoModal" class="modal" aria-hidden="true" style="display:none;">
+<!-- Модальное окно для видео (ВАЖНО: убрано display:none, используется класс .show) -->
+<div id="videoModal" class="modal" aria-hidden="true">
   <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
     <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
     <div id="videoFrameContainer">
@@ -143,64 +199,8 @@
 <!-- YouTube API -->
 <script src="https://www.youtube.com/iframe_api"></script>
 
-<script>
-  // Вспомогательная функция для извлечения ID видео
-  function extractVideoId(url) {
-    if (!url) return null;
-    if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
-    if (url.includes('/shorts/')) return url.split('/shorts/')[1].split(/[?#]/)[0];
-    if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split(/[?#]/)[0];
-    const match = url.match(/[?&]v=([^&]+)/);
-    return match ? match[1] : null;
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const videoModal = document.getElementById("videoModal");
-
-    // Открытие видео
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn[data-video]');
-      if (!btn) return;
-
-      const url = btn.getAttribute('data-video');
-      const videoId = extractVideoId(url);
-      if (!videoId) return;
-
-      currentVideoId = videoId;
-      videoModal.style.display = 'block';
-      videoModal.setAttribute('aria-hidden', 'false');
-
-      try {
-        // Важно: вызов строго внутри клика (для iOS Safari)
-        if (player && playerReady) {
-          player.loadVideoById(currentVideoId);
-          console.log("🎬 Запуск видео:", currentVideoId);
-        } else {
-          console.warn("⚠️ Плеер ещё не готов");
-        }
-      } catch (err) {
-        console.error("❌ Ошибка запуска, открываем в новой вкладке:", err);
-        window.open(url, '_blank', 'noopener,noreferrer');
-      }
-    });
-
-    // Закрытие видео
-    const closeBtn = document.querySelector('[data-close-video]');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        videoModal.style.display = 'none';
-        videoModal.setAttribute('aria-hidden', 'true');
-        if (player && typeof player.stopVideo === 'function') {
-          player.stopVideo();
-          console.log("✅ Видео остановлено");
-        }
-      });
-    }
-  });
-</script>
-
-<!-- Модальное окно регистрации -->
-<div id="registerModal" class="modal" aria-hidden="true">
+<!-- окно регистрации -->
+<div id="registerModal" class="modal" aria-hidden="true" style="display:none;">
   <div class="modal-content" role="dialog" aria-modal="true" aria-label="Регистрация">
     <button class="close" data-close-register aria-label="Закрыть">&times;</button>
     <h3>Регистрация</h3>
@@ -216,7 +216,8 @@
 </div>
 
 <script>window.IS_AUTH = <%= JSON.stringify(isAuth) %>;</script>
-<!-- Основной скрипт -->
+
+<!-- Подключаем основной скрипт (включает весь JS: youtube init, модалки, рейтинг, категории, регистрация) -->
 <script src="/script.js"></script>
 </body>
 </html>
