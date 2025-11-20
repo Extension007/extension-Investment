@@ -126,11 +126,13 @@
     if (typeof window.onYouTubeIframeAPIReady === 'undefined') {
       window.onYouTubeIframeAPIReady = function() {
         console.log("✅ YouTube IFrame API готов (cabinet)");
+        window.youtubeAPIReadyCabinet = true;
       };
     }
 
     // YouTube IFrame Player API - глобальные переменные
     let playerCabinet = null;
+    window.youtubeAPIReadyCabinet = false;
   </script>
 
   <script src="https://www.youtube.com/iframe_api"></script>
@@ -285,24 +287,25 @@
           videoModal.setAttribute("aria-hidden", "false");
 
           // Создаем новый плеер
-          if (typeof YT !== 'undefined' && YT.Player) {
+          if (window.youtubeAPIReadyCabinet && typeof YT !== 'undefined' && YT.Player) {
             createPlayerCabinet(videoId);
           } else {
+            let attempts = 0;
+            const maxAttempts = 50;
+            
             const checkAPI = setInterval(() => {
-              if (typeof YT !== 'undefined' && YT.Player) {
+              attempts++;
+              
+              if (window.youtubeAPIReadyCabinet && typeof YT !== 'undefined' && YT.Player) {
                 clearInterval(checkAPI);
                 createPlayerCabinet(videoId);
-              }
-            }, 100);
-            
-            setTimeout(() => {
-              clearInterval(checkAPI);
-              if (typeof YT === 'undefined' || !YT.Player) {
+              } else if (attempts >= maxAttempts) {
+                clearInterval(checkAPI);
                 console.error("❌ YouTube IFrame API не загружен");
                 alert("Ошибка загрузки YouTube API. Пожалуйста, обновите страницу.");
                 closeVideoModal();
               }
-            }, 5000);
+            }, 100);
           }
         } else {
           console.error("❌ Не удалось извлечь videoId из URL:", url);
@@ -313,15 +316,20 @@
       // Функция создания плеера
       function createPlayerCabinet(videoId) {
         try {
+          if (typeof YT === 'undefined' || !YT.Player) {
+            console.error("❌ YT.Player недоступен при создании плеера");
+            alert("Ошибка: YouTube API не загружен. Пожалуйста, обновите страницу.");
+            closeVideoModal();
+            return;
+          }
+          
           playerCabinet = new YT.Player('videoFrame', {
             videoId: videoId,
             width: '100%',
             height: '480',
             playerVars: {
               rel: 0,
-              playsinline: 1,
-              modestbranding: 1,
-              controls: 1
+              playsinline: 1
             },
             events: {
               'onReady': function(event) {
