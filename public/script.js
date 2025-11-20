@@ -1,33 +1,20 @@
-// 🔹 YouTube IFrame Player API - глобальные переменные и функции
-let player = null;
+let player;
 let currentVideoId = null;
 
-// Глобальная функция, вызываемая YouTube API при загрузке
-// ДОЛЖНА быть определена ДО загрузки YouTube API скрипта
-window.onYouTubeIframeAPIReady = function() {
-  console.log("✅ YouTube IFrame API готов");
-  
-  // Создаем плеер сразу при загрузке API
-  const videoFrame = document.getElementById("videoFrame");
-  if (videoFrame) {
-    try {
-      player = new YT.Player('videoFrame', {
-        width: '100%',
-        height: '480',
-        playerVars: {
-          rel: 0,
-          playsinline: 1
-        },
-        events: {
-          'onReady': onPlayerReady,
-          'onError': onPlayerError
-        }
-      });
-      console.log("✅ Плеер создан в onYouTubeIframeAPIReady");
-    } catch (e) {
-      console.error("❌ Ошибка создания плеера в onYouTubeIframeAPIReady:", e);
+// YouTube вызывает эту функцию сам после загрузки API
+window.onYouTubeIframeAPIReady = function () {
+  console.log("✅ YouTube API загружен");
+  player = new YT.Player('videoFrame', {
+    width: '100%',
+    height: '480',
+    playerVars: { rel: 0, playsinline: 1 },
+    events: {
+      'onReady': onPlayerReady,
+      'onError': (event) => {
+        console.error("❌ Ошибка плеера:", event.data);
+      }
     }
-  }
+  });
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -136,8 +123,9 @@ document.addEventListener("DOMContentLoaded", () => {
       
       return null;
     } catch (err) {
-      console.error("Ошибка извлечения videoId:", err);
-      return null;
+      // Если не удалось распарсить URL, пробуем простой способ
+      const match = url.match(/[?&]v=([^&]+)/);
+      return match ? match[1].split('#')[0].trim() : null;
     }
   }
 
@@ -147,25 +135,34 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeBtn = document.querySelector(".modal .close");
 
   if (modal && videoFrame) {
-    // Функция для открытия видео
-    function openVideoModal(videoUrl) {
-      if (!videoUrl) {
-        console.warn("Пустой URL видео");
-        return;
+    function onPlayerReady(event) {
+      console.log("✅ Плеер готов");
+      if (currentVideoId && typeof event.target.loadVideoById === 'function') {
+        event.target.loadVideoById(currentVideoId);
       }
+    }
+
+    // Обработчик клика на кнопки с data-video
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-video]");
+      if (!btn) return;
       
-      console.log("🎬 Открытие видео:", videoUrl);
-      
-      // Извлекаем videoId из URL
-      const videoId = extractVideoId(videoUrl);
+      e.preventDefault();
+      e.stopPropagation();
+
+      const url = btn.getAttribute("data-video")?.trim();
+      if (!url) return;
+
+      const videoId = extractVideoId(url);
       if (!videoId) {
-        console.error("❌ Не удалось извлечь videoId из URL:", videoUrl);
-        alert("Некорректная ссылка на видео. Поддерживаются только ссылки YouTube.");
+        console.error("❌ Не удалось извлечь videoId из URL:", url);
         return;
       }
 
-      console.log("✅ Video ID:", videoId);
       currentVideoId = videoId;
+
+      console.log("🎬 Открытие видео:", url);
+      console.log("✅ Video ID:", videoId);
 
       // Открываем модальное окно
       modal.style.display = "block";
@@ -173,74 +170,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Загружаем видео в существующий плеер
       if (player && typeof player.loadVideoById === 'function') {
-        try {
-          player.loadVideoById(videoId);
-          console.log("✅ Видео загружено в плеер:", videoId);
-        } catch (e) {
-          console.error("❌ Ошибка загрузки видео:", e);
-          alert("Ошибка загрузки видео. Пожалуйста, попробуйте еще раз.");
-          closeModal();
-        }
+        player.loadVideoById(videoId);
       } else {
-        console.error("❌ Плеер не готов или не найден");
-        alert("Ошибка: видеоплеер не готов. Пожалуйста, обновите страницу.");
-        closeModal();
+        console.warn("⏳ Плеер ещё не готов, попробуйте снова через пару секунд");
       }
       
       if (typeof trapFocus === "function") {
         trapFocus(modal);
       }
-    }
-
-    // Обработчик готовности плеера
-    function onPlayerReady(event) {
-      console.log("✅ Плеер готов");
-      // Видео не запускается автоматически - пользователь должен нажать play вручную
-      // Это соответствует требованиям (без autoplay)
-      // Если есть текущий videoId, загружаем его
-      if (currentVideoId && typeof event.target.loadVideoById === 'function') {
-        event.target.loadVideoById(currentVideoId);
-      }
-    }
-
-    // Обработчик ошибок плеера
-    function onPlayerError(event) {
-      console.error("❌ Ошибка плеера:", event.data);
-      let errorMsg = "Произошла ошибка при загрузке видео.";
-      switch(event.data) {
-        case 2: errorMsg = "Некорректный videoId."; break;
-        case 5: errorMsg = "HTML5 плеер не может воспроизвести видео."; break;
-        case 100: errorMsg = "Видео не найдено или недоступно."; break;
-        case 101:
-        case 150: errorMsg = "Владелец видео запретил встраивание на других сайтах."; break;
-      }
-      alert(errorMsg);
-      closeModal();
-    }
-
-    // Обработчик клика на кнопки с data-video (используем делегирование с capture phase)
-    // КРИТИЧНО: для iOS важно, чтобы openVideoModal вызывалась синхронно в обработчике клика
-    document.addEventListener("click", (e) => {
-      // Проверяем, кликнули ли на кнопку с data-video или внутри неё
-      const btn = e.target.closest("[data-video]");
-      if (!btn) return;
-      
-      console.log("🖱️ Клик по кнопке видео:", btn);
-      
-      // Предотвращаем всплытие события
-      e.preventDefault();
-      e.stopPropagation();
-
-      const rawUrl = btn.getAttribute("data-video")?.trim();
-      if (!rawUrl) {
-        console.warn("⚠️ Кнопка с data-video не содержит URL");
-        return;
-      }
-
-      console.log("📹 URL из атрибута:", rawUrl);
-      // Вызываем синхронно - это важно для iOS (user gesture должен быть сохранен)
-      openVideoModal(rawUrl);
-    }, true); // Используем capture phase для приоритета
+    }, true);
 
     // Обработчик закрытия модального окна
     const closeVideoBtn = document.querySelector("[data-close-video]");
@@ -274,22 +212,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     function closeModal() {
-      // Останавливаем видео перед закрытием модалки
       if (player && typeof player.stopVideo === 'function') {
-        try {
-          player.stopVideo();
-          console.log("✅ Видео остановлено");
-        } catch (e) {
-          console.warn("Ошибка при остановке видео:", e);
-        }
+        player.stopVideo();
       }
-      
       currentVideoId = null;
-      
-      // Закрываем модальное окно
       modal.style.display = "none";
       modal.setAttribute("aria-hidden", "true");
-      
       if (typeof releaseFocus === "function") {
         releaseFocus();
       }
