@@ -164,6 +164,70 @@ body {
   display: block;
 }
 
+/* FIX: Полноэкранный overlay для YouTube видео */
+.video-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 9999;
+}
+
+/* FIX: Контейнер для видео с кнопкой закрытия */
+.video-overlay-container {
+  position: relative;
+  width: 90%;
+  max-width: 960px;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 24px rgba(255, 0, 0, 0.4);
+  background: #000;
+  overflow: hidden;
+}
+
+/* FIX: Контейнер для iframe */
+.video-overlay-iframe-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* FIX: iframe YouTube */
+.video-overlay-iframe-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* FIX: Кнопка закрытия overlay */
+.video-overlay-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 10000;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.video-overlay-close:hover {
+  background: rgba(255, 0, 0, 0.7);
+  transform: scale(1.05);
+}
+
+.video-overlay-close:active {
+  transform: scale(0.95);
+}
+
 /* Нижний блок прижат к низу */
 .product-card .product-bottom {
   margin-top: auto; /* весь блок уходит вниз */
@@ -223,7 +287,7 @@ body {
   font-size: 0.95rem;
 }
 
-/* Модальное окно */
+/* Модальное окно (для регистрации) */
 .modal {
   display: none;
   position: fixed;
@@ -244,11 +308,6 @@ body {
   position: relative;
 }
 
-#videoModal .modal-content {
-  padding: 40px 20px 20px;
-  min-height: 520px;
-}
-
 /* Улучшения для мобильных устройств */
 @media (max-width: 768px) {
   .modal-content {
@@ -257,34 +316,16 @@ body {
     padding: 15px;
   }
   
-  #videoModal .modal-content {
-    padding: 35px 15px 15px;
-    min-height: auto;
+  /* FIX: Адаптивность для видео overlay на мобильных */
+  .video-overlay-container {
+    width: 95%;
+    border-radius: 8px;
   }
   
-  #videoFrame {
-    height: 300px !important;
-    min-height: 300px !important;
+  .video-overlay-close {
+    font-size: 18px;
+    padding: 2px 6px;
   }
-}
-
-/* Специальные стили для iOS */
-@supports (-webkit-touch-callout: none) {
-  #videoModal {
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  #videoFrame {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-  }
-}
-
-#videoModal[aria-hidden="false"] #videoFrame {
-  display: block !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  position: relative;
 }
 
 .modal .close {
