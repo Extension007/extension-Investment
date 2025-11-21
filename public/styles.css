@@ -168,11 +168,16 @@ body {
 .video-overlay {
   position: fixed;
   inset: 0;
-  display: flex;
+  display: none;
   justify-content: center;
   align-items: center;
   background: rgba(0, 0, 0, 0.85);
   z-index: 9999;
+}
+
+/* FIX: Показываем overlay при активации */
+.video-overlay.show {
+  display: flex;
 }
 
 /* FIX: Контейнер для видео с кнопкой закрытия */
@@ -182,7 +187,7 @@ body {
   max-width: 960px;
   aspect-ratio: 16 / 9;
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 24px rgba(255, 0, 0, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   background: #000;
   overflow: hidden;
 }
@@ -216,16 +221,6 @@ body {
   border-radius: 4px;
   cursor: pointer;
   z-index: 10000;
-  transition: background 0.2s ease, transform 0.15s ease;
-}
-
-.video-overlay-close:hover {
-  background: rgba(255, 0, 0, 0.7);
-  transform: scale(1.05);
-}
-
-.video-overlay-close:active {
-  transform: scale(0.95);
 }
 
 /* Нижний блок прижат к низу */
@@ -315,17 +310,6 @@ body {
     margin: 2% auto;
     padding: 15px;
   }
-  
-  /* FIX: Адаптивность для видео overlay на мобильных */
-  .video-overlay-container {
-    width: 95%;
-    border-radius: 8px;
-  }
-  
-  .video-overlay-close {
-    font-size: 18px;
-    padding: 2px 6px;
-  }
 }
 
 .modal .close {
@@ -356,4 +340,5 @@ body {
   font-weight: 700;
   color: #ff3333;
   font-size: 1.1rem;
+}
 }

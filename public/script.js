@@ -12,11 +12,10 @@ function extractVideoId(url) {
   return match ? match[1] : null;
 }
 
-// FIX: Формирование URL для YouTube embed с параметрами для iOS Safari
+// FIX: Формирование URL для YouTube embed без autoplay (избегаем ошибку 153)
 function buildYouTubeEmbedUrl(videoId) {
   if (!videoId) return '';
-  // FIX: playsinline=1 и autoplay=1 обязательны для iOS Safari
-  return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&autoplay=1`;
+  return `https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1`;
 }
 
 // =======================
@@ -27,51 +26,72 @@ document.addEventListener("DOMContentLoaded", () => {
   // FIX: Полноэкранный overlay для YouTube видео
   const videoOverlay = document.getElementById('videoOverlay');
   const videoIframeContainer = document.getElementById('videoIframeContainer');
-  const closeVideoBtn = document.querySelector('[data-close-video]');
+  let currentVideoIframe = null;
+  let currentVideoUrl = null;
   
   // FIX: Функция открытия видео overlay
   function openVideoOverlay(videoUrl) {
+    if (!videoUrl) return;
+    
     const videoId = extractVideoId(videoUrl);
     if (!videoId) {
-      console.warn('⚠️ Не удалось извлечь videoId из URL:', videoUrl);
+      // FIX: Fallback - открываем в новой вкладке если не удалось извлечь ID
+      window.open(videoUrl, '_blank');
       return;
     }
     
-    // FIX: Создаем iframe динамически по клику (важно для iOS Safari)
+    currentVideoUrl = videoUrl;
+    
+    // FIX: Очищаем предыдущий iframe
+    if (currentVideoIframe) {
+      currentVideoIframe.src = '';
+      currentVideoIframe = null;
+    }
+    videoIframeContainer.innerHTML = '';
+    
+    // FIX: Создаем новый iframe
     const iframe = document.createElement('iframe');
     iframe.src = buildYouTubeEmbedUrl(videoId);
-    // FIX: allowfullscreen включен в allow, отдельный атрибут не нужен
     iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture');
+    iframe.setAttribute('allowfullscreen', '');
     iframe.setAttribute('playsinline', '1');
+    iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
     iframe.setAttribute('frameborder', '0');
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = 'none';
+    iframe.style.display = 'block';
     
-    // FIX: Очищаем контейнер перед добавлением нового iframe
-    videoIframeContainer.innerHTML = '';
+    // FIX: Обработчик ошибки загрузки iframe
+    iframe.onerror = function() {
+      // FIX: Fallback - открываем в новой вкладке при ошибке
+      window.open(currentVideoUrl, '_blank');
+      closeVideoOverlay();
+    };
+    
     videoIframeContainer.appendChild(iframe);
+    currentVideoIframe = iframe;
     
     // FIX: Показываем overlay
-    videoOverlay.style.display = 'flex';
+    videoOverlay.classList.add('show');
     videoOverlay.setAttribute('aria-hidden', 'false');
-    
-    console.log('▶️ Открытие видео:', videoId);
+    document.body.style.overflow = 'hidden';
   }
   
   // FIX: Функция закрытия видео overlay
   function closeVideoOverlay() {
     // FIX: Очищаем src у iframe для остановки воспроизведения
-    const iframe = videoIframeContainer.querySelector('iframe');
-    if (iframe) {
-      iframe.src = '';
+    if (currentVideoIframe) {
+      currentVideoIframe.src = '';
+      currentVideoIframe = null;
     }
-    
-    // FIX: Очищаем контейнер
     videoIframeContainer.innerHTML = '';
+    currentVideoUrl = null;
     
     // FIX: Скрываем overlay
-    videoOverlay.style.display = 'none';
+    videoOverlay.classList.remove('show');
     videoOverlay.setAttribute('aria-hidden', 'true');
-    
-    console.log('🔒 Закрытие видео overlay');
+    document.body.style.overflow = '';
   }
   
   // FIX: Обработчик клика на кнопку "Обзор" и закрытия overlay
@@ -82,7 +102,9 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       e.stopPropagation();
       const videoUrl = videoBtn.getAttribute('data-video');
-      openVideoOverlay(videoUrl);
+      if (videoUrl) {
+        openVideoOverlay(videoUrl);
+      }
       return;
     }
     
@@ -111,7 +133,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (openRegisterBtn && registerModal) {
     openRegisterBtn.addEventListener("click", () => {
-      // регистрационная модалка может оставаться через display (не влияет на видео)
       registerModal.style.display = "block";
       registerModal.setAttribute("aria-hidden", "false");
     });
@@ -242,11 +263,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
 
         if (data.success) {
-          // обновляем результат (лайки − дизлайки)
           if (resultEl) resultEl.textContent = String(data.result);
-          // обновляем количество голосов
           if (votesEl) votesEl.textContent = `(${data.total} голосов)`;
-          // помечаем, что голос отдан и блокируем повтор
           ratingBlock.dataset.voted = "true";
           ratingBlock.querySelectorAll("button").forEach((b) => {
             b.disabled = true;
