@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Добавить товар</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="main-header">
+    <div class="container header-inner">
+      <a class="logo" href="/">EXTO</a>
+      <nav class="nav">
+        <ul class="nav-list">
+          <li><a class="nav-link" href="/">Каталог</a></li>
+        </ul>
+      </nav>
+      <div class="header-actions">
+        <% if (isAuth) { %>
+          <% if (isAdmin) { %>
+            <a class="btn outline" href="/admin">Админ-панель</a>
+          <% } else { %>
+            <a class="btn outline" href="/cabinet">Личный кабинет</a>
+          <% } %>
+        <% } %>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="section">
+      <h2>Добавить товар</h2>
+      <form id="addProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/products">
+        <!-- FIX: Основные поля товара -->
+        <input type="text" name="title" placeholder="Название товара" required>
+        <textarea name="description" placeholder="Описание товара" rows="4"></textarea>
+        <input type="number" name="price" placeholder="Цена" min="0" step="1" required>
+        <input type="url" name="link" placeholder="Ссылка на товар">
+        <input type="url" name="video_url" placeholder="YouTube ссылка">
+        
+        <!-- FIX: Поля контактов продавца -->
+        <div class="form-section">
+          <h3>Контакты продавца</h3>
+          <input type="tel" name="phone" placeholder="Телефон">
+          <input type="email" name="email" placeholder="Email">
+          <input type="text" name="telegram" placeholder="Telegram (например: @username)">
+          <input type="text" name="whatsapp" placeholder="WhatsApp (номер телефона)">
+        </div>
+
+        <!-- FIX: Загрузка изображений (до 5 штук) -->
+        <div class="form-section">
+          <label for="images">Изображения товара (до 5 штук):</label>
+          <input 
+            type="file" 
+            id="images" 
+            name="images" 
+            accept="image/png,image/jpeg,image/jpg,image/webp" 
+            multiple
+            data-max-files="5"
+          >
+          <small class="form-hint">Можно загрузить до 5 изображений. Форматы: PNG, JPEG, JPG, WEBP. Максимальный размер: 5MB на файл.</small>
+          <div id="imagePreview" class="image-preview-container"></div>
+        </div>
+
+        <select name="category" required>
+          <option value="home">Для дома</option>
+          <option value="beauty">Красота и здоровье</option>
+          <option value="auto">Авто мото</option>
+          <option value="electric">Электрика</option>
+          <option value="electronics">Электроника</option>
+          <option value="plumbing">Сантехника</option>
+        </select>
+
+        <button type="submit" class="btn primary">Отправить</button>
+      </form>
+      <div id="addProductMsg" class="note" style="margin-top:10px;"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>© 2025 EXTO Ecosystem</p>
+  </footer>
+
+  <script>
+    // FIX: Валидация количества файлов перед отправкой
+    document.getElementById('addProductForm').addEventListener('submit', function(e) {
+      const fileInput = document.getElementById('images');
+      if (fileInput.files.length > 5) {
+        e.preventDefault();
+        alert('Максимальное количество изображений: 5');
+        return false;
+      }
+    });
+
+    // FIX: Предпросмотр выбранных изображений
+    document.getElementById('images').addEventListener('change', function(e) {
+      const preview = document.getElementById('imagePreview');
+      preview.innerHTML = '';
+      
+      if (this.files.length > 5) {
+        alert('Максимальное количество изображений: 5. Выбрано: ' + this.files.length);
+        this.value = '';
+        return;
+      }
+
+      Array.from(this.files).forEach((file, index) => {
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`Файл "${file.name}" превышает размер 5MB`);
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.style.maxWidth = '100px';
+          img.style.maxHeight = '100px';
+          img.style.margin = '5px';
+          img.style.borderRadius = '4px';
+          preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    // FIX: Обработка отправки формы
+    document.getElementById('addProductForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const msg = document.getElementById('addProductMsg');
+      
+      try {
+        const res = await fetch('/products', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+          msg.textContent = 'Товар успешно добавлен!';
+          msg.style.color = 'green';
+          setTimeout(() => {
+            window.location.href = '/products';
+          }, 1500);
+        } else {
+          msg.textContent = data.message || 'Ошибка при добавлении товара';
+          msg.style.color = '#b00020';
+        }
+      } catch (err) {
+        msg.textContent = 'Ошибка сети: ' + err.message;
+        msg.style.color = '#b00020';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -124,7 +124,13 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 20px;
-  align-items: stretch;
+  align-items: start;
+}
+
+/* FIX: Обертка для карточки и блока описания */
+.product-card-wrapper {
+  display: flex;
+  flex-direction: column;
 }
 
 /* Карточка товара */
@@ -139,10 +145,90 @@ body {
   transition: box-shadow 0.25s ease, transform 0.2s ease;
   min-height: 380px;
   min-width: 0; /* важно для грид-детей, чтобы текст не распирал карточку */
+  position: relative;
 }
 .product-card:hover {
   box-shadow: 0 0 16px rgba(255,0,0,0.7);
   transform: translateY(-2px);
+}
+
+/* FIX: Иконка описания в правом верхнем углу карточки */
+.product-info-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 51, 51, 0.2);
+  border: 2px solid rgba(255, 51, 51, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff3333;
+  font-style: italic;
+}
+
+.product-info-icon:hover {
+  background: rgba(255, 51, 51, 0.4);
+  border-color: #ff3333;
+  transform: scale(1.1);
+}
+
+/* FIX: Tooltip с описанием товара */
+.product-info-tooltip {
+  position: absolute;
+  top: 35px;
+  right: 0;
+  background: #111;
+  border: 1px solid rgba(255, 51, 51, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  max-width: 250px;
+  font-size: 0.9rem;
+  color: #fff;
+  line-height: 1.4;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 8px rgba(255, 51, 51, 0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  text-align: left;
+  word-wrap: break-word;
+}
+
+.product-info-tooltip.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.product-info-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 6px solid rgba(255, 51, 51, 0.3);
+}
+
+.product-info-tooltip::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  right: 12px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 5px solid #111;
 }
 
 /* Название сверху */
@@ -153,8 +239,156 @@ body {
   margin-bottom: 10px;
 }
 
-/* Картинка под названием */
-.product-card img {
+/* FIX: Контейнер для слайдера изображений */
+.product-images-slider {
+  position: relative;
+  width: 100%;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.product-images-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+/* FIX: Изображения в слайдере */
+.product-image-slide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  cursor: pointer;
+  display: block;
+}
+
+.product-image-slide.active {
+  opacity: 1;
+  position: relative;
+}
+
+/* FIX: Стрелки навигации слайдера */
+.slider-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.product-card:hover .slider-arrow {
+  opacity: 1;
+}
+
+.slider-arrow:hover {
+  background: rgba(255, 51, 51, 0.8);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.slider-arrow-prev {
+  left: 8px;
+}
+
+.slider-arrow-next {
+  right: 8px;
+}
+
+/* FIX: Индикаторы слайдера */
+.slider-indicators {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+
+.slider-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.slider-indicator.active {
+  background: #ff3333;
+  width: 24px;
+  border-radius: 4px;
+}
+
+/* FIX: Блок "Контакты продавца" */
+.product-contacts {
+  margin-bottom: 12px;
+  text-align: left;
+  padding: 10px;
+  background: rgba(255, 51, 51, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 51, 51, 0.2);
+}
+
+.product-contacts-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #ff9999;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.contact-item:last-child {
+  margin-bottom: 0;
+}
+
+.contact-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.contact-link {
+  color: #ff9999;
+  text-decoration: none;
+  word-break: break-all;
+  transition: color 0.2s ease;
+}
+
+.contact-link:hover {
+  color: #ff3333;
+  text-decoration: underline;
+}
+
+/* Картинка под названием (fallback для старых карточек) */
+.product-card img:not(.product-image-slide) {
   width: 100%;
   height: auto;
   max-height: 200px;
@@ -162,6 +396,38 @@ body {
   border-radius: 8px;
   margin-bottom: 12px;
   display: block;
+}
+
+/* FIX: Блок описания товара под карточкой (шире карточки) */
+.product-description-block {
+  width: 100%;
+  margin-top: 15px;
+  padding: 20px;
+  background: #2a2a2a;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 51, 51, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.product-description-content {
+  max-width: 100%;
+}
+
+.product-description-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ff9999;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.product-description-text {
+  font-size: 0.95rem;
+  color: #ddd;
+  line-height: 1.6;
+  word-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 /* FIX: Полноэкранный overlay для YouTube видео */
@@ -223,18 +489,98 @@ body {
   z-index: 10000;
 }
 
+/* FIX: Overlay для просмотра изображений в полном размере */
+.image-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 10000;
+}
+
+.image-overlay.show {
+  display: flex;
+}
+
+.image-overlay-container {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-overlay-img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+.image-overlay-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  color: #fff;
+  font-size: 32px;
+  line-height: 1;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.image-overlay-close:hover {
+  background: rgba(255, 51, 51, 0.8);
+  transform: scale(1.1);
+}
+
+.image-overlay-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  color: #fff;
+  font-size: 48px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  cursor: pointer;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.image-overlay-nav:hover {
+  background: rgba(255, 51, 51, 0.8);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.image-overlay-prev {
+  left: 20px;
+}
+
+.image-overlay-next {
+  right: 20px;
+}
+
 /* Нижний блок прижат к низу */
 .product-card .product-bottom {
   margin-top: auto; /* весь блок уходит вниз */
-}
-
-/* Описание и цена аккуратно над кнопкой */
-.product-card .product-desc {
-  font-size: 0.95rem;
-  color: #ccc;
-  margin-bottom: 8px;
-  word-break: break-word;
-  overflow-wrap: anywhere;
 }
 
 .product-card .price {
@@ -252,11 +598,6 @@ body {
   margin-top: 8px;
   flex-wrap: wrap;
 }
-
-/* ссылки-кнопки теперь .btn и .btn.outline */
-
-/* Вторая кнопка — обзор видео */
-/* обзор — обычная .btn */
 
 /* Пустое состояние */
 .empty-state {
@@ -310,6 +651,53 @@ body {
     margin: 2% auto;
     padding: 15px;
   }
+
+  /* FIX: Адаптация tooltip для мобильных */
+  .product-info-tooltip {
+    max-width: 200px;
+    font-size: 0.85rem;
+    padding: 10px;
+  }
+
+  /* FIX: Адаптация слайдера для мобильных */
+  .slider-arrow {
+    opacity: 1;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+  }
+
+  /* FIX: Адаптация overlay изображений для мобильных */
+  .image-overlay-container {
+    max-width: 95%;
+  }
+
+  .image-overlay-close {
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+  }
+
+  .image-overlay-nav {
+    width: 44px;
+    height: 44px;
+    font-size: 36px;
+  }
+
+  .image-overlay-prev {
+    left: 10px;
+  }
+
+  .image-overlay-next {
+    right: 10px;
+  }
+
+  /* FIX: Адаптация блока описания для мобильных */
+  .product-description-block {
+    padding: 15px;
+  }
 }
 
 .modal .close {
@@ -334,11 +722,155 @@ body {
   margin-top: 10px;
 }
 
-/* кнопки рейтинга используют .btn.icon */
-
 .product-rating .rating-value {
   font-weight: 700;
   color: #ff3333;
   font-size: 1.1rem;
 }
+
+/* FIX: Стили для форм добавления/редактирования товаров */
+.form-grid {
+  display: grid;
+  gap: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.form-grid input[type="text"],
+.form-grid input[type="email"],
+.form-grid input[type="tel"],
+.form-grid input[type="url"],
+.form-grid input[type="number"],
+.form-grid textarea,
+.form-grid select {
+  width: 100%;
+  padding: 12px;
+  background: #2a2a2a;
+  border: 1px solid rgba(255, 51, 51, 0.3);
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Poppins', Arial, sans-serif;
+  font-size: 0.95rem;
+}
+
+.form-grid input:focus,
+.form-grid textarea:focus,
+.form-grid select:focus {
+  outline: none;
+  border-color: #ff3333;
+  box-shadow: 0 0 8px rgba(255, 51, 51, 0.3);
+}
+
+.form-grid textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-section {
+  padding: 16px;
+  background: rgba(255, 51, 51, 0.05);
+  border: 1px solid rgba(255, 51, 51, 0.2);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.form-section h3 {
+  font-size: 1rem;
+  color: #ff9999;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #999;
+  line-height: 1.4;
+}
+
+/* FIX: Стили для предпросмотра изображений */
+.image-preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.image-preview-container img {
+  border-radius: 8px;
+  border: 2px solid rgba(255, 51, 51, 0.3);
+  object-fit: cover;
+}
+
+/* FIX: Стили для текущих изображений в форме редактирования */
+.current-images-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.current-image-item {
+  position: relative;
+  display: inline-block;
+}
+
+.current-image-preview {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 51, 51, 0.3);
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 51, 51, 0.9);
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.remove-image-btn:hover {
+  background: #ff3333;
+  transform: scale(1.1);
+}
+
+/* FIX: Стили для сообщений формы */
+.note {
+  padding: 12px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #b00020;
+  background: rgba(176, 0, 32, 0.1);
+  border: 1px solid rgba(176, 0, 32, 0.3);
+}
+
+/* FIX: Адаптация форм для мобильных */
+@media (max-width: 768px) {
+  .form-grid {
+    max-width: 100%;
+  }
+
+  .current-image-preview {
+    width: 100px;
+    height: 100px;
+  }
 }

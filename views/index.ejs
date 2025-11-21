@@ -58,43 +58,131 @@
       <div id="product-grid" class="product-grid">
         <% if (products && products.length) { %>
           <% products.forEach(p => { %>
-            <div class="product-card">
-              <h3 class="product-title"><%= p.name %></h3>
+            <!-- FIX: Обертка для карточки и блока описания -->
+            <div class="product-card-wrapper">
+              <div class="product-card" data-product-id="<%= p._id %>">
+                <!-- FIX: Иконка описания в правом верхнем углу -->
+                <% if (p.description) { %>
+                  <div class="product-info-icon" data-description="<%= p.description.replace(/"/g, '&quot;').replace(/'/g, '&#39;') %>" aria-label="Описание товара">
+                    <span>i</span>
+                  </div>
+                <% } %>
 
-              <% if (p.image_url) { %>
-                <img src="<%= p.image_url %>" alt="<%= p.name %>">
-              <% } else { %>
-                <div class="no-image">Нет изображения</div>
-              <% } %>
+                <h3 class="product-title"><%= p.name %></h3>
 
-              <div class="product-bottom">
-                <p class="product-desc"><%= p.description %></p>
-                <span class="price"><%= p.price %> ₸</span>
-
-                <div class="product-actions">
-                  <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Перейти</a>
-                  <% if (p.video_url) { %>
-                    <button class="btn small" data-video="<%= p.video_url %>">Обзор</button>
+                <!-- FIX: Слайдер изображений (до 5 картинок) -->
+                <div class="product-images-slider" data-product-id="<%= p._id %>">
+                  <% 
+                    // FIX: Поддержка массива изображений или одного изображения (обратная совместимость)
+                    let images = [];
+                    if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+                      images = p.images;
+                    } else if (p.image_url) {
+                      images = [p.image_url];
+                    }
+                  %>
+                  <% if (images.length > 0) { %>
+                    <div class="product-images-container">
+                      <% images.forEach((img, idx) => { %>
+                        <img 
+                          src="<%= img %>" 
+                          alt="<%= p.name %> - изображение <%= idx + 1 %>"
+                          class="product-image-slide <%= idx === 0 ? 'active' : '' %>"
+                          data-image-index="<%= idx %>"
+                          data-image-src="<%= img %>"
+                          loading="<%= idx === 0 ? 'eager' : 'lazy' %>"
+                        >
+                      <% }) %>
+                      <% if (images.length > 1) { %>
+                        <!-- FIX: Стрелки навигации слайдера -->
+                        <button class="slider-arrow slider-arrow-prev" aria-label="Предыдущее изображение">‹</button>
+                        <button class="slider-arrow slider-arrow-next" aria-label="Следующее изображение">›</button>
+                        <!-- FIX: Индикаторы слайдера -->
+                        <div class="slider-indicators">
+                          <% images.forEach((img, idx) => { %>
+                            <span class="slider-indicator <%= idx === 0 ? 'active' : '' %>" data-slide-index="<%= idx %>"></span>
+                          <% }) %>
+                        </div>
+                      <% } %>
+                    </div>
+                  <% } else { %>
+                    <div class="no-image">Нет изображения</div>
                   <% } %>
                 </div>
 
-                <!-- 🔹 Блок рейтинга -->
-                <div class="product-rating" data-id="<%= p._id %>" data-voted="<%= (votedMap && votedMap[p._id.toString()]) ? 'true' : 'false' %>">
-                  <button class="like-btn btn icon" type="button" aria-label="Лайк" <%= (votedMap && votedMap[p._id.toString()]) ? 'disabled' : '' %>>👍</button>
+                <div class="product-bottom">
+                  <!-- FIX: Блок "Контакты продавца" вместо описания -->
+                  <% 
+                    const contacts = p.contacts || {};
+                    const hasContacts = (contacts.phone || contacts.email || contacts.telegram || contacts.whatsapp);
+                  %>
+                  <% if (hasContacts) { %>
+                    <div class="product-contacts">
+                      <div class="product-contacts-title">Контакты продавца:</div>
+                      <% if (contacts.phone) { %>
+                        <div class="contact-item">
+                          <span class="contact-icon">📞</span>
+                          <a href="tel:<%= contacts.phone %>" class="contact-link"><%= contacts.phone %></a>
+                        </div>
+                      <% } %>
+                      <% if (contacts.email) { %>
+                        <div class="contact-item">
+                          <span class="contact-icon">✉️</span>
+                          <a href="mailto:<%= contacts.email %>" class="contact-link"><%= contacts.email %></a>
+                        </div>
+                      <% } %>
+                      <% if (contacts.telegram) { %>
+                        <div class="contact-item">
+                          <span class="contact-icon">💬</span>
+                          <a href="https://t.me/<%= contacts.telegram.replace('@', '') %>" target="_blank" rel="noopener" class="contact-link"><%= contacts.telegram %></a>
+                        </div>
+                      <% } %>
+                      <% if (contacts.whatsapp) { %>
+                        <div class="contact-item">
+                          <span class="contact-icon">💬</span>
+                          <a href="https://wa.me/<%= contacts.whatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener" class="contact-link"><%= contacts.whatsapp %></a>
+                        </div>
+                      <% } %>
+                    </div>
+                  <% } %>
 
-                  <span class="result">
-                    <% const likes = p.likes || 0; %>
-                    <% const dislikes = p.dislikes || 0; %>
-                    <%= likes - dislikes %>
-                  </span>
+                  <span class="price"><%= p.price %> ₸</span>
 
-                  <button class="dislike-btn btn icon" type="button" aria-label="Дизлайк" <%= (votedMap && votedMap[p._id.toString()]) ? 'disabled' : '' %>>👎</button>
+                  <div class="product-actions">
+                    <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Перейти</a>
+                    <% if (p.video_url) { %>
+                      <button class="btn small" data-video="<%= p.video_url %>">Обзор</button>
+                    <% } %>
+                  </div>
 
-                  <span class="votes">
-                    (<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)
-                  </span>
+                  <!-- 🔹 Блок рейтинга -->
+                  <div class="product-rating" data-id="<%= p._id %>" data-voted="<%= (votedMap && votedMap[p._id.toString()]) ? 'true' : 'false' %>">
+                    <button class="like-btn btn icon" type="button" aria-label="Лайк" <%= (votedMap && votedMap[p._id.toString()]) ? 'disabled' : '' %>>👍</button>
+
+                    <span class="result">
+                      <% const likes = p.likes || 0; %>
+                      <% const dislikes = p.dislikes || 0; %>
+                      <%= likes - dislikes %>
+                    </span>
+
+                    <button class="dislike-btn btn icon" type="button" aria-label="Дизлайк" <%= (votedMap && votedMap[p._id.toString()]) ? 'disabled' : '' %>>👎</button>
+
+                    <span class="votes">
+                      (<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              <!-- FIX: Блок описания товара под карточкой (шире карточки) -->
+              <% if (p.description) { %>
+                <div class="product-description-block" data-product-id="<%= p._id %>" style="display: none;">
+                  <div class="product-description-content">
+                    <h4 class="product-description-title">Описание товара</h4>
+                    <p class="product-description-text"><%= p.description %></p>
+                  </div>
+                </div>
+              <% } %>
             </div>
           <% }) %>
         <% } else { %>
@@ -137,6 +225,16 @@
     <div class="video-overlay-iframe-container" id="videoIframeContainer">
       <!-- FIX: iframe создается динамически по клику, пустой при загрузке -->
     </div>
+  </div>
+</div>
+
+<!-- FIX: Overlay для просмотра изображений в полном размере -->
+<div id="imageOverlay" class="image-overlay" aria-hidden="true">
+  <div class="image-overlay-container">
+    <button class="image-overlay-close" data-close-image aria-label="Закрыть изображение">&times;</button>
+    <img id="imageOverlayImg" src="" alt="" class="image-overlay-img">
+    <button class="image-overlay-nav image-overlay-prev" data-image-nav="prev" aria-label="Предыдущее изображение">‹</button>
+    <button class="image-overlay-nav image-overlay-next" data-image-nav="next" aria-label="Следующее изображение">›</button>
   </div>
 </div>
 

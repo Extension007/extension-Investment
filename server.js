@@ -95,7 +95,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.youtube.com", "https://youtube.com"], // Разрешаем inline скрипты и YouTube API
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://www.youtube.com", "https://youtube.com", "https://*.youtube.com"], // Разрешаем inline скрипты и YouTube API
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
       fontSrc: ["'self'", "https:", "data:"],
       imgSrc: ["'self'", "data:", "https:", "blob:", "https://res.cloudinary.com"], // Добавляем Cloudinary

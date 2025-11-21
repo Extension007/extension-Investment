@@ -1,12 +1,39 @@
 const mongoose = require("mongoose");
 
+// FIX: Схема контактов продавца
+const contactsSchema = new mongoose.Schema({
+  phone: { type: String, trim: true, default: "" },
+  email: { type: String, trim: true, default: "" },
+  telegram: { type: String, trim: true, default: "" },
+  whatsapp: { type: String, trim: true, default: "" }
+}, { _id: false });
+
 const productSchema = new mongoose.Schema({
+  // FIX: Основные поля товара
   name: { type: String, required: true, trim: true },
   description: { type: String, default: "" },
   price: { type: Number, required: true },
   link: { type: String, trim: true },
+  
+  // FIX: Массив изображений (до 5 штук)
+  images: { 
+    type: [String], 
+    default: [],
+    validate: {
+      validator: function(v) {
+        return v.length <= 5;
+      },
+      message: 'Максимальное количество изображений: 5'
+    }
+  },
+  
+  // FIX: Обратная совместимость со старым полем image_url
   image_url: { type: String, default: null },
   video_url: { type: String, trim: true, default: "" },
+  
+  // FIX: Контакты продавца
+  contacts: { type: contactsSchema, default: () => ({}) },
+  
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   voters: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
   category: {
@@ -28,6 +55,14 @@ const productSchema = new mongoose.Schema({
   },
   rejection_reason: { type: String, default: "" }
 }, { timestamps: true });
+
+// FIX: Предварительная валидация перед сохранением - проверка лимита изображений
+productSchema.pre('save', function(next) {
+  if (this.images && this.images.length > 5) {
+    return next(new Error('Максимальное количество изображений: 5'));
+  }
+  next();
+});
 
 // 🔹 Виртуальное поле: итоговый результат (лайки − дизлайки)
 productSchema.virtual("result").get(function () {

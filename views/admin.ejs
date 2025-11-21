@@ -243,73 +243,18 @@
   </div>
 </div>
 
-<!-- Модальное окно для видео -->
-<div id="videoModal" class="modal" aria-hidden="true" style="display:none;">
-  <div class="modal-content" role="dialog" aria-modal="true" aria-label="Видео обзор">
-    <button class="close" data-close-video aria-label="Закрыть видео">&times;</button>
-    <div id="videoFrameContainer">
-      <div id="videoFrame"></div>
+<!-- FIX: Полноэкранный overlay для YouTube видео -->
+<div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
+  <div class="video-overlay-container">
+    <button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
+    <div class="video-overlay-iframe-container" id="videoIframeContainer">
+      <!-- FIX: iframe создается динамически по клику -->
     </div>
   </div>
 </div>
 
-<!-- YouTube API -->
-<script src="https://www.youtube.com/iframe_api"></script>
-
 <script>
-  let playerAdmin = null;
-  let playerReady = false; // флаг готовности
-  let currentVideoIdAdmin = null;
-
-  function onPlayerReadyAdmin(event) {
-    console.log("✅ Плеер готов (admin)");
-    playerReady = true; // только отмечаем готовность, без автозагрузки
-  }
-
-  function onPlayerErrorAdmin(e) {
-    console.error("❌ Ошибка плеера:", e?.data);
-    // При необходимости можно добавить fallback по коду 153 (iOS)
-    // if (e?.data === 153 && currentVideoIdAdmin) {
-    //   const url = "https://www.youtube.com/watch?v=" + currentVideoIdAdmin;
-    //   window.open(url, "_blank", "noopener,noreferrer");
-    // }
-  }
-
-  // Локальная инициализация без переопределения глобальной onYouTubeIframeAPIReady
-  function initAdminPlayer() {
-    try {
-      playerAdmin = new YT.Player('videoFrame', {
-        width: '100%',
-        height: '480',
-        playerVars: { rel: 0, playsinline: 1 }, // playsinline важен для iOS
-        events: {
-          'onReady': onPlayerReadyAdmin,
-          'onError': onPlayerErrorAdmin
-        }
-      });
-    } catch (err) {
-      console.error("❌ Ошибка создания плеера (admin):", err);
-    }
-  }
-
-  // Дождёмся, когда API поднимется
-  window.addEventListener("load", () => {
-    if (typeof YT !== "undefined" && YT.Player) {
-      initAdminPlayer();
-    } else {
-      const t = setInterval(() => {
-        if (typeof YT !== "undefined" && YT.Player) {
-          clearInterval(t);
-          initAdminPlayer();
-        }
-      }, 100);
-      setTimeout(() => clearInterval(t), 5000);
-    }
-  });
-</script>
-
-<script>
-  // Извлечение videoId из YouTube URL
+  // FIX: Извлечение videoId из разных форматов ссылок YouTube
   function extractVideoId(url) {
     if (!url) return null;
     if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
@@ -318,6 +263,18 @@
     const match = url.match(/[?&]v=([^&]+)/);
     return match ? match[1] : null;
   }
+
+  // FIX: Формирование URL для YouTube embed с параметрами для всех устройств
+  // Используем youtube-nocookie.com для лучшей совместимости и избежания ошибки 153
+  function buildYouTubeEmbedUrl(videoId) {
+    if (!videoId) return '';
+    // FIX: Используем минимальные параметры, autoplay добавим через API
+    // origin важен для безопасности YouTube API
+    return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&playsinline=1&enablejsapi=1&controls=1&origin=${encodeURIComponent(window.location.origin)}`;
+  }
+  
+  // FIX: Глобальная переменная для хранения YouTube плеера
+  let youtubePlayer = null;
 
   document.addEventListener("DOMContentLoaded", () => {
     console.log("🔧 Инициализация админ-панели");
@@ -364,7 +321,7 @@
             alert("Карточка одобрена!");
             location.reload();
           } else {
-            alert("Ошибка: " + (data.message или "Неизвестная ошибка"));
+            alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
           }
         } catch (err) {
           console.error("❌ Ошибка одобрения:", err);
@@ -412,7 +369,7 @@
             alert("Карточка отклонена");
             location.reload();
           } else {
-            alert("Ошибка: " + (data.message или "Неизвестная ошибка"));
+            alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
           }
         } catch (err) {
           console.error("Ошибка отклонения:", err);
@@ -421,53 +378,181 @@
       });
     }
 
-    // Видео модалка
-    const videoModal = document.getElementById("videoModal");
-
-    // Открытие видео (iOS-safe: cue + play строго в клике, без таймеров за пределами клика)
-    document.addEventListener('click', async (e) => {
-      const btn = e.target.closest('.btn[data-video]');
-      if (!btn) return;
-
-      const url = btn.getAttribute('data-video');
-      const videoId = extractVideoId(url);
-      if (!videoId) return;
-
-      currentVideoIdAdmin = videoId;
-      videoModal.style.display = 'block';
-      videoModal.setAttribute('aria-hidden', 'false');
-
-      // Если плеер не успел подняться — коротко ждём, оставаясь в контексте клика
-      if (!playerAdmin || !playerReady) {
-        console.warn("⚠️ Плеер ещё не готов, ждём...");
-        await new Promise(r => setTimeout(r, 200));
+    // FIX: Полноэкранный overlay для YouTube видео
+    const videoOverlay = document.getElementById('videoOverlay');
+    const videoIframeContainer = document.getElementById('videoIframeContainer');
+    
+    // FIX: Функция открытия видео overlay (работает на всех устройствах)
+    function openVideoOverlay(videoUrl) {
+      const videoId = extractVideoId(videoUrl);
+      if (!videoId) {
+        console.warn('⚠️ Не удалось извлечь videoId из URL:', videoUrl);
+        return;
       }
-
-      try {
-        if (playerAdmin) {
-          // Важно для iOS: cue вместо load
-          playerAdmin.cueVideoById(currentVideoIdAdmin);
-          // Запуск строго внутри клика
-          playerAdmin.playVideo();
-          console.log("🎬 Запуск видео:", currentVideoIdAdmin);
+      
+      // FIX: Очищаем предыдущий плеер
+      if (youtubePlayer) {
+        try {
+          youtubePlayer.destroy();
+        } catch (e) {
+          // Игнорируем ошибки
         }
-      } catch (err) {
-        console.error("❌ Ошибка запуска, открываем в новой вкладке:", err);
-        window.open(url, '_blank', 'noopener,noreferrer');
+        youtubePlayer = null;
       }
-    });
-
-    // Закрытие видео
-    const closeVideoBtn = document.querySelector('[data-close-video]');
-    if (closeVideoBtn) {
-      closeVideoBtn.addEventListener('click', () => {
-        videoModal.style.display = 'none';
-        videoModal.setAttribute('aria-hidden', 'true');
-        if (playerAdmin && typeof playerAdmin.stopVideo === 'function') {
-          playerAdmin.stopVideo();
-        }
-      });
+      
+      // FIX: Очищаем контейнер перед добавлением нового iframe
+      videoIframeContainer.innerHTML = '';
+      
+      // FIX: Показываем overlay
+      videoOverlay.style.display = 'flex';
+      videoOverlay.setAttribute('aria-hidden', 'false');
+      
+      // FIX: Предотвращаем скролл body при открытом видео (важно для мобильных)
+      document.body.style.overflow = 'hidden';
+      
+      // FIX: Загружаем YouTube IFrame API если еще не загружен
+      if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        
+        // FIX: Ждем загрузки API
+        window.onYouTubeIframeAPIReady = function() {
+          createYouTubePlayer(videoId);
+        };
+      } else {
+        // FIX: API уже загружен, создаем плеер сразу
+        createYouTubePlayer(videoId);
+      }
+      
+      console.log('▶️ Открытие видео:', videoId);
     }
+    
+    // FIX: Функция создания YouTube плеера с автовоспроизведением
+    function createYouTubePlayer(videoId) {
+      try {
+        youtubePlayer = new YT.Player(videoIframeContainer, {
+          videoId: videoId,
+          playerVars: {
+            'rel': 0,
+            'modestbranding': 1,
+            'playsinline': 1,
+            'controls': 1,
+            'autoplay': 1,
+            'mute': 1,
+            'enablejsapi': 1,
+            'origin': window.location.origin
+          },
+          events: {
+            'onReady': function(event) {
+              // FIX: Запускаем видео после готовности плеера
+              try {
+                event.target.playVideo();
+                // FIX: Включаем звук через небольшую задержку после начала воспроизведения
+                setTimeout(function() {
+                  try {
+                    event.target.unMute();
+                  } catch (e) {
+                    // Игнорируем ошибки включения звука
+                  }
+                }, 1000);
+              } catch (e) {
+                console.log('ℹ️ Автовоспроизведение недоступно, пользователь может запустить вручную');
+              }
+            },
+            'onError': function(event) {
+              console.error('❌ Ошибка YouTube плеера:', event.data);
+              if (event.data === 153) {
+                console.log('ℹ️ Ошибка 153: Видео готово, но автовоспроизведение заблокировано. Нажмите play вручную.');
+              }
+            }
+          }
+        });
+      } catch (e) {
+        console.error('❌ Ошибка создания YouTube плеера:', e);
+        // FIX: Fallback - используем обычный iframe если API не работает
+        const iframe = document.createElement('iframe');
+        iframe.src = buildYouTubeEmbedUrl(videoId);
+        iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture; accelerometer; gyroscope');
+        iframe.setAttribute('playsinline', '1');
+        iframe.setAttribute('frameborder', '0');
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.setAttribute('webkitallowfullscreen', '');
+        iframe.setAttribute('mozallowfullscreen', '');
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.style.display = 'block';
+        videoIframeContainer.innerHTML = '';
+        videoIframeContainer.appendChild(iframe);
+      }
+    }
+    
+    // FIX: Функция закрытия видео overlay
+    function closeVideoOverlay() {
+      // FIX: Останавливаем и уничтожаем YouTube плеер
+      if (youtubePlayer) {
+        try {
+          youtubePlayer.stopVideo();
+          youtubePlayer.destroy();
+        } catch (e) {
+          // Игнорируем ошибки
+        }
+        youtubePlayer = null;
+      }
+      
+      // FIX: Очищаем src у iframe для остановки воспроизведения (fallback)
+      const iframe = videoIframeContainer.querySelector('iframe');
+      if (iframe) {
+        iframe.src = '';
+      }
+      
+      // FIX: Очищаем контейнер
+      videoIframeContainer.innerHTML = '';
+      
+      // FIX: Скрываем overlay
+      videoOverlay.style.display = 'none';
+      videoOverlay.setAttribute('aria-hidden', 'true');
+      
+      // FIX: Восстанавливаем скролл body
+      document.body.style.overflow = '';
+      
+      console.log('🔒 Закрытие видео overlay');
+    }
+    
+    // FIX: Обработчик клика и touch-событий на кнопку "Обзор" и закрытия overlay (работает на всех устройствах)
+    const handleVideoClick = (e) => {
+      // FIX: Открытие видео по клику на кнопку "Обзор"
+      const videoBtn = e.target.closest('.btn[data-video]');
+      if (videoBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const videoUrl = videoBtn.getAttribute('data-video');
+        if (videoUrl) {
+          openVideoOverlay(videoUrl);
+        }
+        return;
+      }
+      
+      // FIX: Закрытие overlay по кнопке закрытия
+      if (e.target.closest('[data-close-video]')) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeVideoOverlay();
+        return;
+      }
+      
+      // FIX: Закрытие overlay по клику на фон (но не на контейнер с видео)
+      if (e.target === videoOverlay) {
+        closeVideoOverlay();
+        return;
+      }
+    };
+    
+    // FIX: Поддержка клика и touch для всех устройств
+    document.addEventListener('click', handleVideoClick, true);
+    document.addEventListener('touchend', handleVideoClick, true);
   });
 </script>
 
