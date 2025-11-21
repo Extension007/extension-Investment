@@ -367,30 +367,91 @@ app.get("/cabinet", requireUser, async (req, res) => {
 });
 
 // Пользователь создаёт карточку (на модерацию: статус pending)
-app.post("/cabinet/product", requireUser, upload.single("image"), async (req, res) => {
+// FIX: Загрузка до 5 изображений с обработкой ошибок multer
+app.post("/cabinet/product", requireUser, (req, res, next) => {
+  upload.array("images", 5)(req, res, (err) => {
+    if (err) {
+      console.error("❌ Ошибка multer при загрузке файлов:", err);
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ success: false, message: "Максимальное количество изображений: 5" });
+      }
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, message: "Размер файла превышает 5MB" });
+      }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ success: false, message: "Неожиданное поле для загрузки файла" });
+      }
+      if (err.message && err.message.includes('Недопустимый тип файла')) {
+        return res.status(400).json({ success: false, message: err.message });
+      }
+      return res.status(400).json({ success: false, message: "Ошибка загрузки файлов: " + (err.message || "Неизвестная ошибка") });
+    }
+    next();
+  });
+}, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
+    console.log("📥 Получен запрос на создание карточки");
+    console.log("📸 Количество файлов:", req.files ? req.files.length : 0);
+    console.log("📋 Тело запроса:", req.body);
+    
     // Проверяем, что пользователь залогинен и имеет ID
     if (!req.session.user || !req.session.user._id) {
       console.error("❌ Пользователь не авторизован или нет ID в сессии");
       return res.status(401).json({ success: false, message: "Необходима авторизация" });
     }
 
-    const { name, description, link, video_url, category } = req.body;
+    const { name, description, link, video_url, category, phone, email, telegram, whatsapp, contact_method } = req.body;
     const price = Number(req.body.price || 0) || 0;
+    
+    // FIX: Проверка обязательных полей
+    if (!name || !name.trim()) {
+      console.error("❌ Отсутствует название товара");
+      return res.status(400).json({ success: false, message: "Название товара обязательно" });
+    }
+    
+    if (!price || price <= 0) {
+      console.error("❌ Неверная цена:", price);
+      return res.status(400).json({ success: false, message: "Цена должна быть больше 0" });
+    }
     const categoryValue = CATEGORY_KEYS.includes(category) ? category : "home";
     
-    // Обрабатываем путь к изображению
+    // FIX: Формируем объект контактов продавца
+    const contacts = {
+      phone: phone ? phone.trim() : "",
+      email: email ? email.trim() : "",
+      telegram: telegram ? telegram.trim() : "",
+      whatsapp: whatsapp ? whatsapp.trim() : "",
+      contact_method: contact_method ? contact_method.trim() : "" // FIX: Способ связи
+    };
+    
+    // FIX: Обрабатываем массив изображений (до 5 шт.)
+    let images = [];
     let image_url = null;
-    if (req.file) {
-      // Если используется Cloudinary, путь уже в req.file.path
-      // Если используется локальное хранилище, нужен относительный путь
-      if (req.file.path && !req.file.path.startsWith('http')) {
-        // Локальное хранилище - используем относительный путь
-        image_url = '/uploads/' + req.file.filename;
-      } else {
-        // Cloudinary - используем полный путь
-        image_url = req.file.path;
+    
+    if (req.files && req.files.length > 0) {
+      // Ограничиваем до 5 изображений
+      const filesToProcess = req.files.slice(0, 5);
+      
+      filesToProcess.forEach(file => {
+        let imagePath = null;
+        // Если используется Cloudinary, путь уже в file.path
+        // Если используется локальное хранилище, нужен относительный путь
+        if (file.path && !file.path.startsWith('http')) {
+          // Локальное хранилище - используем относительный путь
+          imagePath = '/uploads/' + file.filename;
+        } else {
+          // Cloudinary - используем полный путь
+          imagePath = file.path;
+        }
+        if (imagePath) {
+          images.push(imagePath);
+        }
+      });
+      
+      // Для обратной совместимости берем первое изображение
+      if (images.length > 0) {
+        image_url = images[0];
       }
     }
     
@@ -415,7 +476,9 @@ app.post("/cabinet/product", requireUser, upload.single("image"), async (req, re
       price, 
       owner: ownerId, 
       category: categoryValue, 
-      image_url, 
+      images, // FIX: Массив изображений (до 5 шт.)
+      image_url, // FIX: Для обратной совместимости
+      contacts, // FIX: Контакты продавца
       status: "pending",
       likes: 0,
       dislikes: 0

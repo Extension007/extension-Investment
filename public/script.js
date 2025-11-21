@@ -32,9 +32,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // FIX: Overlay для просмотра изображений
   const imageOverlay = document.getElementById('imageOverlay');
   const imageOverlayImg = document.getElementById('imageOverlayImg');
+  
+  // FIX: Модальное окно для просмотра изображений
+  const imageModal = document.getElementById('imageModal');
+  const imageModalImage = document.getElementById('imageModalImage');
+  const imageModalCurrent = document.getElementById('imageModalCurrent');
+  const imageModalTotal = document.getElementById('imageModalTotal');
+  const imageModalTitle = document.getElementById('imageModalTitle');
+  
   let currentImageIndex = 0;
   let currentImages = [];
-  let currentProductId = null;
+  let currentProductName = '';
   
   // FIX: Функция открытия видео overlay
   function openVideoOverlay(videoUrl) {
@@ -101,26 +109,66 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.style.overflow = '';
   }
   
-  // FIX: Функция открытия overlay с изображением
+  // FIX: Функция открытия overlay с изображением (старый вариант)
   function openImageOverlay(imageSrc, imageIndex, images, productId) {
     currentImages = images;
     currentImageIndex = imageIndex;
-    currentProductId = productId;
-    imageOverlayImg.src = imageSrc;
-    imageOverlayImg.alt = `Изображение ${imageIndex + 1} из ${images.length}`;
-    imageOverlay.classList.add('show');
-    imageOverlay.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
+    if (imageOverlay && imageOverlayImg) {
+      imageOverlayImg.src = imageSrc;
+      imageOverlayImg.alt = `Изображение ${imageIndex + 1} из ${images.length}`;
+      imageOverlay.classList.add('show');
+      imageOverlay.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  // FIX: Функция открытия модального окна с изображением
+  function openImageModal(imageSrc, imageIndex, images, productName) {
+    currentImages = images || [imageSrc];
+    currentImageIndex = imageIndex || 0;
+    currentProductName = productName || '';
+    
+    if (imageModal && imageModalImage) {
+      imageModalImage.src = currentImages[currentImageIndex];
+      imageModalImage.alt = `${productName} - изображение ${currentImageIndex + 1}`;
+      
+      if (imageModalCurrent) {
+        imageModalCurrent.textContent = currentImageIndex + 1;
+      }
+      if (imageModalTotal) {
+        imageModalTotal.textContent = currentImages.length;
+      }
+      if (imageModalTitle) {
+        imageModalTitle.textContent = productName;
+      }
+      
+      imageModal.style.display = 'flex';
+      imageModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
   }
 
   // FIX: Функция закрытия overlay с изображением
   function closeImageOverlay() {
-    imageOverlay.classList.remove('show');
-    imageOverlay.setAttribute('aria-hidden', 'true');
+    if (imageOverlay) {
+      imageOverlay.classList.remove('show');
+      imageOverlay.setAttribute('aria-hidden', 'true');
+    }
     document.body.style.overflow = '';
     currentImages = [];
     currentImageIndex = 0;
-    currentProductId = null;
+  }
+
+  // FIX: Функция закрытия модального окна с изображением
+  function closeImageModal() {
+    if (imageModal) {
+      imageModal.style.display = 'none';
+      imageModal.setAttribute('aria-hidden', 'true');
+    }
+    document.body.style.overflow = '';
+    currentImages = [];
+    currentImageIndex = 0;
+    currentProductName = '';
   }
 
   // FIX: Функция переключения изображения в overlay
@@ -131,8 +179,21 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (direction === 'prev') {
       currentImageIndex = (currentImageIndex - 1 + currentImages.length) % currentImages.length;
     }
-    imageOverlayImg.src = currentImages[currentImageIndex];
-    imageOverlayImg.alt = `Изображение ${currentImageIndex + 1} из ${currentImages.length}`;
+    
+    // Обновляем overlay (старый вариант)
+    if (imageOverlay && imageOverlayImg) {
+      imageOverlayImg.src = currentImages[currentImageIndex];
+      imageOverlayImg.alt = `Изображение ${currentImageIndex + 1} из ${currentImages.length}`;
+    }
+    
+    // Обновляем модальное окно (новый вариант)
+    if (imageModal && imageModalImage) {
+      imageModalImage.src = currentImages[currentImageIndex];
+      imageModalImage.alt = `${currentProductName} - изображение ${currentImageIndex + 1}`;
+      if (imageModalCurrent) {
+        imageModalCurrent.textContent = currentImageIndex + 1;
+      }
+    }
   }
 
   // FIX: Инициализация tooltip и блока описания
@@ -254,12 +315,33 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       });
 
-      // FIX: Обработчик клика на изображение для открытия в overlay
+      // FIX: Обработчик клика на изображение для открытия в модальном окне
       images.forEach((img, idx) => {
         img.addEventListener('click', () => {
-          const allImages = Array.from(images).map(i => i.getAttribute('data-image-src'));
-          const productId = slider.getAttribute('data-product-id');
-          openImageOverlay(img.getAttribute('data-image-src'), idx, allImages, productId);
+          // Пытаемся получить массив изображений из data-атрибута
+          let allImages = [];
+          try {
+            const imagesData = img.getAttribute('data-product-images');
+            if (imagesData) {
+              allImages = JSON.parse(imagesData);
+            } else {
+              allImages = Array.from(images).map(i => i.getAttribute('data-image-src') || i.src);
+            }
+          } catch (e) {
+            allImages = Array.from(images).map(i => i.getAttribute('data-image-src') || i.src);
+          }
+          
+          const productName = img.getAttribute('data-product-name') || '';
+          const imageSrc = img.getAttribute('data-image-src') || img.src;
+          
+          // Используем новое модальное окно
+          if (imageModal) {
+            openImageModal(imageSrc, idx, allImages, productName);
+          } else if (imageOverlay) {
+            // Fallback на старое overlay
+            const productId = slider.getAttribute('data-product-id');
+            openImageOverlay(imageSrc, idx, allImages, productId);
+          }
         });
       });
 
@@ -313,6 +395,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // FIX: Клавиатурная навигация для модального окна изображений
+  document.addEventListener('keydown', (e) => {
+    if (!imageModal || imageModal.style.display === 'none') return;
+    
+    if (e.key === 'Escape') {
+      closeImageModal();
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      navigateImage('prev');
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      navigateImage('next');
+    }
+  });
+
   // FIX: Инициализация всех компонентов
   initTooltipsAndDescription();
   initImageSliders();
@@ -336,6 +433,62 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       e.stopPropagation();
       closeVideoOverlay();
+      return;
+    }
+    
+    // FIX: Обработчик клика на изображения с классом image-clickable
+    if (e.target.classList.contains('image-clickable')) {
+      e.preventDefault();
+      e.stopPropagation();
+      const img = e.target;
+      let allImages = [];
+      try {
+        const imagesData = img.getAttribute('data-product-images');
+        if (imagesData) {
+          allImages = JSON.parse(imagesData);
+        } else {
+          allImages = [img.getAttribute('data-image-src') || img.src];
+        }
+      } catch (e) {
+        allImages = [img.getAttribute('data-image-src') || img.src];
+      }
+      
+      const imageIndex = parseInt(img.getAttribute('data-image-index')) || 0;
+      const productName = img.getAttribute('data-product-name') || '';
+      const imageSrc = img.getAttribute('data-image-src') || img.src;
+      
+      if (imageModal) {
+        openImageModal(imageSrc, imageIndex, allImages, productName);
+      }
+      return;
+    }
+    
+    // FIX: Закрытие модального окна изображений
+    if (e.target.closest('[data-close-image]')) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeImageModal();
+      return;
+    }
+    
+    // FIX: Навигация по изображениям в модальном окне
+    if (e.target.closest('.image-nav-prev')) {
+      e.preventDefault();
+      e.stopPropagation();
+      navigateImage('prev');
+      return;
+    }
+    
+    if (e.target.closest('.image-nav-next')) {
+      e.preventDefault();
+      e.stopPropagation();
+      navigateImage('next');
+      return;
+    }
+    
+    // FIX: Закрытие модального окна по клику на фон
+    if (e.target === imageModal) {
+      closeImageModal();
       return;
     }
     

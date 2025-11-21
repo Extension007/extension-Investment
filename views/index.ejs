@@ -87,10 +87,13 @@
                         <img 
                           src="<%= img %>" 
                           alt="<%= p.name %> - изображение <%= idx + 1 %>"
-                          class="product-image-slide <%= idx === 0 ? 'active' : '' %>"
+                          class="product-image-slide <%= idx === 0 ? 'active' : '' %> image-clickable"
                           data-image-index="<%= idx %>"
                           data-image-src="<%= img %>"
+                          data-product-images='<%= JSON.stringify(images) %>'
+                          data-product-name="<%= p.name %>"
                           loading="<%= idx === 0 ? 'eager' : 'lazy' %>"
+                          style="cursor: pointer;"
                         >
                       <% }) %>
                       <% if (images.length > 1) { %>
@@ -110,41 +113,51 @@
                   <% } %>
                 </div>
 
-                <div class="product-bottom">
-                  <!-- FIX: Блок "Контакты продавца" вместо описания -->
-                  <% 
-                    const contacts = p.contacts || {};
-                    const hasContacts = (contacts.phone || contacts.email || contacts.telegram || contacts.whatsapp);
-                  %>
-                  <% if (hasContacts) { %>
-                    <div class="product-contacts">
-                      <div class="product-contacts-title">Контакты продавца:</div>
+                <!-- FIX: Отображение контактов продавца сразу ниже картинки -->
+                <% 
+                  const contacts = p.contacts || {};
+                  const hasContacts = (contacts.phone || contacts.email || contacts.telegram || contacts.whatsapp || contacts.contact_method);
+                %>
+                <% if (hasContacts) { %>
+                  <div class="product-contacts">
+                    <h4 class="contacts-title">Контакты:</h4>
+                    <div class="contacts-list">
                       <% if (contacts.phone) { %>
-                        <div class="contact-item">
+                        <a href="tel:<%= contacts.phone %>" class="contact-item">
                           <span class="contact-icon">📞</span>
-                          <a href="tel:<%= contacts.phone %>" class="contact-link"><%= contacts.phone %></a>
-                        </div>
+                          <span><%= contacts.phone %></span>
+                        </a>
                       <% } %>
                       <% if (contacts.email) { %>
-                        <div class="contact-item">
+                        <a href="mailto:<%= contacts.email %>" class="contact-item">
                           <span class="contact-icon">✉️</span>
-                          <a href="mailto:<%= contacts.email %>" class="contact-link"><%= contacts.email %></a>
-                        </div>
+                          <span><%= contacts.email %></span>
+                        </a>
                       <% } %>
                       <% if (contacts.telegram) { %>
-                        <div class="contact-item">
-                          <span class="contact-icon">💬</span>
-                          <a href="https://t.me/<%= contacts.telegram.replace('@', '') %>" target="_blank" rel="noopener" class="contact-link"><%= contacts.telegram %></a>
-                        </div>
+                        <a href="https://t.me/<%= contacts.telegram.replace('@', '') %>" target="_blank" rel="noopener" class="contact-item">
+                          <span class="contact-icon">✈️</span>
+                          <span><%= contacts.telegram %></span>
+                        </a>
                       <% } %>
                       <% if (contacts.whatsapp) { %>
-                        <div class="contact-item">
+                        <a href="https://wa.me/<%= contacts.whatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener" class="contact-item">
                           <span class="contact-icon">💬</span>
-                          <a href="https://wa.me/<%= contacts.whatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener" class="contact-link"><%= contacts.whatsapp %></a>
-                        </div>
+                          <span><%= contacts.whatsapp %></span>
+                        </a>
                       <% } %>
                     </div>
-                  <% } %>
+                    <!-- FIX: Отображение способа связи -->
+                    <% if (contacts.contact_method) { %>
+                      <div class="contact-method">
+                        <span class="contact-method-label">Способ связи:</span>
+                        <span class="contact-method-text"><%= contacts.contact_method %></span>
+                      </div>
+                    <% } %>
+                  </div>
+                <% } %>
+
+                <div class="product-bottom">
 
                   <span class="price"><%= p.price %> ₸</span>
 
@@ -235,6 +248,24 @@
     <img id="imageOverlayImg" src="" alt="" class="image-overlay-img">
     <button class="image-overlay-nav image-overlay-prev" data-image-nav="prev" aria-label="Предыдущее изображение">‹</button>
     <button class="image-overlay-nav image-overlay-next" data-image-nav="next" aria-label="Следующее изображение">›</button>
+  </div>
+</div>
+
+<!-- FIX: Модальное окно для просмотра изображений в полном размере -->
+<div id="imageModal" class="modal image-modal" aria-hidden="true" style="display:none;">
+  <div class="modal-content image-modal-content" role="dialog" aria-modal="true" aria-label="Просмотр изображения">
+    <button class="close" data-close-image aria-label="Закрыть изображение">&times;</button>
+    <div class="image-modal-container">
+      <button class="image-nav-btn image-nav-prev" aria-label="Предыдущее изображение">‹</button>
+      <div class="image-modal-image-wrapper">
+        <img id="imageModalImage" src="" alt="" class="image-modal-image">
+        <div class="image-modal-counter">
+          <span id="imageModalCurrent">1</span> / <span id="imageModalTotal">1</span>
+        </div>
+        <div class="image-modal-title" id="imageModalTitle"></div>
+      </div>
+      <button class="image-nav-btn image-nav-next" aria-label="Следующее изображение">›</button>
+    </div>
   </div>
 </div>
 

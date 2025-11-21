@@ -33,7 +33,13 @@
         <input type="url" name="link" placeholder="Ссылка">
         <input type="url" name="video_url" placeholder="YouTube ссылка">
         <input type="number" name="price" placeholder="Цена" min="0" step="1" required>
-        <input type="file" name="image" accept="image/*">
+        <!-- FIX: Загрузка до 5 изображений -->
+        <div class="form-section">
+          <label for="images">Изображения (до 5 шт.):</label>
+          <input type="file" id="images" name="images" accept="image/*" multiple data-max-files="5">
+          <div id="imagePreview" class="image-preview-container" style="display: none; margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;"></div>
+          <small class="form-hint">Можно выбрать до 5 изображений</small>
+        </div>
         <select name="category" required>
           <option value="home">Для дома</option>
           <option value="beauty">Красота и здоровье</option>
@@ -42,6 +48,18 @@
           <option value="electronics">Электроника</option>
           <option value="plumbing">Сантехника</option>
         </select>
+        
+        <!-- FIX: Секция контактов продавца -->
+        <div class="form-section">
+          <h3 style="margin-bottom: 10px;">Контакты продавца</h3>
+          <input type="tel" name="phone" placeholder="Телефон">
+          <input type="email" name="email" placeholder="Email">
+          <input type="text" name="telegram" placeholder="Telegram (например: @username)">
+          <input type="text" name="whatsapp" placeholder="WhatsApp (номер телефона)">
+          <label for="contact_method">Способ связи:</label>
+          <textarea id="contact_method" name="contact_method" placeholder="Укажите предпочтительный способ связи (например: Звоните с 9:00 до 18:00, Пишите в Telegram)" rows="2"></textarea>
+        </div>
+        
         <button type="submit" class="btn primary">Отправить</button>
       </form>
       <div id="createProductMsg" class="note" style="margin-top:10px;"></div>
@@ -152,19 +170,64 @@
     if (form) {
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
+        
+        // FIX: Проверка количества изображений перед отправкой
+        const imagesInput = form.querySelector('input[name="images"]');
+        if (imagesInput && imagesInput.files.length > 5) {
+          msg.textContent = "Максимальное количество изображений: 5";
+          msg.style.color = "#b00020";
+          return;
+        }
+        
+        // FIX: Проверка размера файлов
+        if (imagesInput && imagesInput.files.length > 0) {
+          for (let i = 0; i < imagesInput.files.length; i++) {
+            const file = imagesInput.files[i];
+            if (file.size > 5 * 1024 * 1024) {
+              msg.textContent = `Файл "${file.name}" превышает 5MB`;
+              msg.style.color = "#b00020";
+              return;
+            }
+          }
+        }
+        
+        // FIX: Показываем сообщение о загрузке
+        msg.textContent = "Отправка...";
+        msg.style.color = "#666";
+        
         const formData = new FormData(form);
+        
         try {
+          console.log("📤 Отправка формы...");
+          console.log("📸 Количество изображений:", imagesInput ? imagesInput.files.length : 0);
+          
           const res = await fetch("/cabinet/product", { method: "POST", body: formData });
+          
+          console.log("📥 Ответ получен, статус:", res.status);
+          
+          // FIX: Проверяем, что ответ - JSON
+          const contentType = res.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            const text = await res.text();
+            console.error("❌ Ответ не JSON:", text);
+            msg.textContent = "Ошибка: " + (text || "Неверный формат ответа");
+            msg.style.color = "#b00020";
+            return;
+          }
+          
           const json = await res.json();
+          console.log("📋 JSON ответ:", json);
+          
           if (json.success) {
             msg.textContent = "Карточка отправлена на модерацию.";
             msg.style.color = "green";
             setTimeout(() => location.reload(), 800);
           } else {
-            msg.textContent = json.message || "Ошибка";
+            msg.textContent = json.message || "Ошибка при создании карточки";
             msg.style.color = "#b00020";
           }
         } catch (err) {
+          console.error("❌ Ошибка при отправке:", err);
           msg.textContent = "Ошибка сети: " + err.message;
           msg.style.color = "#b00020";
         }
@@ -371,6 +434,65 @@
     document.addEventListener('click', handleVideoClick, true);
     document.addEventListener('touchend', handleVideoClick, true);
   });
+
+  // FIX: Превью выбранных изображений
+  const imagesInput = document.getElementById('images');
+  const imagePreview = document.getElementById('imagePreview');
+  
+  if (imagesInput && imagePreview) {
+    imagesInput.addEventListener('change', function(e) {
+      const files = Array.from(e.target.files);
+      const maxFiles = parseInt(imagesInput.getAttribute('data-max-files')) || 5;
+      
+      // Ограничиваем количество файлов
+      if (files.length > maxFiles) {
+        alert(`Можно выбрать не более ${maxFiles} изображений`);
+        e.target.value = '';
+        imagePreview.innerHTML = '';
+        imagePreview.style.display = 'none';
+        return;
+      }
+      
+      // Очищаем предыдущие превью
+      imagePreview.innerHTML = '';
+      
+      if (files.length === 0) {
+        imagePreview.style.display = 'none';
+        return;
+      }
+      
+      imagePreview.style.display = 'grid';
+      
+      files.forEach((file, index) => {
+        // Проверка размера файла (макс 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
+          return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const div = document.createElement('div');
+          div.className = 'preview-item';
+          div.style.position = 'relative';
+          div.style.aspectRatio = '1';
+          div.style.overflow = 'hidden';
+          div.style.borderRadius = '8px';
+          div.style.border = '2px solid #ddd';
+          
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.objectFit = 'cover';
+          
+          div.appendChild(img);
+          imagePreview.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+  }
 </script>
 
 </body>

@@ -56,7 +56,21 @@ if (!hasCloudinary) {
   console.log("✅ Используется локальное хранилище файлов (uploads/)");
 }
 
+// FIX: Фильтр файлов - только изображения
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Недопустимый тип файла. Разрешены только PNG, JPEG, JPG, WEBP'), false);
+  }
+};
+
 module.exports = multer({ 
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+  fileFilter,
+  limits: { 
+    fileSize: 5 * 1024 * 1024, // 5MB на файл
+    files: 5 // максимум 5 файлов
+  }
 });

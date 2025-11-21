@@ -5,7 +5,8 @@ const contactsSchema = new mongoose.Schema({
   phone: { type: String, trim: true, default: "" },
   email: { type: String, trim: true, default: "" },
   telegram: { type: String, trim: true, default: "" },
-  whatsapp: { type: String, trim: true, default: "" }
+  whatsapp: { type: String, trim: true, default: "" },
+  contact_method: { type: String, trim: true, default: "" } // FIX: Способ связи
 }, { _id: false });
 
 const productSchema = new mongoose.Schema({
