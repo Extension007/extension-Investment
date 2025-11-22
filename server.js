@@ -103,7 +103,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https:", "data:"],
       imgSrc: ["'self'", "data:", "https:", "blob:", "https://res.cloudinary.com"], // Добавляем Cloudinary
       connectSrc: ["'self'", "https:"],
-      frameSrc: ["'self'", "https://www.youtube.com", "https://youtube.com", "https://youtu.be", "https://*.youtube.com", "https://www.youtube-nocookie.com"],
+      frameSrc: ["'self'", "https://www.youtube.com", "https://youtube.com", "https://youtu.be", "https://*.youtube.com", "https://www.youtube-nocookie.com", "https://vk.com", "https://*.vk.com", "https://www.instagram.com", "https://*.instagram.com"],
       mediaSrc: ["'self'", "https:"],
       objectSrc: ["'none'"]
     }

@@ -2,6 +2,16 @@
 // Вспомогательные функции
 // =======================
 
+// Определение типа видео по URL
+function getVideoType(url) {
+  if (!url) return null;
+  url = url.toLowerCase();
+  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+  if (url.includes('vk.com') || url.includes('vkontakte.ru')) return 'vk';
+  if (url.includes('instagram.com')) return 'instagram';
+  return null;
+}
+
 // FIX: Извлечение videoId из разных форматов ссылок YouTube
 function extractVideoId(url) {
   if (!url) return null;
@@ -12,10 +22,52 @@ function extractVideoId(url) {
   return match ? match[1] : null;
 }
 
-// FIX: Формирование URL для YouTube embed без autoplay (избегаем ошибку 153)
+// Извлечение параметров из URL ВКонтакте
+function extractVKVideoParams(url) {
+  if (!url) return null;
+  // Формат: https://vk.com/video{owner_id}_{video_id}
+  // Или: https://vk.com/video?z=video{owner_id}_{video_id}
+  let match = url.match(/video(-?\d+)_(\d+)/);
+  if (match) {
+    return { ownerId: match[1], videoId: match[2] };
+  }
+  // Альтернативный формат: https://vk.com/video_ext.php?oid=...&id=...
+  match = url.match(/[?&]oid=(-?\d+).*[?&]id=(\d+)/);
+  if (match) {
+    return { ownerId: match[1], videoId: match[2] };
+  }
+  return null;
+}
+
+// Извлечение ID публикации из URL Instagram
+function extractInstagramPostId(url) {
+  if (!url) return null;
+  // Формат: https://www.instagram.com/p/{post_id}/
+  // Или: https://www.instagram.com/reel/{reel_id}/
+  let match = url.match(/\/(p|reel)\/([A-Za-z0-9_-]+)/);
+  if (match) {
+    return match[2];
+  }
+  return null;
+}
+
+// FIX: Формирование URL для YouTube embed
 function buildYouTubeEmbedUrl(videoId) {
   if (!videoId) return '';
-  return `https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1`;
+  return `https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&enablejsapi=1&controls=1&origin=${encodeURIComponent(window.location.origin)}`;
+}
+
+// Формирование URL для ВКонтакте embed
+function buildVKEmbedUrl(params) {
+  if (!params || !params.ownerId || !params.videoId) return '';
+  return `https://vk.com/video_ext.php?oid=${params.ownerId}&id=${params.videoId}&hash=${Date.now()}`;
+}
+
+// Формирование URL для Instagram embed
+function buildInstagramEmbedUrl(postId) {
+  if (!postId) return '';
+  // Instagram использует oEmbed API, но можно использовать прямую ссылку на embed
+  return `https://www.instagram.com/p/${postId}/embed/`;
 }
 
 // =======================
@@ -59,18 +111,42 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentImages = [];
   let currentProductName = '';
   
-  // FIX: Функция открытия видео overlay
+  // FIX: Функция открытия видео overlay (поддержка YouTube, VK, Instagram)
   function openVideoOverlay(videoUrl) {
     if (!videoUrl) return;
     
-    const videoId = extractVideoId(videoUrl);
-    if (!videoId) {
-      // FIX: Fallback - открываем в новой вкладке если не удалось извлечь ID
+    currentVideoUrl = videoUrl;
+    
+    // Определяем тип видео
+    const videoType = getVideoType(videoUrl);
+    let embedUrl = '';
+    
+    if (videoType === 'youtube') {
+      const videoId = extractVideoId(videoUrl);
+      if (!videoId) {
+        window.open(videoUrl, '_blank');
+        return;
+      }
+      embedUrl = buildYouTubeEmbedUrl(videoId);
+    } else if (videoType === 'vk') {
+      const vkParams = extractVKVideoParams(videoUrl);
+      if (!vkParams) {
+        window.open(videoUrl, '_blank');
+        return;
+      }
+      embedUrl = buildVKEmbedUrl(vkParams);
+    } else if (videoType === 'instagram') {
+      const instagramId = extractInstagramPostId(videoUrl);
+      if (!instagramId) {
+        window.open(videoUrl, '_blank');
+        return;
+      }
+      embedUrl = buildInstagramEmbedUrl(instagramId);
+    } else {
+      // Неизвестный тип - открываем в новой вкладке
       window.open(videoUrl, '_blank');
       return;
     }
-    
-    currentVideoUrl = videoUrl;
     
     // FIX: Очищаем предыдущий iframe
     if (currentVideoIframe) {
@@ -81,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // FIX: Создаем новый iframe
     const iframe = document.createElement('iframe');
-    iframe.src = buildYouTubeEmbedUrl(videoId);
+    iframe.src = embedUrl;
     iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture');
     iframe.setAttribute('allowfullscreen', '');
     iframe.setAttribute('playsinline', '1');
@@ -91,6 +167,12 @@ document.addEventListener("DOMContentLoaded", () => {
     iframe.style.height = '100%';
     iframe.style.border = 'none';
     iframe.style.display = 'block';
+    
+    // Для Instagram нужно добавить специфичные атрибуты
+    if (videoType === 'instagram') {
+      iframe.setAttribute('scrolling', 'no');
+      iframe.style.minHeight = '600px';
+    }
     
     // FIX: Обработчик ошибки загрузки iframe
     iframe.onerror = function() {
