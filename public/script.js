@@ -196,79 +196,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // FIX: Инициализация tooltip и блока описания
-  function initTooltipsAndDescription() {
-    const infoIcons = document.querySelectorAll('.product-info-icon');
-    infoIcons.forEach(icon => {
-      const description = icon.getAttribute('data-description');
-      if (!description) return;
-
-      const productCard = icon.closest('.product-card');
-      const productId = productCard ? productCard.getAttribute('data-product-id') : null;
-      const descriptionBlock = productId ? document.querySelector(`.product-description-block[data-product-id="${productId}"]`) : null;
-
-      // FIX: Создаем tooltip элемент
-      const tooltip = document.createElement('div');
-      tooltip.className = 'product-info-tooltip';
-      tooltip.textContent = description;
-      icon.appendChild(tooltip);
-
-      let tooltipTimeout = null;
-      let isTooltipVisible = false;
-
-      // FIX: Показываем tooltip при наведении (desktop) с задержкой
-      icon.addEventListener('mouseenter', () => {
-        if (tooltipTimeout) clearTimeout(tooltipTimeout);
-        tooltipTimeout = setTimeout(() => {
-          tooltip.classList.add('show');
-          isTooltipVisible = true;
-        }, 150);
-      });
-
-      // FIX: Скрываем tooltip при уходе курсора
-      icon.addEventListener('mouseleave', () => {
-        if (tooltipTimeout) clearTimeout(tooltipTimeout);
-        tooltip.classList.remove('show');
-        isTooltipVisible = false;
-      });
-
-      // FIX: Поддержка touch-событий для мобильных (tap для показа/скрытия)
-      let touchStartTime = 0;
-      icon.addEventListener('touchstart', (e) => {
-        touchStartTime = Date.now();
-        e.preventDefault();
-      }, { passive: false });
-
-      icon.addEventListener('touchend', (e) => {
-        const touchDuration = Date.now() - touchStartTime;
-        if (touchDuration < 300) {
-          // Короткое касание - переключаем tooltip
-          e.preventDefault();
-          if (isTooltipVisible) {
-            tooltip.classList.remove('show');
-            isTooltipVisible = false;
-          } else {
-            tooltip.classList.add('show');
-            isTooltipVisible = true;
-          }
-        }
-      }, { passive: false });
-
-      // FIX: Показываем/скрываем блок описания по клику на иконку
-      if (descriptionBlock) {
-        icon.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const isVisible = descriptionBlock.style.display !== 'none';
-          if (isVisible) {
-            descriptionBlock.style.display = 'none';
-          } else {
-            descriptionBlock.style.display = 'block';
-          }
-        });
-      }
-    });
-  }
-
   // FIX: Инициализация слайдера изображений
   function initImageSliders() {
     const sliders = document.querySelectorAll('.product-images-slider');
@@ -411,7 +338,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // FIX: Инициализация всех компонентов
-  initTooltipsAndDescription();
   initImageSliders();
 
   // FIX: Обработчик клика на кнопку "Обзор" и закрытия overlay
@@ -610,9 +536,92 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // FIX: Модальное окно описания товара
+  const descriptionModal = document.getElementById('descriptionModal');
+  const descriptionModalTitle = document.getElementById('descriptionModalTitle');
+  const descriptionModalContent = document.getElementById('descriptionModalContent');
+  const closeDescriptionBtn = document.querySelector('[data-close-description]');
+
+  // Функция открытия модального окна описания
+  function openDescriptionModal(productName, description) {
+    if (!descriptionModal || !description) return;
+    
+    if (descriptionModalTitle) {
+      descriptionModalTitle.textContent = productName || 'Описание товара';
+    }
+    
+    if (descriptionModalContent) {
+      // Экранируем HTML и создаем параграф
+      const p = document.createElement('p');
+      p.style.whiteSpace = 'pre-wrap';
+      p.style.wordWrap = 'break-word';
+      p.textContent = description;
+      descriptionModalContent.innerHTML = '';
+      descriptionModalContent.appendChild(p);
+    }
+    
+    descriptionModal.style.display = 'block';
+    descriptionModal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  // Функция закрытия модального окна описания
+  function closeDescriptionModal() {
+    if (!descriptionModal) return;
+    descriptionModal.style.display = 'none';
+    descriptionModal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  // Обработчик клика на значок "i" или кнопку "Описание"
+  document.addEventListener('click', (e) => {
+    // Клик на значок "i"
+    const infoIcon = e.target.closest('.product-info-icon');
+    if (infoIcon) {
+      e.preventDefault();
+      e.stopPropagation();
+      const productName = infoIcon.getAttribute('data-product-name') || 'Товар';
+      const description = infoIcon.getAttribute('data-description') || '';
+      openDescriptionModal(productName, description);
+      return;
+    }
+
+    // Клик на кнопку "Описание" (для совместимости)
+    const descBtn = e.target.closest('[data-description-modal]');
+    if (descBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const productName = descBtn.getAttribute('data-product-name') || 'Товар';
+      const description = descBtn.getAttribute('data-description') || '';
+      openDescriptionModal(productName, description);
+      return;
+    }
+
+    // Закрытие модального окна описания
+    if (e.target.closest('[data-close-description]')) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeDescriptionModal();
+      return;
+    }
+
+    // Закрытие по клику на фон
+    if (e.target === descriptionModal) {
+      closeDescriptionModal();
+      return;
+    }
+  });
+
+  // Обработчик закрытия по Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && descriptionModal && descriptionModal.style.display === 'block') {
+      closeDescriptionModal();
+    }
+  });
+
   // ====== Категории и рейтинг ======
   document.addEventListener("click", async (e) => {
-    // FIX: Пропускаем обработку, если клик по кнопке видео или изображениям (уже обработано выше)
+    // FIX: Пропускаем обработку, если клик по кнопке видео, изображениям или описанию (уже обработано выше)
     if (e.target.closest('.btn[data-video]') || 
         e.target.closest('[data-close-video]') || 
         e.target === videoOverlay ||
@@ -622,7 +631,10 @@ document.addEventListener("DOMContentLoaded", () => {
         e.target.closest('[data-close-image]') ||
         e.target.closest('[data-image-nav]') ||
         e.target === imageOverlay ||
-        e.target.closest('.product-info-icon')) {
+        e.target.closest('.product-info-icon') ||
+        e.target.closest('[data-description-modal]') ||
+        e.target.closest('[data-close-description]') ||
+        e.target === descriptionModal) {
       return;
     }
 
@@ -646,9 +658,32 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (openServicesCat && servicesDropdown) {
+      const opened = servicesDropdown.classList.toggle("open");
+      servicesDropdown.setAttribute("aria-hidden", opened ? "false" : "true");
+      return;
+    }
+
+    const servicesCatItem = e.target.closest(".dropdown-item");
+    if (servicesCatItem && servicesDropdown && e.target.closest("#openServicesCategories, #servicesCategoriesMenu")) {
+      const cat = servicesCatItem.getAttribute("data-category");
+      const url = new URL(window.location.href);
+      if (cat === "all") url.searchParams.delete("category");
+      else url.searchParams.set("category", cat);
+      // Добавляем якорь для перехода к секции услуг
+      url.hash = "services";
+      window.location.href = url.toString();
+      return;
+    }
+
     if (dropdown && !e.target.closest(".category-dropdown")) {
       dropdown.classList.remove("open");
       dropdown.setAttribute("aria-hidden", "true");
+    }
+
+    if (servicesDropdown && !e.target.closest(".category-dropdown")) {
+      servicesDropdown.classList.remove("open");
+      servicesDropdown.setAttribute("aria-hidden", "true");
     }
 
     // Рейтинг (лайк/дизлайк)

@@ -13,21 +13,31 @@
   <header class="main-header">
     <div class="container header-inner">
       <a class="logo" href="/">EXTO</a>
-      <nav class="nav">
-        <ul class="nav-list">
-          <li><a class="nav-link" href="/">Каталог</a></li>
-        </ul>
+      <nav class="nav" style="display:none;">
+        <!-- Навигация скрыта -->
       </nav>
       <div class="header-actions">
         <span class="user-chip">👤 <%= user.username %></span>
+        <form id="logoutForm" method="POST" action="/logout" style="display:inline;margin-left:10px;">
+          <button type="submit" class="btn outline small">Выход</button>
+        </form>
       </div>
     </div>
   </header>
 
   <main class="container">
     <section class="section">
-      <h2>Создать карточку товара</h2>
+      <h2>Создать карточку товара/услуги</h2>
       <form id="createProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/product">
+        <!-- Селектор типа публикации -->
+        <div class="form-section">
+          <label for="type">Тип публикации:</label>
+          <select id="type" name="type" required>
+            <option value="product">Товар</option>
+            <option value="service">Услуга</option>
+          </select>
+        </div>
+        
         <input type="text" name="name" placeholder="Название" required>
         <input type="text" name="description" placeholder="Описание">
         <input type="url" name="link" placeholder="Ссылка">
@@ -66,7 +76,7 @@
     </section>
 
     <section class="section">
-      <h2>Мои карточки</h2>
+      <h2>Мои товары</h2>
       <% if (products && products.length) { %>
         <div class="product-grid">
           <% products.forEach(p => { %>
@@ -109,6 +119,7 @@
                 <% } %>
                 <p class="product-desc"><%= p.description || "—" %></p>
                 <div class="product-actions">
+                  <a class="btn small outline" href="/cabinet/product/<%= p._id %>/edit">✏️ Редактировать</a>
                   <% if (p.link) { %>
                     <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
                   <% } %>
@@ -121,7 +132,68 @@
           <% }) %>
         </div>
       <% } else { %>
-        <p class="empty-state">У вас пока нет карточек.</p>
+        <p class="empty-state">У вас пока нет товаров.</p>
+      <% } %>
+    </section>
+
+    <section class="section">
+      <h2>Мои услуги</h2>
+      <% if (services && services.length) { %>
+        <div class="product-grid">
+          <% services.forEach(s => { %>
+            <div class="product-card">
+              <h3 class="product-title"><%= s.name %></h3>
+              <% if (s.image_url) { %>
+                <img src="<%= s.image_url %>" alt="<%= s.name %>">
+              <% } else { %>
+                <div class="no-image">Нет изображения</div>
+              <% } %>
+              <div class="product-bottom">
+                <div style="text-align:center;margin-bottom:10px;">
+                  <% if (s.status === "pending") { %>
+                    <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ⏳ На модерации
+                    </span>
+                  <% } else if (s.status === "approved") { %>
+                    <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ✅ Опубликовано
+                    </span>
+                  <% } else if (s.status === "rejected") { %>
+                    <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ❌ Отклонено
+                    </span>
+                    <% if (s.rejection_reason) { %>
+                      <p style="color:#f44336;font-size:0.85rem;margin-top:5px;"><%= s.rejection_reason %></p>
+                    <% } %>
+                  <% } %>
+                </div>
+
+                <div class="row">
+                  <span class="muted">Текущая цена:</span>
+                  <strong class="price" data-id="<%= s._id %>"><%= s.price %></strong>
+                </div>
+                <% if (s.status === "approved" || s.status === "pending") { %>
+                  <form class="priceForm" data-id="<%= s._id %>">
+                    <input type="number" name="price" min="0" step="1" placeholder="Новая цена" required>
+                    <button type="submit" class="btn small">Обновить цену</button>
+                  </form>
+                <% } %>
+                <p class="product-desc"><%= s.description || "—" %></p>
+                <div class="product-actions">
+                  <a class="btn small outline" href="/cabinet/product/<%= s._id %>/edit">✏️ Редактировать</a>
+                  <% if (s.link) { %>
+                    <a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">Ссылка</a>
+                  <% } %>
+                  <% if (s.video_url) { %>
+                    <button class="btn small" data-video="<%= s.video_url %>">Обзор</button>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="empty-state">У вас пока нет услуг.</p>
       <% } %>
     </section>
   </main>
@@ -164,6 +236,24 @@
   let youtubePlayer = null;
 
   document.addEventListener("DOMContentLoaded", () => {
+    // Обработка выхода
+    const logoutForm = document.getElementById("logoutForm");
+    if (logoutForm) {
+      logoutForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!confirm("Вы уверены, что хотите выйти?")) return;
+        try {
+          const res = await fetch("/logout", { method: "POST" });
+          if (res.ok) {
+            window.location.href = "/";
+          }
+        } catch (err) {
+          console.error("Ошибка выхода:", err);
+          window.location.href = "/";
+        }
+      });
+    }
+
     const form = document.getElementById("createProductForm");
     const msg = document.getElementById("createProductMsg");
 

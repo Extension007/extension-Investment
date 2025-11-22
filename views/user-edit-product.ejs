@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Редактирование товара</title>
+  <title>Редактировать товар</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,7 +19,7 @@
         </ul>
       </nav>
       <div class="header-actions">
-        <a class="btn outline" href="/admin">← Назад в админку</a>
+        <a class="btn outline" href="/cabinet">← Назад в кабинет</a>
       </div>
     </div>
   </header>
@@ -27,7 +27,7 @@
   <main class="container">
     <section class="section">
       <h2>Редактировать товар/услугу</h2>
-      <form id="editProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/admin/product/<%= product._id %>/edit">
+      <form id="editProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/product/<%= product._id %>/edit">
         <!-- Селектор типа публикации -->
         <div class="form-section">
           <label for="type">Тип публикации:</label>
@@ -117,6 +117,7 @@
     document.querySelectorAll('.remove-image-btn').forEach(btn => {
       btn.addEventListener('click', function() {
         const index = parseInt(this.getAttribute('data-image-index'));
+        // Пересчитываем индексы после удаления
         const newImages = [];
         currentImages.forEach((img, idx) => {
           if (idx !== index) newImages.push(img);
@@ -127,6 +128,7 @@
       });
     });
 
+    // Обновление скрытого поля с текущими изображениями
     function updateCurrentImages() {
       const input = document.getElementById('currentImagesInput');
       if (input) {
@@ -134,7 +136,7 @@
       }
     }
 
-    // Валидация количества файлов
+    // Валидация количества файлов перед отправкой
     document.getElementById('editProductForm').addEventListener('submit', function(e) {
       const fileInput = document.getElementById('images');
       const totalImages = currentImages.length + fileInput.files.length;
@@ -158,7 +160,7 @@
         return;
       }
 
-      Array.from(this.files).forEach((file) => {
+      Array.from(this.files).forEach((file, index) => {
         if (file.size > 5 * 1024 * 1024) {
           alert(`Файл "${file.name}" превышает размер 5MB`);
           return;
@@ -185,6 +187,49 @@
         reader.readAsDataURL(file);
       });
     });
+
+    // Обработка отправки формы
+    document.getElementById('editProductForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const msg = document.getElementById('editProductMsg');
+      
+      msg.textContent = "Отправка...";
+      msg.style.color = "#666";
+      
+      try {
+        const res = await fetch('/cabinet/product/<%= product._id %>/edit', {
+          method: 'POST',
+          body: formData
+        });
+        
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          console.error("❌ Ответ не JSON:", text);
+          msg.textContent = "Ошибка: " + (text || "Неверный формат ответа");
+          msg.style.color = "#b00020";
+          return;
+        }
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          msg.textContent = 'Товар успешно обновлен!';
+          msg.style.color = 'green';
+          setTimeout(() => {
+            window.location.href = '/cabinet';
+          }, 1500);
+        } else {
+          msg.textContent = data.message || 'Ошибка при обновлении товара';
+          msg.style.color = '#b00020';
+        }
+      } catch (err) {
+        msg.textContent = 'Ошибка сети: ' + err.message;
+        msg.style.color = '#b00020';
+      }
+    });
   </script>
 </body>
 </html>
+

@@ -42,6 +42,13 @@ const productSchema = new mongoose.Schema({
     enum: ["home", "beauty", "auto", "electric", "electronics", "plumbing"],
     default: "home"
   },
+  
+  // Тип публикации: товар или услуга
+  type: {
+    type: String,
+    enum: ["product", "service"],
+    default: "product"
+  },
 
   // 🔹 Рейтинг
   likes: { type: Number, default: 0 },

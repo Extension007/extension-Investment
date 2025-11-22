@@ -13,27 +13,28 @@
   <header class="main-header">
     <div class="container header-inner">
       <a class="logo" href="/">EXTO</a>
-      <nav class="nav">
-        <ul class="nav-list">
-          <li><a class="nav-link" href="/">Каталог</a></li>
-        </ul>
+      <nav class="nav" style="display:none;">
+        <!-- Навигация скрыта -->
       </nav>
       <div class="header-actions">
         <span class="user-chip">Админ-панель</span>
+        <form id="logoutForm" method="POST" action="/logout" style="display:inline;margin-left:10px;">
+          <button type="submit" class="btn outline small">Выход</button>
+        </form>
       </div>
     </div>
   </header>
 
   <main class="container">
-    <!-- Секция модерации -->
+    <!-- Модерация товаров -->
     <section class="section">
       <div class="section-header">
-        <h2>Модерация карточек</h2>
+        <h2>Модерация товаров</h2>
         <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
           <% if (pendingProducts && pendingProducts.length) { %>
             <%= pendingProducts.length %> на проверке
           <% } else { %>
-            Нет карточек на модерации
+            Нет товаров на модерации
           <% } %>
         </span>
       </div>
@@ -85,30 +86,131 @@
           <% }) %>
         </div>
       <% } else { %>
-        <p class="empty-state">Нет карточек на модерации</p>
+        <p class="empty-state">Нет товаров на модерации</p>
       <% } %>
     </section>
 
-    <!-- Добавить товар -->
+    <!-- Модерация услуг -->
     <section class="section">
       <div class="section-header">
-        <h2>Добавить товар</h2>
+        <h2>Модерация услуг</h2>
+        <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+          <% if (pendingServices && pendingServices.length) { %>
+            <%= pendingServices.length %> на проверке
+          <% } else { %>
+            Нет услуг на модерации
+          <% } %>
+        </span>
       </div>
-      <form method="POST" action="/admin/product" enctype="multipart/form-data" class="form-grid">
-        <input type="text" name="name" placeholder="Название" required>
-        <input type="text" name="description" placeholder="Описание">
-        <input type="number" name="price" placeholder="Цена" min="0" step="1" required>
-        <input type="url" name="link" placeholder="Ссылка" required>
-        <input type="file" name="image" accept="image/*">
-        <input type="url" name="video_url" placeholder="Ссылка на YouTube видео">
-        <button type="submit" class="btn primary">Добавить</button>
-      </form>
+
+      <% if (pendingServices && pendingServices.length) { %>
+        <div class="product-grid">
+          <% pendingServices.forEach(s => { %>
+            <div class="product-card" style="border:2px solid #ff9800;">
+              <h3 class="product-title"><%= s.name %></h3>
+              <% if (s.image_url) { %>
+                <img src="<%= s.image_url %>" alt="<%= s.name %>">
+              <% } else { %>
+                <div class="no-image">Нет изображения</div>
+              <% } %>
+
+              <div class="product-bottom">
+                <p class="product-desc"><%= s.description || "—" %></p>
+                <div class="row" style="justify-content:center; gap:8px;">
+                  <span class="muted">Цена:</span>
+                  <strong class="price"><%= s.price %></strong>
+                </div>
+
+                <% if (s.owner) { %>
+                  <% if (typeof s.owner === 'object' && s.owner.username) { %>
+                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= s.owner.username %></p>
+                  <% } else { %>
+                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= s.owner %></p>
+                  <% } %>
+                <% } else { %>
+                  <p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
+                <% } %>
+
+                <div class="product-actions" style="flex-direction:column;gap:8px;">
+                  <button class="btn small approve-btn" data-id="<%= s._id %>" style="background:#4caf50;color:#fff;">
+                    ✅ Одобрить
+                  </button>
+                  <button class="btn small reject-btn" data-id="<%= s._id %>" style="background:#f44336;color:#fff;">
+                    ❌ Отклонить
+                  </button>
+                  <% if (s.link) { %>
+                    <a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">Ссылка</a>
+                  <% } %>
+                  <% if (s.video_url) { %>
+                    <button class="btn small outline" data-video="<%= s.video_url %>">Видео</button>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="empty-state">Нет услуг на модерации</p>
+      <% } %>
     </section>
 
-    <!-- Все карточки -->
+    <!-- Добавить товар/услугу -->
     <section class="section">
       <div class="section-header">
-        <h2>Все карточки</h2>
+        <h2>Добавить товар/услугу</h2>
+      </div>
+      <form id="adminCreateProductForm" method="POST" action="/admin/product" enctype="multipart/form-data" class="form-grid">
+        <!-- Селектор типа публикации -->
+        <div class="form-section">
+          <label for="adminType">Тип публикации:</label>
+          <select id="adminType" name="type" required>
+            <option value="product">Товар</option>
+            <option value="service">Услуга</option>
+          </select>
+        </div>
+        
+        <input type="text" name="name" placeholder="Название" required>
+        <textarea name="description" placeholder="Описание" rows="4"></textarea>
+        <input type="number" name="price" placeholder="Цена" min="0" step="1" required>
+        <input type="url" name="link" placeholder="Ссылка">
+        <input type="url" name="video_url" placeholder="YouTube ссылка">
+        
+        <!-- Поля контактов продавца -->
+        <div class="form-section">
+          <h3>Контакты продавца</h3>
+          <input type="tel" name="phone" placeholder="Телефон">
+          <input type="email" name="email" placeholder="Email">
+          <input type="text" name="telegram" placeholder="Telegram (например: @username)">
+          <input type="text" name="whatsapp" placeholder="WhatsApp (номер телефона)">
+          <textarea name="contact_method" placeholder="Способ связи (например: Звоните с 9:00 до 18:00)" rows="2"></textarea>
+        </div>
+        
+        <!-- Загрузка до 5 изображений -->
+        <div class="form-section">
+          <label for="adminImages">Изображения (до 5 шт.):</label>
+          <input type="file" id="adminImages" name="images" accept="image/*" multiple data-max-files="5">
+          <div id="adminImagePreview" class="image-preview-container" style="display:none;margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:10px;"></div>
+          <small class="form-hint">Можно выбрать до 5 изображений</small>
+        </div>
+        
+        <select name="category" required>
+          <option value="home">Для дома</option>
+          <option value="beauty">Красота и здоровье</option>
+          <option value="auto">Авто мото</option>
+          <option value="electric">Электрика</option>
+          <option value="electronics">Электроника</option>
+          <option value="plumbing">Сантехника</option>
+        </select>
+        
+        <button type="submit" class="btn primary">Добавить</button>
+      </form>
+      <div id="adminCreateMsg" class="note" style="margin-top:10px;"></div>
+    </section>
+
+    <!-- Каталог товаров -->
+    <section class="section">
+      <div class="section-header">
+        <h2>Каталог товаров</h2>
         <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
           Всего: <%= products ? products.length : 0 %>
         </span>
@@ -278,6 +380,24 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     console.log("🔧 Инициализация админ-панели");
+
+    // Обработка выхода
+    const logoutForm = document.getElementById("logoutForm");
+    if (logoutForm) {
+      logoutForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!confirm("Вы уверены, что хотите выйти?")) return;
+        try {
+          const res = await fetch("/logout", { method: "POST" });
+          if (res.ok) {
+            window.location.href = "/";
+          }
+        } catch (err) {
+          console.error("Ошибка выхода:", err);
+          window.location.href = "/";
+        }
+      });
+    }
 
     // Блокировка/Разблокировка карточек
     const toggleBtns = document.querySelectorAll(".toggle-visibility-btn");
@@ -553,6 +673,113 @@
     // FIX: Поддержка клика и touch для всех устройств
     document.addEventListener('click', handleVideoClick, true);
     document.addEventListener('touchend', handleVideoClick, true);
+
+    // Обработка формы создания товара админом
+    const adminCreateForm = document.getElementById('adminCreateProductForm');
+    const adminCreateMsg = document.getElementById('adminCreateMsg');
+    const adminImagesInput = document.getElementById('adminImages');
+    const adminImagePreview = document.getElementById('adminImagePreview');
+
+    if (adminCreateForm) {
+      adminCreateForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Проверка количества изображений
+        if (adminImagesInput && adminImagesInput.files.length > 5) {
+          adminCreateMsg.textContent = 'Максимальное количество изображений: 5';
+          adminCreateMsg.style.color = '#b00020';
+          return;
+        }
+        
+        adminCreateMsg.textContent = 'Отправка...';
+        adminCreateMsg.style.color = '#666';
+        
+        const formData = new FormData(adminCreateForm);
+        
+        try {
+          const res = await fetch('/admin/product', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const data = await res.json();
+            if (data.success) {
+              adminCreateMsg.textContent = 'Товар успешно добавлен!';
+              adminCreateMsg.style.color = 'green';
+              adminCreateForm.reset();
+              adminImagePreview.innerHTML = '';
+              adminImagePreview.style.display = 'none';
+              setTimeout(() => {
+                location.reload();
+              }, 1500);
+            } else {
+              adminCreateMsg.textContent = data.message || 'Ошибка при добавлении товара';
+              adminCreateMsg.style.color = '#b00020';
+            }
+          } else {
+            // Если ответ HTML (redirect), перезагружаем страницу
+            location.reload();
+          }
+        } catch (err) {
+          adminCreateMsg.textContent = 'Ошибка сети: ' + err.message;
+          adminCreateMsg.style.color = '#b00020';
+        }
+      });
+    }
+
+    // Превью изображений для админ-формы
+    if (adminImagesInput && adminImagePreview) {
+      adminImagesInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        const maxFiles = 5;
+        
+        if (files.length > maxFiles) {
+          alert(`Можно выбрать не более ${maxFiles} изображений`);
+          e.target.value = '';
+          adminImagePreview.innerHTML = '';
+          adminImagePreview.style.display = 'none';
+          return;
+        }
+        
+        adminImagePreview.innerHTML = '';
+        
+        if (files.length === 0) {
+          adminImagePreview.style.display = 'none';
+          return;
+        }
+        
+        adminImagePreview.style.display = 'grid';
+        
+        files.forEach((file) => {
+          if (file.size > 5 * 1024 * 1024) {
+            alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
+            return;
+          }
+          
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            const div = document.createElement('div');
+            div.style.position = 'relative';
+            div.style.aspectRatio = '1';
+            div.style.overflow = 'hidden';
+            div.style.borderRadius = '8px';
+            div.style.border = '2px solid #ddd';
+            
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            
+            div.appendChild(img);
+            adminImagePreview.appendChild(div);
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+    }
   });
 </script>
 

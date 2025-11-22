@@ -223,39 +223,67 @@ app.get("/", async (req, res) => {
       }
     }
     
-    // Показываем карточки со статусом "approved" или без статуса (для обратной совместимости)
-    const filter = { 
-      $or: [
-        { status: "approved" },
-        { status: { $exists: false } },
-        { status: null }
+    // Фильтр для товаров (type: "product" или без поля type для обратной совместимости)
+    const productsFilter = { 
+      $and: [
+        {
+          $or: [
+            { status: "approved" },
+            { status: { $exists: false } },
+            { status: null }
+          ]
+        },
+        {
+          $or: [
+            { type: "product" },
+            { type: { $exists: false } },
+            { type: null }
+          ]
+        }
       ]
     };
+    
+    // Фильтр для услуг (type: "service")
+    const servicesFilter = { 
+      $and: [
+        {
+          $or: [
+            { status: "approved" },
+            { status: { $exists: false } },
+            { status: null }
+          ]
+        },
+        { type: "service" }
+      ]
+    };
+    
     if (selected && categoryKeys.includes(selected)) {
-      filter.category = selected;
+      productsFilter.$and.push({ category: selected });
+      servicesFilter.$and.push({ category: selected });
     }
     
-    // Выполняем запрос с обработкой таймаутов
+    // Выполняем запросы с обработкой таймаутов
     let products = [];
+    let services = [];
     try {
-      products = await Product.find(filter).sort({ _id: -1 }).maxTimeMS(5000); // Таймаут 5 секунд
+      products = await Product.find(productsFilter).sort({ _id: -1 }).maxTimeMS(5000);
+      services = await Product.find(servicesFilter).sort({ _id: -1 }).maxTimeMS(5000);
     } catch (queryErr) {
-      // Если ошибка запроса (таймаут, нет подключения и т.д.), показываем пустой каталог
       console.warn("⚠️ Ошибка запроса к БД:", queryErr.message);
-      return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+      return res.render("index", { products: [], services: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
     }
-    // пометим где пользователь голосовал
+    
+    // пометим где пользователь голосовал (для товаров и услуг)
     const userId = req.session.user?._id?.toString();
     const votedMap = {};
-    if (userId) {
-      products.forEach(p => {
-        if (Array.isArray(p.voters) && p.voters.map(v => v.toString()).includes(userId)) {
-          votedMap[p._id.toString()] = true;
-        }
-      });
-    }
+    [...products, ...services].forEach(p => {
+      if (Array.isArray(p.voters) && p.voters.map(v => v.toString()).includes(userId)) {
+        votedMap[p._id.toString()] = true;
+      }
+    });
+    
     // page/totalPages оставлены для совместимости с твоим рендером
-    res.render("index", { products, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap, categories, selectedCategory: selected || "all" });
+    res.render("index", { products, services, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap, categories, selectedCategory: selected || "all" });
   } catch (err) {
     console.error("❌ Ошибка получения товаров:", err);
     console.error("❌ Детали ошибки:", err.message);
@@ -358,8 +386,22 @@ app.post("/auth/register", async (req, res) => {
 app.get("/cabinet", requireUser, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).send("Личный кабинет недоступен: нет БД");
   try {
-    const myProducts = await Product.find({ owner: req.session.user._id }).sort({ _id: -1 });
-    res.render("cabinet", { user: req.session.user, products: myProducts });
+    // Разделяем товары и услуги
+    const myProducts = await Product.find({ 
+      owner: req.session.user._id,
+      $or: [
+        { type: "product" },
+        { type: { $exists: false } },
+        { type: null }
+      ]
+    }).sort({ _id: -1 });
+    
+    const myServices = await Product.find({ 
+      owner: req.session.user._id,
+      type: "service"
+    }).sort({ _id: -1 });
+    
+    res.render("cabinet", { user: req.session.user, products: myProducts, services: myServices || [] });
   } catch (err) {
     console.error("❌ Ошибка загрузки кабинета:", err);
     res.status(500).send("Ошибка загрузки кабинета");
@@ -401,13 +443,13 @@ app.post("/cabinet/product", requireUser, (req, res, next) => {
       return res.status(401).json({ success: false, message: "Необходима авторизация" });
     }
 
-    const { name, description, link, video_url, category, phone, email, telegram, whatsapp, contact_method } = req.body;
+    const { name, description, link, video_url, category, phone, email, telegram, whatsapp, contact_method, type } = req.body;
     const price = Number(req.body.price || 0) || 0;
     
     // FIX: Проверка обязательных полей
     if (!name || !name.trim()) {
-      console.error("❌ Отсутствует название товара");
-      return res.status(400).json({ success: false, message: "Название товара обязательно" });
+      console.error("❌ Отсутствует название товара/услуги");
+      return res.status(400).json({ success: false, message: "Название обязательно" });
     }
     
     if (!price || price <= 0) {
@@ -415,6 +457,7 @@ app.post("/cabinet/product", requireUser, (req, res, next) => {
       return res.status(400).json({ success: false, message: "Цена должна быть больше 0" });
     }
     const categoryValue = CATEGORY_KEYS.includes(category) ? category : "home";
+    const typeValue = (type === "service" || type === "product") ? type : "product";
     
     // FIX: Формируем объект контактов продавца
     const contacts = {
@@ -476,6 +519,7 @@ app.post("/cabinet/product", requireUser, (req, res, next) => {
       price, 
       owner: ownerId, 
       category: categoryValue, 
+      type: typeValue, // Тип: товар или услуга
       images, // FIX: Массив изображений (до 5 шт.)
       image_url, // FIX: Для обратной совместимости
       contacts, // FIX: Контакты продавца
@@ -536,6 +580,144 @@ app.post("/cabinet/product/:id/price", async (req, res) => {
   } catch (err) {
     console.error("❌ Ошибка изменения цены:", err);
     res.status(500).json({ success: false, message: "Ошибка изменения цены" });
+  }
+});
+
+// Получение формы редактирования товара для пользователя
+app.get("/cabinet/product/:id/edit", requireUser, async (req, res) => {
+  if (!HAS_MONGO) return res.status(503).send("Недоступно: отсутствует подключение к БД");
+  try {
+    const product = await Product.findOne({ _id: req.params.id, owner: req.session.user._id });
+    if (!product) {
+      return res.status(404).send("Карточка не найдена или у вас нет прав для редактирования");
+    }
+    res.render("user-edit-product", { product, user: req.session.user });
+  } catch (err) {
+    console.error("❌ Ошибка получения товара для редактирования:", err);
+    res.status(500).send("Ошибка базы данных");
+  }
+});
+
+// Редактирование товара пользователем
+app.post("/cabinet/product/:id/edit", requireUser, (req, res, next) => {
+  upload.array("images", 5)(req, res, (err) => {
+    if (err) {
+      console.error("❌ Ошибка multer при загрузке файлов:", err);
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ success: false, message: "Максимальное количество изображений: 5" });
+      }
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, message: "Размер файла превышает 5MB" });
+      }
+      return res.status(400).json({ success: false, message: "Ошибка загрузки файлов: " + (err.message || "Неизвестная ошибка") });
+    }
+    next();
+  });
+}, async (req, res) => {
+  if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+  try {
+    // Проверяем, что пользователь является владельцем карточки
+    const product = await Product.findOne({ _id: req.params.id, owner: req.session.user._id });
+    if (!product) {
+      return res.status(404).json({ success: false, message: "Карточка не найдена или у вас нет прав для редактирования" });
+    }
+
+    const { name, description, link, video_url, category, phone, email, telegram, whatsapp, contact_method, current_images, type } = req.body;
+    const price = Number(req.body.price || 0) || 0;
+    
+    // Валидация
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: "Название товара/услуги обязательно" });
+    }
+    
+    if (!price || price <= 0) {
+      return res.status(400).json({ success: false, message: "Цена должна быть больше 0" });
+    }
+
+    const categoryValue = CATEGORY_KEYS.includes(category) ? category : product.category || "home";
+    const typeValue = (type === "service" || type === "product") ? type : (product.type || "product");
+    
+    // Обработка изображений
+    let images = [];
+    
+    // Если есть текущие изображения
+    if (current_images) {
+      try {
+        const currentImagesArray = typeof current_images === 'string' 
+          ? JSON.parse(current_images) 
+          : Array.isArray(current_images) 
+            ? current_images 
+            : [];
+        images = currentImagesArray.filter(img => img);
+      } catch (e) {
+        images = product.images || [];
+      }
+    } else {
+      images = product.images || [];
+    }
+
+    // Добавляем новые загруженные изображения
+    if (req.files && req.files.length > 0) {
+      const filesToProcess = req.files.slice(0, 5);
+      filesToProcess.forEach(file => {
+        let imagePath = null;
+        if (file.path && !file.path.startsWith('http')) {
+          imagePath = '/uploads/' + file.filename;
+        } else {
+          imagePath = file.path;
+        }
+        if (imagePath) {
+          images.push(imagePath);
+        }
+      });
+      // Ограничиваем до 5 изображений
+      images = images.slice(0, 5);
+    }
+
+    // Для обратной совместимости
+    let image_url = images.length > 0 ? images[0] : null;
+    
+    // Формируем объект контактов
+    const contacts = {
+      phone: phone ? phone.trim() : "",
+      email: email ? email.trim() : "",
+      telegram: telegram ? telegram.trim() : "",
+      whatsapp: whatsapp ? whatsapp.trim() : "",
+      contact_method: contact_method ? contact_method.trim() : ""
+    };
+    
+    // Обновляем карточку
+    const updated = await Product.findOneAndUpdate(
+      { _id: req.params.id, owner: req.session.user._id },
+      { 
+        name: name.trim(), 
+        description: description ? description.trim() : "", 
+        price, 
+        link: link ? link.trim() : "", 
+        video_url: video_url ? video_url.trim() : "",
+        images,
+        image_url,
+        contacts,
+        category: categoryValue,
+        type: typeValue
+      },
+      { new: true }
+    );
+    
+    if (!updated) {
+      return res.status(404).json({ success: false, message: "Карточка не найдена" });
+    }
+    
+    console.log("✅ Карточка обновлена пользователем:", {
+      id: updated._id.toString(),
+      name: updated.name,
+      owner: updated.owner.toString()
+    });
+    
+    res.json({ success: true, product: updated });
+  } catch (err) {
+    console.error("❌ Ошибка редактирования карточки:", err);
+    res.status(500).json({ success: false, message: "Ошибка редактирования карточки: " + err.message });
   }
 });
 // Вход для админов (POST)
@@ -608,17 +790,52 @@ app.post("/user/login", async (req, res) => {
   }
 });
 
+// Выход (logout)
+app.post("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("❌ Ошибка выхода:", err);
+      return res.status(500).json({ success: false, message: "Ошибка выхода" });
+    }
+    res.json({ success: true, message: "Вы успешно вышли" });
+  });
+});
+
+app.get("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("❌ Ошибка выхода:", err);
+      return res.redirect("/");
+    }
+    res.redirect("/");
+  });
+});
+
 // Админка
 app.get("/admin", requireAdmin, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
     
-    // Получаем все карточки с информацией о владельце
-    const allProducts = await Product.find()
+    // Разделяем товары и услуги
+    // Все товары
+    const allProducts = await Product.find({
+      $or: [
+        { type: "product" },
+        { type: { $exists: false } },
+        { type: null }
+      ]
+    })
       .sort({ _id: -1 })
       .populate("owner", "username email");
     
-    // Получаем карточки на модерации (со статусом pending и с owner)
+    // Все услуги
+    const allServices = await Product.find({
+      type: "service"
+    })
+      .sort({ _id: -1 })
+      .populate("owner", "username email");
+    
+    // Карточки на модерации (товары)
     const pendingProducts = await Product.find({ 
       $and: [
         { owner: { $ne: null, $exists: true } },
@@ -628,18 +845,46 @@ app.get("/admin", requireAdmin, async (req, res) => {
             { status: { $exists: false } },
             { status: null }
           ]
+        },
+        {
+          $or: [
+            { type: "product" },
+            { type: { $exists: false } },
+            { type: null }
+          ]
         }
       ]
     })
       .sort({ _id: -1 })
       .populate("owner", "username email");
     
-    console.log(`📋 Всего карточек: ${allProducts.length}`);
-    console.log(`⏳ На модерации: ${pendingProducts.length}`);
+    // Карточки на модерации (услуги)
+    const pendingServices = await Product.find({ 
+      $and: [
+        { owner: { $ne: null, $exists: true } },
+        {
+          $or: [
+            { status: "pending" },
+            { status: { $exists: false } },
+            { status: null }
+          ]
+        },
+        { type: "service" }
+      ]
+    })
+      .sort({ _id: -1 })
+      .populate("owner", "username email");
+    
+    console.log(`📋 Всего товаров: ${allProducts.length}`);
+    console.log(`🎯 Всего услуг: ${allServices.length}`);
+    console.log(`⏳ Товаров на модерации: ${pendingProducts.length}`);
+    console.log(`⏳ Услуг на модерации: ${pendingServices.length}`);
     
     res.render("admin", { 
       products: allProducts, 
+      services: allServices || [],
       pendingProducts,
+      pendingServices: pendingServices || [],
       categories: CATEGORY_LABELS
     });
   } catch (err) {
@@ -649,36 +894,98 @@ app.get("/admin", requireAdmin, async (req, res) => {
 });
 
 // Добавление товара (админом - сразу approved)
-app.post("/admin/product", requireAdmin, upload.single("image"), async (req, res) => {
-  if (!HAS_MONGO) return res.status(503).send("Недоступно: отсутствует подключение к БД");
-  const { name, description, price, link, video_url } = req.body;
-  let image_url = null;
+app.post("/admin/product", requireAdmin, (req, res, next) => {
+  upload.array("images", 5)(req, res, (err) => {
+    if (err) {
+      console.error("❌ Ошибка multer при загрузке файлов:", err);
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ success: false, message: "Максимальное количество изображений: 5" });
+      }
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, message: "Размер файла превышает 5MB" });
+      }
+      return res.status(400).json({ success: false, message: "Ошибка загрузки файлов: " + (err.message || "Неизвестная ошибка") });
+    }
+    next();
+  });
+}, async (req, res) => {
+  if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
-    if (req.file) {
-      // Обрабатываем путь к изображению
-      if (req.file.path && !req.file.path.startsWith('http')) {
-        // Локальное хранилище - используем относительный путь
-        image_url = '/uploads/' + req.file.filename;
-      } else {
-        // Cloudinary - используем полный путь
-        image_url = req.file.path;
+    const { name, description, price, link, video_url, category, phone, email, telegram, whatsapp, contact_method, type } = req.body;
+    
+    // Валидация
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: "Название товара/услуги обязательно" });
+    }
+    
+    const priceNum = Number(price);
+    if (!priceNum || priceNum <= 0) {
+      return res.status(400).json({ success: false, message: "Цена должна быть больше 0" });
+    }
+
+    const categoryValue = CATEGORY_KEYS.includes(category) ? category : "home";
+    const typeValue = (type === "service" || type === "product") ? type : "product";
+    
+    // Обработка изображений
+    let images = [];
+    let image_url = null;
+    
+    if (req.files && req.files.length > 0) {
+      const filesToProcess = req.files.slice(0, 5);
+      filesToProcess.forEach(file => {
+        let imagePath = null;
+        if (file.path && !file.path.startsWith('http')) {
+          imagePath = '/uploads/' + file.filename;
+        } else {
+          imagePath = file.path;
+        }
+        if (imagePath) {
+          images.push(imagePath);
+        }
+      });
+      
+      if (images.length > 0) {
+        image_url = images[0];
       }
     }
+    
+    // Формируем объект контактов
+    const contacts = {
+      phone: phone ? phone.trim() : "",
+      email: email ? email.trim() : "",
+      telegram: telegram ? telegram.trim() : "",
+      whatsapp: whatsapp ? whatsapp.trim() : "",
+      contact_method: contact_method ? contact_method.trim() : ""
+    };
+    
     await Product.create({
-      name,
-      description,
-      price,
-      link,
+      name: name.trim(),
+      description: description ? description.trim() : "",
+      price: priceNum,
+      link: link ? link.trim() : "",
+      video_url: video_url ? video_url.trim() : "",
+      images,
       image_url,
-      video_url,
+      contacts,
+      category: categoryValue,
+      type: typeValue, // Тип: товар или услуга
       status: "approved", // Админ создает сразу опубликованные
-      // ✅ инициализируем счётчики голосов
       likes: 0,
       dislikes: 0
     });
+    
+    // Проверяем, является ли запрос AJAX
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) {
+      return res.json({ success: true, message: "Товар успешно добавлен" });
+    }
     res.redirect("/admin");
   } catch (err) {
     console.error("❌ Ошибка добавления товара:", err);
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) {
+      return res.status(500).json({ success: false, message: "Ошибка добавления товара: " + err.message });
+    }
     res.status(500).send("Ошибка загрузки изображения или базы данных");
   }
 });
@@ -709,29 +1016,133 @@ app.get("/admin/product/:id/edit", requireAuth, async (req, res) => {
 });
 
 // Редактирование товара (сохранение)
-app.post("/admin/product/:id/edit", requireAuth, upload.single("image"), async (req, res) => {
-  if (!HAS_MONGO) return res.status(503).send("Недоступно: отсутствует подключение к БД");
-  const { name, description, price, link, video_url, current_image } = req.body;
-  let image_url = current_image || null;
-  try {
-    if (req.file) {
-      // Обрабатываем путь к изображению
-      if (req.file.path && !req.file.path.startsWith('http')) {
-        // Локальное хранилище - используем относительный путь
-        image_url = '/uploads/' + req.file.filename;
-      } else {
-        // Cloudinary - используем полный путь
-        image_url = req.file.path;
+app.post("/admin/product/:id/edit", requireAuth, (req, res, next) => {
+  upload.array("images", 5)(req, res, (err) => {
+    if (err) {
+      console.error("❌ Ошибка multer при загрузке файлов:", err);
+      if (err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({ success: false, message: "Максимальное количество изображений: 5" });
       }
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ success: false, message: "Размер файла превышает 5MB" });
+      }
+      return res.status(400).json({ success: false, message: "Ошибка загрузки файлов: " + (err.message || "Неизвестная ошибка") });
     }
+    next();
+  });
+}, async (req, res) => {
+  if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) {
+        return res.status(404).json({ success: false, message: "Товар не найден" });
+      }
+      return res.redirect("/admin");
+    }
+
+    const { name, description, price, link, video_url, category, phone, email, telegram, whatsapp, contact_method, current_images, type } = req.body;
+    
+    // Валидация
+    if (!name || !name.trim()) {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) {
+        return res.status(400).json({ success: false, message: "Название товара обязательно" });
+      }
+      return res.redirect("/admin");
+    }
+
+    const priceNum = Number(price);
+    if (!priceNum || priceNum <= 0) {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) {
+        return res.status(400).json({ success: false, message: "Цена должна быть больше 0" });
+      }
+      return res.redirect("/admin");
+    }
+
+    const categoryValue = CATEGORY_KEYS.includes(category) ? category : product.category || "home";
+    const typeValue = (type === "service" || type === "product") ? type : (product.type || "product");
+    
+    // Обработка изображений
+    let images = [];
+    
+    // Если есть текущие изображения
+    if (current_images) {
+      try {
+        const currentImagesArray = typeof current_images === 'string' 
+          ? JSON.parse(current_images) 
+          : Array.isArray(current_images) 
+            ? current_images 
+            : [];
+        images = currentImagesArray.filter(img => img);
+      } catch (e) {
+        images = product.images || [];
+      }
+    } else {
+      images = product.images || [];
+    }
+
+    // Добавляем новые загруженные изображения
+    if (req.files && req.files.length > 0) {
+      const filesToProcess = req.files.slice(0, 5);
+      filesToProcess.forEach(file => {
+        let imagePath = null;
+        if (file.path && !file.path.startsWith('http')) {
+          imagePath = '/uploads/' + file.filename;
+        } else {
+          imagePath = file.path;
+        }
+        if (imagePath) {
+          images.push(imagePath);
+        }
+      });
+      // Ограничиваем до 5 изображений
+      images = images.slice(0, 5);
+    }
+
+    // Для обратной совместимости
+    let image_url = images.length > 0 ? images[0] : null;
+    
+    // Формируем объект контактов
+    const contacts = {
+      phone: phone ? phone.trim() : "",
+      email: email ? email.trim() : "",
+      telegram: telegram ? telegram.trim() : "",
+      whatsapp: whatsapp ? whatsapp.trim() : "",
+      contact_method: contact_method ? contact_method.trim() : ""
+    };
+    
     await Product.findByIdAndUpdate(
       req.params.id,
-      { name, description, price, link, image_url, video_url },
+      { 
+        name: name.trim(), 
+        description: description ? description.trim() : "", 
+        price: priceNum, 
+        link: link ? link.trim() : "", 
+        video_url: video_url ? video_url.trim() : "",
+        images,
+        image_url,
+        contacts,
+        category: categoryValue,
+        type: typeValue
+      },
       { runValidators: true }
     );
+    
+    // Проверяем, является ли запрос AJAX
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) {
+      return res.json({ success: true, message: "Товар успешно обновлен" });
+    }
     res.redirect("/admin");
   } catch (err) {
     console.error("❌ Ошибка редактирования товара:", err);
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) {
+      return res.status(500).json({ success: false, message: "Ошибка редактирования товара: " + err.message });
+    }
     res.status(500).send("Ошибка загрузки изображения или базы данных");
   }
 });
