@@ -587,47 +587,209 @@ body {
   white-space: pre-wrap;
 }
 
-/* FIX: Полноэкранный overlay для YouTube видео */
+/* Универсальный overlay для видео (YouTube, VK, Instagram) */
 .video-overlay {
   position: fixed;
   inset: 0;
   display: none;
   justify-content: center;
   align-items: center;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.9);
   z-index: 9999;
+  padding: 20px;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  /* Предотвращаем overflow при смене ориентации */
+  overflow: hidden;
 }
 
-/* FIX: Показываем overlay при активации */
+/* Показываем overlay при активации */
 .video-overlay.show {
   display: flex;
 }
 
-/* FIX: Контейнер для видео с кнопкой закрытия */
+/* Контейнер для видео с кнопкой закрытия - адаптивный резиновый контейнер */
 .video-overlay-container {
   position: relative;
-  width: 90%;
+  width: 100%;
   max-width: 960px;
-  aspect-ratio: 16 / 9;
+  /* Для YouTube обычных видео - 16:9, используем резиновый контейнер */
+  padding-bottom: 56.25%; /* 16:9 aspect ratio (9/16 = 0.5625) */
+  height: 0;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   background: #000;
   overflow: hidden;
+  /* Адаптивная минимальная высота */
+  min-height: 0;
+  /* Обеспечиваем адаптивность при смене ориентации */
+  max-height: 90vh;
 }
 
-/* FIX: Контейнер для iframe */
+/* Для YouTube Shorts (вертикальные видео) - адаптивный контейнер */
+.video-overlay-container.shorts-container {
+  padding-bottom: 177.78%; /* 9:16 aspect ratio (16/9 = 1.7778) */
+  max-width: 400px;
+  max-height: 90vh;
+}
+
+/* Для Instagram контента - более гибкий адаптивный контейнер */
+.video-overlay-container.instagram-container {
+  padding-bottom: 0; /* Отключаем фиксированное соотношение */
+  height: auto;
+  min-height: 600px;
+  max-height: 90vh;
+}
+
+/* Контейнер для iframe - абсолютное позиционирование для резинового контейнера */
 .video-overlay-iframe-container {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  position: relative;
+  overflow: hidden;
 }
 
-/* FIX: iframe YouTube */
+/* Для Instagram контейнера используем относительное позиционирование */
+.video-overlay-container.instagram-container .video-overlay-iframe-container {
+  position: relative;
+  height: auto;
+  min-height: 600px;
+}
+
+/* iframe для всех платформ - заполняет весь контейнер */
 .video-overlay-iframe-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   border: none;
   display: block;
+  /* Убеждаемся, что iframe видим и не перекрыт */
+  z-index: 1;
+}
+
+/* Для Instagram iframe используем относительное позиционирование */
+.video-overlay-container.instagram-container .video-overlay-iframe-container iframe {
+  position: relative;
+  height: auto;
+}
+
+/* Медиа-запросы для мобильных устройств */
+@media (max-width: 768px) {
+  .video-overlay {
+    padding: 10px;
+  }
+  
+  .video-overlay-container {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 8px;
+  }
+  
+  .video-overlay-container.instagram-container {
+    min-height: 500px;
+  }
+}
+
+/* Для очень маленьких экранов */
+@media (max-width: 480px) {
+  .video-overlay {
+    padding: 5px;
+  }
+  
+  .video-overlay-container {
+    border-radius: 6px;
+  }
+  
+  .video-overlay-container.instagram-container {
+    min-height: 400px;
+  }
+}
+
+/* Медиа-запросы для ориентации экрана */
+
+/* Портретная ориентация (вертикальная) */
+@media (orientation: portrait) {
+  .video-overlay {
+    padding: 10px;
+  }
+  
+  .video-overlay-container {
+    width: 100%;
+    max-width: 100%;
+    /* Для обычных видео в портретной ориентации уменьшаем максимальную ширину */
+    max-width: 100vw;
+  }
+  
+  /* YouTube Shorts в портретной ориентации занимают больше места */
+  .video-overlay-container.shorts-container {
+    max-width: min(400px, 90vw);
+    max-height: 90vh;
+  }
+  
+  /* Instagram в портретной ориентации */
+  .video-overlay-container.instagram-container {
+    min-height: min(600px, 80vh);
+    max-height: 90vh;
+  }
+}
+
+/* Ландшафтная ориентация (горизонтальная) */
+@media (orientation: landscape) {
+  .video-overlay {
+    padding: 15px;
+  }
+  
+  .video-overlay-container {
+    /* В ландшафтной ориентации используем больше вертикального пространства */
+    max-width: min(960px, 95vw);
+    max-height: 90vh;
+  }
+  
+  /* YouTube Shorts в ландшафтной ориентации ограничены по высоте */
+  .video-overlay-container.shorts-container {
+    max-width: min(400px, 50vw);
+    max-height: 85vh;
+  }
+  
+  /* Instagram в ландшафтной ориентации */
+  .video-overlay-container.instagram-container {
+    min-height: min(500px, 80vh);
+    max-height: 90vh;
+  }
+}
+
+/* Комбинированные медиа-запросы: ландшафтная ориентация на мобильных */
+@media (orientation: landscape) and (max-width: 768px) {
+  .video-overlay {
+    padding: 5px;
+  }
+  
+  .video-overlay-container {
+    max-width: 100%;
+    max-height: 95vh;
+  }
+  
+  /* YouTube Shorts в ландшафтной ориентации на мобильных */
+  .video-overlay-container.shorts-container {
+    max-width: min(300px, 40vw);
+    max-height: 90vh;
+  }
+}
+
+/* Комбинированные медиа-запросы: портретная ориентация на больших экранах */
+@media (orientation: portrait) and (min-width: 769px) {
+  .video-overlay-container {
+    max-width: 600px;
+  }
+  
+  .video-overlay-container.shorts-container {
+    max-width: 400px;
+  }
 }
 
 /* FIX: Кнопка закрытия overlay */

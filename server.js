@@ -102,8 +102,8 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
       fontSrc: ["'self'", "https:", "data:"],
       imgSrc: ["'self'", "data:", "https:", "blob:", "https://res.cloudinary.com"], // Добавляем Cloudinary
-      connectSrc: ["'self'", "https:"],
-      frameSrc: ["'self'", "https://www.youtube.com", "https://youtube.com", "https://youtu.be", "https://*.youtube.com", "https://www.youtube-nocookie.com", "https://vk.com", "https://*.vk.com", "https://www.instagram.com", "https://*.instagram.com"],
+      connectSrc: ["'self'", "https:", "https://api.instagram.com"],
+      frameSrc: ["'self'", "https://www.youtube.com", "https://youtube.com", "https://youtu.be", "https://*.youtube.com", "https://www.youtube-nocookie.com", "https://m.youtube.com", "https://vk.com", "https://*.vk.com", "https://www.instagram.com", "https://*.instagram.com"],
       mediaSrc: ["'self'", "https:"],
       objectSrc: ["'none'"]
     }
@@ -1482,6 +1482,68 @@ app.post("/admin/product/:id/toggle-visibility", requireAdmin, async (req, res) 
   } catch (err) {
     console.error("❌ Ошибка блокировки карточки:", err);
     res.status(500).json({ success: false, message: "Ошибка блокировки карточки" });
+  }
+});
+
+// Instagram oEmbed API endpoint
+app.get("/api/instagram/oembed", async (req, res) => {
+  try {
+    const { url } = req.query;
+    if (!url) {
+      return res.status(400).json({ success: false, message: "URL parameter is required" });
+    }
+
+    // Validate Instagram URL
+    if (!url.includes('instagram.com')) {
+      return res.status(400).json({ success: false, message: "Invalid Instagram URL" });
+    }
+
+    // Call Instagram oEmbed API
+    const oembedUrl = `https://api.instagram.com/oembed?url=${encodeURIComponent(url)}`;
+    const https = require('https');
+    
+    try {
+      const data = await new Promise((resolve, reject) => {
+        https.get(oembedUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          }
+        }, (response) => {
+          let body = '';
+          response.on('data', (chunk) => body += chunk);
+          response.on('end', () => {
+            if (response.statusCode === 200) {
+              try {
+                resolve(JSON.parse(body));
+              } catch (e) {
+                reject(new Error('Invalid JSON response'));
+              }
+            } else {
+              reject(new Error(`Instagram API returned ${response.statusCode}`));
+            }
+          });
+        }).on('error', reject);
+      });
+
+      res.json({ success: true, html: data.html || '', thumbnail_url: data.thumbnail_url || null });
+    } catch (fetchErr) {
+      console.error("❌ Ошибка запроса к Instagram oEmbed API:", fetchErr);
+      // Fallback: return embed URL
+      const postId = url.match(/\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
+      if (postId) {
+        const embedUrl = `https://www.instagram.com/p/${postId[2]}/embed/`;
+        res.json({ 
+          success: true, 
+          html: `<iframe src="${embedUrl}" width="100%" height="600" frameborder="0" scrolling="no" allowtransparency="true" allow="encrypted-media"></iframe>`,
+          fallback: true
+        });
+      } else {
+        res.status(500).json({ success: false, message: "Failed to fetch Instagram embed" });
+      }
+    }
+  } catch (err) {
+    console.error("❌ Ошибка Instagram oEmbed:", err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

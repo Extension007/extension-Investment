@@ -2,72 +2,139 @@
 // Вспомогательные функции
 // =======================
 
+// =======================
+// Универсальный видеоплеер
+// =======================
+
+// Определение iOS устройства
+function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
 // Определение типа видео по URL
 function getVideoType(url) {
   if (!url) return null;
-  url = url.toLowerCase();
-  if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
-  if (url.includes('vk.com') || url.includes('vkontakte.ru')) return 'vk';
-  if (url.includes('instagram.com')) return 'instagram';
+  const urlLower = url.toLowerCase();
+  if (urlLower.includes('youtube.com') || urlLower.includes('youtu.be')) return 'youtube';
+  if (urlLower.includes('vk.com') || urlLower.includes('vkontakte.ru')) return 'vk';
+  if (urlLower.includes('instagram.com')) return 'instagram';
   return null;
 }
 
-// FIX: Извлечение videoId из разных форматов ссылок YouTube
+// Извлечение videoId из разных форматов ссылок YouTube (включая Shorts)
 function extractVideoId(url) {
   if (!url) return null;
-  if (url.includes('/embed/')) return url.split('/embed/')[1].split(/[?#]/)[0];
-  if (url.includes('/shorts/')) return url.split('/shorts/')[1].split(/[?#]/)[0];
-  if (url.includes('youtu.be/')) return url.split('youtu.be/')[1].split(/[?#]/)[0];
+  
+  // https://www.youtube.com/watch?v=VIDEO_ID
+  // https://youtu.be/VIDEO_ID
+  // https://www.youtube.com/embed/VIDEO_ID
+  // https://www.youtube.com/shorts/VIDEO_ID
+  // https://youtube.com/shorts/VIDEO_ID
+  // https://m.youtube.com/shorts/VIDEO_ID
+  // https://m.youtube.com/watch?v=VIDEO_ID
+  
+  // Проверяем embed формат
+  if (url.includes('/embed/')) {
+    return url.split('/embed/')[1].split(/[?#]/)[0];
+  }
+  
+  // Проверяем shorts формат (YouTube Shorts)
+  if (url.includes('/shorts/')) {
+    return url.split('/shorts/')[1].split(/[?#]/)[0];
+  }
+  
+  // Проверяем короткий формат youtu.be
+  if (url.includes('youtu.be/')) {
+    return url.split('youtu.be/')[1].split(/[?#]/)[0];
+  }
+  
+  // Проверяем стандартный формат watch?v=
   const match = url.match(/[?&]v=([^&]+)/);
   return match ? match[1] : null;
 }
 
-// Извлечение параметров из URL ВКонтакте
+// Извлечение параметров из URL ВКонтакте (поддержка video и clip)
 function extractVKVideoParams(url) {
   if (!url) return null;
+  
   // Формат: https://vk.com/video{owner_id}_{video_id}
-  // Или: https://vk.com/video?z=video{owner_id}_{video_id}
+  // Формат: https://vk.com/video?z=video{owner_id}_{video_id}
+  // Формат: https://vk.com/clip{owner_id}_{clip_id}
+  // Формат: https://vk.com/video_ext.php?oid=...&id=...
+  
+  // Проверяем формат video{owner_id}_{video_id}
   let match = url.match(/video(-?\d+)_(\d+)/);
   if (match) {
-    return { ownerId: match[1], videoId: match[2] };
+    return { ownerId: match[1], videoId: match[2], type: 'video' };
   }
+  
+  // Проверяем формат clip{owner_id}_{clip_id}
+  match = url.match(/clip(-?\d+)_(\d+)/);
+  if (match) {
+    return { ownerId: match[1], videoId: match[2], type: 'clip' };
+  }
+  
   // Альтернативный формат: https://vk.com/video_ext.php?oid=...&id=...
   match = url.match(/[?&]oid=(-?\d+).*[?&]id=(\d+)/);
   if (match) {
-    return { ownerId: match[1], videoId: match[2] };
+    return { ownerId: match[1], videoId: match[2], type: 'video' };
   }
+  
   return null;
 }
 
 // Извлечение ID публикации из URL Instagram
 function extractInstagramPostId(url) {
   if (!url) return null;
+  
   // Формат: https://www.instagram.com/p/{post_id}/
-  // Или: https://www.instagram.com/reel/{reel_id}/
-  let match = url.match(/\/(p|reel)\/([A-Za-z0-9_-]+)/);
+  // Формат: https://www.instagram.com/reel/{reel_id}/
+  // Формат: https://www.instagram.com/tv/{tv_id}/
+  // Формат: https://instagram.com/p/{post_id}/
+  
+  const match = url.match(/\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
   if (match) {
-    return match[2];
+    return { postId: match[2], type: match[1] };
   }
   return null;
-}
-
-// FIX: Формирование URL для YouTube embed
-function buildYouTubeEmbedUrl(videoId) {
-  if (!videoId) return '';
-  return `https://www.youtube-nocookie.com/embed/${videoId}?playsinline=1&rel=0&modestbranding=1&enablejsapi=1&controls=1&origin=${encodeURIComponent(window.location.origin)}`;
 }
 
 // Формирование URL для ВКонтакте embed
 function buildVKEmbedUrl(params) {
   if (!params || !params.ownerId || !params.videoId) return '';
-  return `https://vk.com/video_ext.php?oid=${params.ownerId}&id=${params.videoId}&hash=${Date.now()}`;
+  const type = params.type || 'video';
+  // Для clip используем другой формат
+  if (type === 'clip') {
+    return `https://vk.com/video_ext.php?oid=${params.ownerId}&id=${params.videoId}&hash=${Date.now()}&hd=1`;
+  }
+  return `https://vk.com/video_ext.php?oid=${params.ownerId}&id=${params.videoId}&hash=${Date.now()}&hd=1`;
 }
 
-// Формирование URL для Instagram embed
-function buildInstagramEmbedUrl(postId) {
-  if (!postId) return '';
-  // Instagram использует oEmbed API, но можно использовать прямую ссылку на embed
-  return `https://www.instagram.com/p/${postId}/embed/`;
+// Получение Instagram embed через oEmbed API
+async function getInstagramEmbed(url) {
+  try {
+    const response = await fetch(`/api/instagram/oembed?url=${encodeURIComponent(url)}`);
+    const data = await response.json();
+    if (data.success && data.html) {
+      return data.html;
+    }
+    // Fallback на прямой embed
+    const postData = extractInstagramPostId(url);
+    if (postData) {
+      const embedUrl = `https://www.instagram.com/p/${postData.postId}/embed/`;
+      return `<iframe src="${embedUrl}" width="100%" height="600" frameborder="0" scrolling="no" allowtransparency="true" allow="encrypted-media"></iframe>`;
+    }
+    return null;
+  } catch (err) {
+    console.error('Ошибка получения Instagram embed:', err);
+    // Fallback на прямой embed
+    const postData = extractInstagramPostId(url);
+    if (postData) {
+      const embedUrl = `https://www.instagram.com/p/${postData.postId}/embed/`;
+      return `<iframe src="${embedUrl}" width="100%" height="600" frameborder="0" scrolling="no" allowtransparency="true" allow="encrypted-media"></iframe>`;
+    }
+    return null;
+  }
 }
 
 // =======================
@@ -95,6 +162,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const videoIframeContainer = document.getElementById('videoIframeContainer');
   let currentVideoIframe = null;
   let currentVideoUrl = null;
+  let isVideoOpening = false; // Флаг для предотвращения повторных вызовов
+  let youtubePlayer = null; // Глобальная переменная для YouTube IFrame API плеера
+  let isPlaying = false; // Флаг для защиты от двойного вызова play()
+  let isPaused = false; // Флаг для защиты от двойного вызова pause()
+  
+  // Проверка наличия элементов видео overlay
+  if (!videoOverlay) {
+    console.warn('⚠️ videoOverlay element not found in DOM');
+  }
+  if (!videoIframeContainer) {
+    console.warn('⚠️ videoIframeContainer element not found in DOM');
+  }
 
   // FIX: Overlay для просмотра изображений
   const imageOverlay = document.getElementById('imageOverlay');
@@ -111,99 +190,621 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentImages = [];
   let currentProductName = '';
   
-  // FIX: Функция открытия видео overlay (поддержка YouTube, VK, Instagram)
-  function openVideoOverlay(videoUrl) {
-    if (!videoUrl) return;
+  // Создание YouTube iframe с использованием YouTube IFrame API (исправление ошибки 153)
+  function createYouTubeIframe(videoId) {
+    if (!videoId || !videoIframeContainer) {
+      console.error('❌ createYouTubeIframe: отсутствует videoId или videoIframeContainer');
+      if (currentVideoUrl) {
+        window.open(currentVideoUrl, '_blank');
+      }
+      closeVideoOverlay();
+      return;
+    }
     
-    currentVideoUrl = videoUrl;
+    // Сбрасываем флаги воспроизведения
+    isPlaying = false;
+    isPaused = false;
     
-    // Определяем тип видео
-    const videoType = getVideoType(videoUrl);
-    let embedUrl = '';
+    // Уничтожаем предыдущий плеер, если он существует
+    if (youtubePlayer) {
+      try {
+        youtubePlayer.destroy();
+        console.log('🗑️ Предыдущий YouTube плеер уничтожен');
+      } catch (e) {
+        console.warn('⚠️ Ошибка при уничтожении предыдущего плеера:', e);
+      }
+      youtubePlayer = null;
+    }
     
-    if (videoType === 'youtube') {
-      const videoId = extractVideoId(videoUrl);
-      if (!videoId) {
-        window.open(videoUrl, '_blank');
+    // Очищаем контейнер
+    videoIframeContainer.innerHTML = '';
+    
+    // Проверяем, что overlay видим перед созданием плеера (критично для YouTube API)
+    if (!videoOverlay || videoOverlay.style.display === 'none' || !videoOverlay.classList.contains('show')) {
+      console.error('❌ Overlay не виден, невозможно создать YouTube плеер');
+      if (currentVideoUrl) {
+        window.open(currentVideoUrl, '_blank');
+      }
+      closeVideoOverlay();
+      return;
+    }
+    
+    // Проверяем размеры контейнера
+    const containerRect = videoIframeContainer.getBoundingClientRect();
+    console.log('📐 Размеры контейнера перед созданием плеера:', {
+      width: containerRect.width,
+      height: containerRect.height,
+      visible: containerRect.width > 0 && containerRect.height > 0
+    });
+    
+    if (containerRect.width === 0 || containerRect.height === 0) {
+      console.error('❌ Контейнер имеет нулевые размеры, невозможно создать плеер');
+      // Используем небольшую задержку для пересчета размеров
+      setTimeout(() => {
+        createYouTubeIframe(videoId);
+      }, 100);
+      return;
+    }
+    
+    try {
+      // Создаем YouTube плеер через IFrame API
+      // enablejsapi=1 - включает JavaScript API для управления плеером
+      const origin = encodeURIComponent(window.location.origin);
+      
+      console.log('🎬 Создание YouTube плеера через IFrame API:', videoId);
+      
+      youtubePlayer = new YT.Player(videoIframeContainer, {
+        videoId: videoId,
+        width: '100%',
+        height: '100%',
+        playerVars: {
+          'playsinline': 1,        // Воспроизведение встроенного видео (критично для iOS)
+          'controls': 1,           // Показывать элементы управления (включая кнопку Play)
+          'rel': 0,                // Не показывать похожие видео
+          'enablejsapi': 1,        // Включить JavaScript API (критично для исправления ошибки 153)
+          'origin': window.location.origin, // Домен для безопасности
+          'modestbranding': 1      // Уменьшить брендинг YouTube
+        },
+        events: {
+          'onReady': function(event) {
+            console.log('✅ YouTube плеер готов к воспроизведению (onReady вызван)');
+            console.log('📊 Состояние плеера:', {
+              videoId: event.target.getVideoData().video_id,
+              duration: event.target.getDuration(),
+              playerState: event.target.getPlayerState()
+            });
+            
+            // Проверяем размеры плеера
+            const iframe = videoIframeContainer.querySelector('iframe');
+            if (iframe) {
+              const iframeRect = iframe.getBoundingClientRect();
+              console.log('📐 Размеры iframe плеера:', {
+                width: iframeRect.width,
+                height: iframeRect.height
+              });
+              
+              const computedStyle = window.getComputedStyle(iframe);
+              console.log('📊 Стили iframe плеера:', {
+                display: computedStyle.display,
+                visibility: computedStyle.visibility,
+                opacity: computedStyle.opacity
+              });
+              
+              currentVideoIframe = iframe;
+            }
+            
+            // Плеер готов, но НЕ запускаем автоматически
+            // Пользователь должен нажать Play вручную (это лучшая практика)
+            console.log('ℹ️ Плеер готов. Пользователь может нажать кнопку Play для воспроизведения.');
+          },
+          'onError': function(event) {
+            const errorCode = event.data;
+            console.error('❌ Ошибка YouTube плеера:', errorCode);
+            
+            let errorMessage = 'Неизвестная ошибка YouTube';
+            switch(errorCode) {
+              case 2:
+                errorMessage = 'Ошибка 2: Неверный параметр значения. Проверьте videoId.';
+                break;
+              case 5:
+                errorMessage = 'Ошибка 5: HTML5 ошибка воспроизведения. Возможно, проблема с браузером.';
+                break;
+              case 100:
+                errorMessage = 'Ошибка 100: Видео не найдено или недоступно.';
+                break;
+              case 101:
+                errorMessage = 'Ошибка 101: Воспроизведение на этом сайте не разрешено владельцем видео.';
+                break;
+              case 150:
+                errorMessage = 'Ошибка 150: Воспроизведение на этом сайте не разрешено владельцем видео.';
+                break;
+              case 153:
+                errorMessage = 'Ошибка 153: Проблема с кодированием видеопотока. Попробуйте обновить страницу.';
+                // Для ошибки 153 пытаемся пересоздать плеер
+                console.warn('⚠️ Обнаружена ошибка 153, пробуем пересоздать плеер...');
+                setTimeout(() => {
+                  if (videoId && videoIframeContainer) {
+                    createYouTubeIframe(videoId);
+                  }
+                }, 2000);
+                return;
+              default:
+                errorMessage = `Ошибка ${errorCode}: Проблема с воспроизведением видео.`;
+            }
+            
+            console.error('📋 Описание ошибки:', errorMessage);
+            
+            // При ошибке открываем видео в новой вкладке
+            if (currentVideoUrl) {
+              console.log('🔗 Открываем видео напрямую на YouTube:', currentVideoUrl);
+              window.open(currentVideoUrl, '_blank');
+            }
+            
+            // Закрываем overlay
+            setTimeout(() => {
+              closeVideoOverlay();
+            }, 1000);
+          },
+          'onStateChange': function(event) {
+            const state = event.data;
+            const stateNames = {
+              0: 'ENDED',
+              1: 'PLAYING',
+              2: 'PAUSED',
+              3: 'BUFFERING',
+              5: 'CUED'
+            };
+            
+            const stateName = stateNames[state] || 'UNKNOWN';
+            console.log('📺 Изменение состояния плеера:', stateName, `(${state})`);
+            
+            // Обновляем флаги
+            if (state === YT.PlayerState.PLAYING) {
+              isPlaying = true;
+              isPaused = false;
+            } else if (state === YT.PlayerState.PAUSED) {
+              isPlaying = false;
+              isPaused = true;
+            }
+          }
+        }
+      });
+      
+      console.log('✅ YouTube IFrame API плеер создан');
+      
+    } catch (error) {
+      console.error('❌ Ошибка создания YouTube IFrame API плеера:', error);
+      console.error('📋 Детали ошибки:', {
+        message: error.message,
+        stack: error.stack,
+        videoId: videoId,
+        containerExists: !!videoIframeContainer,
+        YTApiAvailable: typeof YT !== 'undefined' && typeof YT.Player !== 'undefined'
+      });
+      
+      // Fallback: если API недоступно, используем простой iframe
+      if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+        console.warn('⚠️ YouTube IFrame API не загружен, используем fallback на простой iframe');
+        createYouTubeIframeFallback(videoId);
+      } else {
+        if (currentVideoUrl) {
+          window.open(currentVideoUrl, '_blank');
+        }
+        closeVideoOverlay();
+      }
+    }
+  }
+  
+  // Fallback функция для создания простого iframe (если API недоступно)
+  function createYouTubeIframeFallback(videoId) {
+    try {
+      const origin = encodeURIComponent(window.location.origin);
+      const embedUrl = `https://www.youtube.com/embed/${videoId}?playsinline=1&controls=1&rel=0&enablejsapi=1&origin=${origin}`;
+      
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute('frameborder', '0');
+      iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+      iframe.style.display = 'block';
+      
+      videoIframeContainer.appendChild(iframe);
+      currentVideoIframe = iframe;
+      
+      requestAnimationFrame(() => {
+        iframe.src = embedUrl;
+      });
+      
+      iframe.onload = function() {
+        console.log('✅ Fallback iframe загружен');
+      };
+      
+      console.log('✅ Fallback iframe создан');
+    } catch (error) {
+      console.error('❌ Ошибка создания fallback iframe:', error);
+      if (currentVideoUrl) {
+        window.open(currentVideoUrl, '_blank');
+      }
+      closeVideoOverlay();
+    }
+  }
+  
+  // Глобальная функция для обработки готовности YouTube IFrame API
+  window.onYouTubeIframeAPIReady = function() {
+    console.log('✅ YouTube IFrame API загружен и готов к использованию');
+  };
+  
+  // Функция для пересчета размеров видео-контейнеров при смене ориентации
+  function handleOrientationChange() {
+    console.log('📱 Изменение ориентации экрана');
+    
+    // Если overlay открыт, пересчитываем размеры контейнера
+    if (videoOverlay && videoOverlay.classList.contains('show')) {
+      // Даем браузеру время на пересчет размеров
+      setTimeout(() => {
+        const container = videoIframeContainer;
+        if (container) {
+          const containerRect = container.getBoundingClientRect();
+          console.log('📐 Пересчет размеров контейнера после смены ориентации:', {
+            width: containerRect.width,
+            height: containerRect.height,
+            orientation: window.innerWidth > window.innerHeight ? 'landscape' : 'portrait'
+          });
+          
+          // Если есть YouTube плеер, обновляем его размеры
+          if (youtubePlayer && typeof youtubePlayer.setSize === 'function') {
+            try {
+              // YouTube API автоматически пересчитает размеры при изменении контейнера
+              // Но можно явно вызвать resize, если нужно
+              const iframe = container.querySelector('iframe');
+              if (iframe) {
+                // Если размеры контейнера изменились, YouTube плеер автоматически адаптируется
+                console.log('✅ Размеры YouTube плеера будут пересчитаны автоматически');
+              }
+            } catch (e) {
+              console.warn('⚠️ Ошибка при обновлении размеров YouTube плеера:', e);
+            }
+          }
+          
+          // Пересчитываем размеры для VK и Instagram iframe
+          const iframe = container.querySelector('iframe');
+          if (iframe) {
+            const iframeRect = iframe.getBoundingClientRect();
+            console.log('📐 Размеры iframe после смены ориентации:', {
+              width: iframeRect.width,
+              height: iframeRect.height
+            });
+          }
+        }
+      }, 100);
+    }
+  }
+  
+  // Обработчик смены ориентации экрана
+  let orientationChangeTimeout;
+  window.addEventListener('orientationchange', function() {
+    clearTimeout(orientationChangeTimeout);
+    // Даем браузеру время на обработку смены ориентации
+    orientationChangeTimeout = setTimeout(handleOrientationChange, 200);
+  });
+  
+  // Обработчик изменения размера окна (работает и при смене ориентации на некоторых устройствах)
+  window.addEventListener('resize', function() {
+    // Используем debounce для оптимизации
+    clearTimeout(orientationChangeTimeout);
+    orientationChangeTimeout = setTimeout(function() {
+      // Проверяем, изменилась ли ориентация
+      const currentOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+      const previousOrientation = window.previousOrientation || currentOrientation;
+      
+      if (currentOrientation !== previousOrientation) {
+        window.previousOrientation = currentOrientation;
+        handleOrientationChange();
+      }
+    }, 200);
+  });
+  
+  // Инициализируем предыдущую ориентацию
+  window.previousOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+  
+  // Создание VK iframe (изолированная функция)
+  function createVkIframe(url) {
+    if (!url || !videoIframeContainer) {
+      console.error('❌ createVkIframe: отсутствует url или videoIframeContainer');
+      if (currentVideoUrl) {
+        window.open(currentVideoUrl, '_blank');
+      }
+      closeVideoOverlay();
+      return;
+    }
+    
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.setAttribute('frameborder', '0');
+      iframe.setAttribute('scrolling', 'no');
+      iframe.setAttribute('allow', 'fullscreen');
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+      iframe.style.display = 'block';
+      iframe.src = url;
+      
+      iframe.onerror = function() {
+        console.error('❌ Ошибка загрузки VK iframe');
+        if (currentVideoUrl) {
+          window.open(currentVideoUrl, '_blank');
+        }
+        closeVideoOverlay();
+      };
+      
+      iframe.onload = function() {
+        console.log('✅ VK iframe загружен');
+      };
+      
+      videoIframeContainer.appendChild(iframe);
+      currentVideoIframe = iframe;
+      console.log('✅ VK iframe создан и добавлен в контейнер');
+      
+    } catch (error) {
+      console.error('❌ Ошибка создания VK iframe:', error);
+      if (currentVideoUrl) {
+        window.open(currentVideoUrl, '_blank');
+      }
+      closeVideoOverlay();
+    }
+  }
+  
+  // Создание Instagram iframe (изолированная функция)
+  async function createInstagramIframe(url) {
+    if (!url || !videoIframeContainer) {
+      console.error('❌ createInstagramIframe: отсутствует url или videoIframeContainer');
+      if (currentVideoUrl) {
+        window.open(currentVideoUrl, '_blank');
+      }
+      closeVideoOverlay();
+      return;
+    }
+    
+    // Добавляем класс для Instagram контейнера (более гибкий размер)
+    const container = videoOverlay.querySelector('.video-overlay-container');
+    if (container) {
+      container.classList.add('instagram-container');
+    }
+    
+    // Показываем индикатор загрузки
+    videoIframeContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;">Загрузка...</div>';
+    
+    try {
+      console.log('▶️ Загрузка Instagram embed для:', url);
+      const embedHtml = await getInstagramEmbed(url);
+      if (!embedHtml) {
+        console.warn('⚠️ Не удалось получить Instagram embed');
+        window.open(url, '_blank');
+        closeVideoOverlay();
         return;
       }
-      embedUrl = buildYouTubeEmbedUrl(videoId);
-    } else if (videoType === 'vk') {
-      const vkParams = extractVKVideoParams(videoUrl);
-      if (!vkParams) {
-        window.open(videoUrl, '_blank');
-        return;
+      
+      // Вставляем HTML от Instagram oEmbed API
+      videoIframeContainer.innerHTML = embedHtml;
+      
+      // Находим iframe в вставленном HTML
+      const iframe = videoIframeContainer.querySelector('iframe');
+      if (iframe) {
+        iframe.setAttribute('allow', 'encrypted-media; fullscreen; picture-in-picture');
+        iframe.setAttribute('scrolling', 'no');
+        iframe.style.width = '100%';
+        iframe.style.height = '100%';
+        iframe.style.border = 'none';
+        iframe.style.display = 'block';
+        iframe.style.minHeight = '600px';
+        currentVideoIframe = iframe;
+        console.log('✅ Instagram iframe создан');
+      } else {
+        console.warn('⚠️ iframe не найден в Instagram embed HTML');
       }
-      embedUrl = buildVKEmbedUrl(vkParams);
-    } else if (videoType === 'instagram') {
-      const instagramId = extractInstagramPostId(videoUrl);
-      if (!instagramId) {
-        window.open(videoUrl, '_blank');
-        return;
-      }
-      embedUrl = buildInstagramEmbedUrl(instagramId);
-    } else {
-      // Неизвестный тип - открываем в новой вкладке
+    } catch (err) {
+      console.error('❌ Ошибка загрузки Instagram:', err);
+      window.open(url, '_blank');
+      closeVideoOverlay();
+    }
+  }
+  
+  // Универсальная функция открытия видео overlay (поддержка YouTube, VK, Instagram)
+  // Доступна для всех пользователей, включая гостей (без авторизации)
+  async function openVideoOverlay(videoUrl) {
+    if (!videoUrl) {
+      console.warn('⚠️ openVideoOverlay: videoUrl не указан');
+      return;
+    }
+    
+    // Защита от повторных вызовов
+    if (isVideoOpening) {
+      console.log('ℹ️ Видео уже открывается, пропускаем повторный вызов');
+      return;
+    }
+    
+    // Проверяем наличие элементов
+    if (!videoOverlay || !videoIframeContainer) {
+      console.error('❌ Video overlay elements not found, opening in new tab');
       window.open(videoUrl, '_blank');
       return;
     }
     
-    // FIX: Очищаем предыдущий iframe
-    if (currentVideoIframe) {
-      currentVideoIframe.src = '';
-      currentVideoIframe = null;
-    }
-    videoIframeContainer.innerHTML = '';
-    
-    // FIX: Создаем новый iframe
-    const iframe = document.createElement('iframe');
-    iframe.src = embedUrl;
-    iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; picture-in-picture');
-    iframe.setAttribute('allowfullscreen', '');
-    iframe.setAttribute('playsinline', '1');
-    iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-    iframe.setAttribute('frameborder', '0');
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = 'none';
-    iframe.style.display = 'block';
-    
-    // Для Instagram нужно добавить специфичные атрибуты
-    if (videoType === 'instagram') {
-      iframe.setAttribute('scrolling', 'no');
-      iframe.style.minHeight = '600px';
-    }
-    
-    // FIX: Обработчик ошибки загрузки iframe
-    iframe.onerror = function() {
-      // FIX: Fallback - открываем в новой вкладке при ошибке
-      window.open(currentVideoUrl, '_blank');
+    try {
+      isVideoOpening = true;
+      currentVideoUrl = videoUrl;
+      
+      // Определяем тип видео
+      const videoType = getVideoType(videoUrl);
+      
+      if (!videoType) {
+        console.warn('⚠️ Неизвестный тип видео:', videoUrl);
+        window.open(videoUrl, '_blank');
+        return;
+      }
+      
+      // Очищаем предыдущий контент
+      if (currentVideoIframe) {
+        try {
+          currentVideoIframe.src = '';
+        } catch (e) {
+          // Игнорируем ошибки при очистке
+        }
+        currentVideoIframe = null;
+      }
+      videoIframeContainer.innerHTML = '';
+      
+      // Показываем overlay сразу (с индикатором загрузки для Instagram)
+      videoOverlay.classList.add('show');
+      videoOverlay.setAttribute('aria-hidden', 'false');
+      videoOverlay.style.display = 'flex'; // Дополнительно устанавливаем display для надежности
+      document.body.style.overflow = 'hidden';
+      
+      console.log('✅ Overlay показан, класс show добавлен');
+      
+      if (videoType === 'youtube') {
+        const videoId = extractVideoId(videoUrl);
+        if (!videoId) {
+          console.warn('⚠️ Не удалось извлечь videoId из URL:', videoUrl);
+          window.open(videoUrl, '_blank');
+          closeVideoOverlay();
+          return;
+        }
+        
+        console.log('▶️ Открытие YouTube видео:', videoId);
+        
+        // Используем requestAnimationFrame для гарантии, что overlay полностью отображен
+        requestAnimationFrame(() => {
+          // Двойной requestAnimationFrame для гарантии полной отрисовки overlay
+          requestAnimationFrame(() => {
+            // Проверяем, что YouTube IFrame API загружен
+            if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+              console.warn('⚠️ YouTube IFrame API еще не загружен, ждем...');
+              
+              // Показываем индикатор загрузки
+              videoIframeContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;font-size:1.2rem;">Загрузка YouTube плеера...</div>';
+              
+              // Ждем загрузки API с таймаутом
+              let apiWaitCount = 0;
+              const maxWaitCount = 50; // 5 секунд максимум
+              
+              const waitForAPI = setInterval(() => {
+                apiWaitCount++;
+                
+                if (typeof YT !== 'undefined' && typeof YT.Player !== 'undefined') {
+                  clearInterval(waitForAPI);
+                  console.log('✅ YouTube IFrame API загружен, создаем плеер');
+                  videoIframeContainer.innerHTML = ''; // Очищаем индикатор загрузки
+                  createYouTubeIframe(videoId);
+                } else if (apiWaitCount >= maxWaitCount) {
+                  clearInterval(waitForAPI);
+                  console.error('❌ YouTube IFrame API не загрузился за 5 секунд, используем fallback');
+                  videoIframeContainer.innerHTML = ''; // Очищаем индикатор загрузки
+                  createYouTubeIframeFallback(videoId);
+                }
+              }, 100);
+            } else {
+              // API уже загружен, создаем плеер сразу
+              createYouTubeIframe(videoId);
+            }
+          });
+        });
+        
+      } else if (videoType === 'vk') {
+        const vkParams = extractVKVideoParams(videoUrl);
+        if (!vkParams) {
+          console.warn('⚠️ Не удалось извлечь параметры VK из URL:', videoUrl);
+          window.open(videoUrl, '_blank');
+          closeVideoOverlay();
+          return;
+        }
+        const embedUrl = buildVKEmbedUrl(vkParams);
+        console.log('▶️ Открытие VK видео:', embedUrl);
+        createVkIframe(embedUrl);
+        
+      } else if (videoType === 'instagram') {
+        console.log('▶️ Открытие Instagram видео:', videoUrl);
+        await createInstagramIframe(videoUrl);
+        
+      } else {
+        // Неизвестный тип - открываем в новой вкладке
+        console.warn('⚠️ Неизвестный тип видео:', videoType);
+        window.open(videoUrl, '_blank');
+        closeVideoOverlay();
+      }
+    } catch (error) {
+      console.error('❌ Критическая ошибка в openVideoOverlay:', error);
+      window.open(videoUrl, '_blank');
       closeVideoOverlay();
-    };
-    
-    videoIframeContainer.appendChild(iframe);
-    currentVideoIframe = iframe;
-    
-    // FIX: Показываем overlay
-    videoOverlay.classList.add('show');
-    videoOverlay.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
+    } finally {
+      // Сбрасываем флаг после небольшой задержки, чтобы дать время iframe загрузиться
+      setTimeout(() => {
+        isVideoOpening = false;
+      }, 500);
+    }
   }
   
-  // FIX: Функция закрытия видео overlay
+  
+  // Функция закрытия видео overlay
   function closeVideoOverlay() {
-    // FIX: Очищаем src у iframe для остановки воспроизведения
+    // Сбрасываем флаг открытия
+    isVideoOpening = false;
+    
+    // Сбрасываем флаги воспроизведения
+    isPlaying = false;
+    isPaused = false;
+    
+    // Останавливаем и уничтожаем YouTube плеер
+    if (youtubePlayer) {
+      try {
+        // Останавливаем воспроизведение
+        if (youtubePlayer.stopVideo) {
+          youtubePlayer.stopVideo();
+        }
+        // Уничтожаем плеер
+        if (youtubePlayer.destroy) {
+          youtubePlayer.destroy();
+        }
+        console.log('🛑 YouTube плеер остановлен и уничтожен');
+      } catch (e) {
+        console.warn('⚠️ Ошибка при остановке YouTube плеера:', e);
+      }
+      youtubePlayer = null;
+    }
+    
+    // Очищаем src у iframe для остановки воспроизведения (fallback)
     if (currentVideoIframe) {
-      currentVideoIframe.src = '';
+      try {
+        currentVideoIframe.src = '';
+      } catch (e) {
+        // Игнорируем ошибки при очистке
+      }
       currentVideoIframe = null;
     }
-    videoIframeContainer.innerHTML = '';
+    
+    // Очищаем контейнер
+    if (videoIframeContainer) {
+      videoIframeContainer.innerHTML = '';
+    }
+    
+    // Убираем класс instagram-container если был добавлен
+    const container = videoOverlay ? videoOverlay.querySelector('.video-overlay-container') : null;
+    if (container) {
+      container.classList.remove('instagram-container');
+    }
+    
     currentVideoUrl = null;
     
-    // FIX: Скрываем overlay
-    videoOverlay.classList.remove('show');
-    videoOverlay.setAttribute('aria-hidden', 'true');
+    // Скрываем overlay
+    if (videoOverlay) {
+      videoOverlay.classList.remove('show');
+      videoOverlay.setAttribute('aria-hidden', 'true');
+      videoOverlay.style.display = 'none'; // Дополнительно устанавливаем display для надежности
+    }
     document.body.style.overflow = '';
+    console.log('✅ Video overlay закрыт');
   }
   
   // FIX: Функция открытия overlay с изображением (старый вариант)
@@ -438,26 +1039,30 @@ document.addEventListener("DOMContentLoaded", () => {
   initImageSliders();
 
   // FIX: Обработчик клика на кнопку "Обзор" и закрытия overlay
+  // Просмотр видео доступен для всех пользователей (включая гостей)
   document.addEventListener('click', (e) => {
-    // FIX: Открытие видео по клику на кнопку "Обзор"
+    // FIX: Открытие видео по клику на кнопку "Обзор" - открываем в overlay
     const videoBtn = e.target.closest('.btn[data-video]');
     if (videoBtn) {
       e.preventDefault();
       e.stopPropagation();
+      e.stopImmediatePropagation(); // Останавливаем дальнейшее распространение события
+      
       const videoUrl = videoBtn.getAttribute('data-video');
       if (videoUrl) {
-        openVideoOverlay(videoUrl);
+        console.log('🎬 Клик на кнопку видео, URL:', videoUrl);
+        // Открываем видео в overlay (модальном окне)
+        openVideoOverlay(videoUrl).catch(err => {
+          console.error('❌ Ошибка при открытии видео:', err);
+          window.open(videoUrl, '_blank');
+        });
+      } else {
+        console.warn('⚠️ Кнопка видео не содержит data-video атрибут');
       }
-      return;
+      return false; // Дополнительная защита от всплытия
     }
     
-    // FIX: Закрытие видео overlay по кнопке закрытия
-    if (e.target.closest('[data-close-video]')) {
-      e.preventDefault();
-      e.stopPropagation();
-      closeVideoOverlay();
-      return;
-    }
+    // FIX: Закрытие видео overlay по кнопке закрытия (обрабатывается выше вместе с кликом на фон)
     
     // FIX: Обработчик клика на баннеры для открытия в overlay (но не на кнопку ссылки)
     if (e.target.closest('.banner-link-icon')) {
@@ -533,8 +1138,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
-    // FIX: Закрытие видео overlay по клику на фон
-    if (e.target === videoOverlay) {
+    // FIX: Закрытие видео overlay по клику на фон или кнопке закрытия
+    if (videoOverlay && (e.target === videoOverlay || e.target.closest('[data-close-video]'))) {
+      e.preventDefault();
+      e.stopPropagation();
       closeVideoOverlay();
       return;
     }
@@ -729,8 +1336,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Обработчик закрытия по Escape
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && descriptionModal && descriptionModal.style.display === 'block') {
-      closeDescriptionModal();
+    if (e.key === 'Escape') {
+      // Закрываем модальное окно описания
+      if (descriptionModal && descriptionModal.style.display === 'block') {
+        closeDescriptionModal();
+      }
+      // Закрываем видео overlay
+      if (videoOverlay && videoOverlay.classList.contains('show')) {
+        closeVideoOverlay();
+      }
     }
   });
 
@@ -772,6 +1386,10 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = url.toString();
       return;
     }
+
+    // Категории услуг (открытие/закрытие/выбор)
+    const openServicesCat = e.target.closest("#openServicesCategories");
+    const servicesDropdown = document.getElementById("servicesCategoriesMenu");
 
     if (openServicesCat && servicesDropdown) {
       const opened = servicesDropdown.classList.toggle("open");
@@ -830,7 +1448,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const resultEl = ratingBlock.querySelector(".result");
       const votesEl = ratingBlock.querySelector(".votes");
-      const productId = ratingBlock.dataset.id;
       const value = likeBtn ? "like" : "dislike";
 
       // Отключаем кнопки сразу, чтобы предотвратить повторные клики
