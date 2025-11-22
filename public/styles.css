@@ -203,8 +203,8 @@ body {
   font-weight: 700;
   color: #ff3333;
   font-style: italic;
-  /* Анимация мигания с частотой 0.5 секунд (полный цикл 1 секунда: 0.5 сек видно, 0.5 сек тускло) */
-  animation: blink 1s ease-in-out infinite;
+  /* Анимация мигания (полный цикл 0.5 секунды: быстрее мигание) */
+  animation: blink 0.5s ease-in-out infinite;
 }
 
 @keyframes blink {
@@ -258,8 +258,8 @@ body {
   color: #ffffff;
   text-decoration: none;
   box-shadow: 0 2px 8px rgba(0, 123, 255, 0.5);
-  /* Анимация мигания с частотой 0.5 секунд */
-  animation: blink-banner 1s ease-in-out infinite;
+  /* Анимация мигания (полный цикл 0.5 секунды: быстрее мигание) */
+  animation: blink-banner 0.5s ease-in-out infinite;
 }
 
 @keyframes blink-banner {

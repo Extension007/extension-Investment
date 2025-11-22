@@ -4,6 +4,7 @@ require("dotenv").config(); // ✅ для локальной загрузки .e
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
+const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const MongoStore = require("connect-mongo");
@@ -141,6 +142,7 @@ if (process.env.MONGODB_URI) {
 }
 
 app.use(session(sessionOptions));
+app.use(cookieParser());
 
 // Статика
 app.use(express.static(path.join(__dirname, "public")));
@@ -292,20 +294,30 @@ app.get("/", async (req, res) => {
       console.warn("⚠️ Ошибка получения баннеров:", bannerErr.message);
     }
     
-    // Подсчет посетителей (только если еще не посещал в этой сессии)
+    // Подсчет посетителей (только один раз для каждого уникального гостя)
     let visitorCount = 0;
     try {
-      if (!req.session.hasVisited) {
-        // Увеличиваем счетчик посетителей
+      // Проверяем наличие cookie, которая хранится 1 год
+      const visitorCookie = req.cookies.exto_visitor;
+      
+      if (!visitorCookie) {
+        // Это новый уникальный посетитель - увеличиваем счетчик
         const stats = await Statistics.findOneAndUpdate(
           { key: "visitors" },
           { $inc: { value: 1 } },
           { upsert: true, new: true }
         );
         visitorCount = stats.value;
-        req.session.hasVisited = true;
+        
+        // Устанавливаем cookie на 1 год, чтобы гость учитывался только один раз
+        res.cookie('exto_visitor', '1', {
+          maxAge: 365 * 24 * 60 * 60 * 1000, // 1 год
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production', // только HTTPS в production
+          sameSite: 'lax'
+        });
       } else {
-        // Получаем текущее значение без увеличения
+        // Гость уже был засчитан - просто получаем текущее значение
         const stats = await Statistics.findOne({ key: "visitors" });
         visitorCount = stats ? stats.value : 0;
       }
