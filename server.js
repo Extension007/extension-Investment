@@ -1310,29 +1310,53 @@ app.post("/admin/product/:id/edit", requireAuth, (req, res, next) => {
 });
 
 // 📌 Голосование (лайки/дизлайки → возвращаем результат и общее количество голосов)
+// Доступно всем: гостям (через cookie) и пользователям (через сессию)
 app.post("/api/rating/:id", async (req, res) => {
   try {
-    if (!req.session.user) return res.status(401).json({ success: false, message: "Голосование доступно только зарегистрированным пользователям" });
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Рейтинг недоступен: нет БД" });
     const { value } = req.body; // "like" или "dislike"
     const product = await Product.findById(req.params.id);
     if (!product) return res.status(404).json({ success: false, message: "Товар не найден" });
 
-    // один голос на пользователя
-    const userId = req.session.user._id.toString();
-    const already = (product.voters || []).map(v => v.toString()).includes(userId);
-    if (already) {
-      return res.status(409).json({ success: false, message: "Вы уже голосовали за этот товар" });
+    // Проверяем, голосовал ли уже
+    if (req.session.user) {
+      // Для зарегистрированных пользователей - проверяем массив voters
+      const userId = req.session.user._id.toString();
+      const already = (product.voters || []).map(v => v.toString()).includes(userId);
+      if (already) {
+        return res.status(409).json({ success: false, message: "Вы уже голосовали за этот товар" });
+      }
+    } else {
+      // Для гостей - проверяем cookie
+      const guestVoteCookie = req.cookies[`exto_vote_${req.params.id}`];
+      if (guestVoteCookie) {
+        return res.status(409).json({ success: false, message: "Вы уже голосовали за этот товар" });
+      }
     }
 
+    // Обновляем рейтинг
     if (value === "like") product.likes += 1;
     else if (value === "dislike") product.dislikes += 1;
 
     product.rating_updated_at = Date.now();
-    product.voters = product.voters || [];
-    product.voters.push(req.session.user._id);
+
+    // Для пользователей добавляем в массив voters
+    if (req.session.user) {
+      product.voters = product.voters || [];
+      product.voters.push(req.session.user._id);
+    }
 
     await product.save();
+
+    // Для гостей устанавливаем cookie на 1 год
+    if (!req.session.user) {
+      res.cookie(`exto_vote_${req.params.id}`, '1', {
+        maxAge: 365 * 24 * 60 * 60 * 1000, // 1 год
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
+    }
 
     res.json({
       success: true,

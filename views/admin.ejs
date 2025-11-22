@@ -375,9 +375,9 @@
 
                 <!-- Рейтинг (только отображение) -->
                 <div class="product-rating" data-id="<%= p._id %>" style="margin-top:10px;">
-                  <button class="btn icon" type="button" disabled aria-label="Лайк">👍</button>
+                  <button class="btn icon" type="button" disabled aria-label="Лайк">▲</button>
                   <span class="result"><%= (p.likes || 0) - (p.dislikes || 0) %></span>
-                  <button class="btn icon" type="button" disabled aria-label="Дизлайк">👎</button>
+                  <button class="btn icon" type="button" disabled aria-label="Дизлайк">▼</button>
                   <span class="votes">(<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)</span>
                 </div>
               </div>

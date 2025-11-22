@@ -13,20 +13,22 @@
 <body>
   <header class="main-header">
     <div class="container header-inner">
-      <a class="logo" href="/">EXTO</a>
+      <div class="header-left">
+        <a class="logo" href="/">EXTO</a>
+        <div class="header-stats">
+          <div class="stat-item">
+            <span style="opacity: 0.8;">👥 Гости:</span>
+            <strong style="color: #4caf50;"><%= typeof visitorCount !== 'undefined' ? visitorCount : 0 %></strong>
+          </div>
+          <div class="stat-item">
+            <span style="opacity: 0.8;">👤 Партнеры:</span>
+            <strong style="color: #2196f3;"><%= typeof userCount !== 'undefined' ? userCount : 0 %></strong>
+          </div>
+        </div>
+      </div>
       <nav class="nav" style="display:none;">
         <!-- Навигация скрыта -->
       </nav>
-      <div class="header-stats">
-        <div class="stat-item">
-          <span style="opacity: 0.8;">👥 Гости:</span>
-          <strong style="color: #4caf50;"><%= typeof visitorCount !== 'undefined' ? visitorCount : 0 %></strong>
-        </div>
-        <div class="stat-item">
-          <span style="opacity: 0.8;">👤 Партнеры:</span>
-          <strong style="color: #2196f3;"><%= typeof userCount !== 'undefined' ? userCount : 0 %></strong>
-        </div>
-      </div>
       <div class="header-actions">
         <% if (isAuth) { %>
           <% if (isAdmin) { %>
@@ -178,8 +180,8 @@
                   </div>
 
                   <!-- 🔹 Блок рейтинга -->
-                  <div class="product-rating" data-id="<%= p._id %>" data-voted="<%= (votedMap && votedMap[p._id.toString()]) ? 'true' : 'false' %>">
-                    <button class="like-btn btn icon" type="button" aria-label="Лайк" <%= (votedMap && votedMap[p._id.toString()]) ? 'disabled' : '' %>>👍</button>
+                  <div class="product-rating" data-id="<%= p._id %>" data-voted="false">
+                    <button class="like-btn btn icon" type="button" aria-label="Лайк">▲</button>
 
                     <span class="result">
                       <% const likes = p.likes || 0; %>
@@ -187,7 +189,7 @@
                       <%= likes - dislikes %>
                     </span>
 
-                    <button class="dislike-btn btn icon" type="button" aria-label="Дизлайк" <%= (votedMap && votedMap[p._id.toString()]) ? 'disabled' : '' %>>👎</button>
+                    <button class="dislike-btn btn icon" type="button" aria-label="Дизлайк">▼</button>
 
                     <span class="votes">
                       (<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)
@@ -350,7 +352,7 @@
 
                   <!-- 🔹 Блок рейтинга -->
                   <div class="product-rating" data-id="<%= s._id %>" data-voted="<%= (votedMap && votedMap[s._id.toString()]) ? 'true' : 'false' %>">
-                    <button class="like-btn btn icon" type="button" aria-label="Лайк" <%= (votedMap && votedMap[s._id.toString()]) ? 'disabled' : '' %>>👍</button>
+                    <button class="like-btn btn icon" type="button" aria-label="Лайк">▲</button>
 
                     <span class="result">
                       <% const likes = s.likes || 0; %>
@@ -358,7 +360,7 @@
                       <%= likes - dislikes %>
                     </span>
 
-                    <button class="dislike-btn btn icon" type="button" aria-label="Дизлайк" <%= (votedMap && votedMap[s._id.toString()]) ? 'disabled' : '' %>>👎</button>
+                    <button class="dislike-btn btn icon" type="button" aria-label="Дизлайк">▼</button>
 
                     <span class="votes">
                       (<%= (s.likes || 0) + (s.dislikes || 0) %> голосов)

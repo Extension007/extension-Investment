@@ -23,6 +23,21 @@ function buildYouTubeEmbedUrl(videoId) {
 // =======================
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Инициализация состояния голосования для гостей (проверка cookie)
+  if (!window.IS_AUTH) {
+    document.querySelectorAll(".product-rating").forEach(ratingBlock => {
+      const productId = ratingBlock.dataset.id;
+      if (productId) {
+        const voteCookie = document.cookie.split(';').some(cookie => cookie.trim().startsWith(`exto_vote_${productId}=`));
+        if (voteCookie) {
+          ratingBlock.dataset.voted = "true";
+          ratingBlock.querySelectorAll("button").forEach((b) => {
+            b.disabled = true;
+          });
+        }
+      }
+    });
+  }
   // FIX: Полноэкранный overlay для YouTube видео
   const videoOverlay = document.getElementById('videoOverlay');
   const videoIframeContainer = document.getElementById('videoIframeContainer');
@@ -704,36 +719,49 @@ document.addEventListener("DOMContentLoaded", () => {
       servicesDropdown.setAttribute("aria-hidden", "true");
     }
 
-    // Рейтинг (лайк/дизлайк)
+    // Рейтинг (лайк/дизлайк) - доступно всем: гостям и пользователям
     const likeBtn = e.target.closest(".like-btn");
     const dislikeBtn = e.target.closest(".dislike-btn");
 
     if (likeBtn || dislikeBtn) {
-      if (!window.IS_AUTH) {
-        const modal = document.getElementById("registerModal");
-        if (modal) {
-          modal.style.display = "block";
-          modal.setAttribute("aria-hidden", "false");
-        } else {
-          alert("Голосование доступно только зарегистрированным пользователям");
-        }
-        return;
-      }
-
       const ratingBlock = e.target.closest(".product-rating");
       if (!ratingBlock) return;
-      if (ratingBlock.dataset.voted === "true") return;
+      
+      const productId = ratingBlock.dataset.id;
+      
+      // Проверяем, голосовал ли уже (через cookie для гостей или data-атрибут для пользователей)
+      if (ratingBlock.dataset.voted === "true") {
+        return;
+      }
+      
+      // Для гостей также проверяем cookie
+      if (!window.IS_AUTH) {
+        const voteCookie = document.cookie.split(';').some(cookie => cookie.trim().startsWith(`exto_vote_${productId}=`));
+        if (voteCookie) {
+          ratingBlock.dataset.voted = "true";
+          ratingBlock.querySelectorAll("button").forEach((b) => {
+            b.disabled = true;
+          });
+          return;
+        }
+      }
 
       const resultEl = ratingBlock.querySelector(".result");
       const votesEl = ratingBlock.querySelector(".votes");
       const productId = ratingBlock.dataset.id;
       const value = likeBtn ? "like" : "dislike";
 
+      // Отключаем кнопки сразу, чтобы предотвратить повторные клики
+      ratingBlock.querySelectorAll("button").forEach((b) => {
+        b.disabled = true;
+      });
+
       try {
         const res = await fetch(`/api/rating/${productId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ value })
+          body: JSON.stringify({ value }),
+          credentials: 'include' // Важно для отправки cookie
         });
         const data = await res.json();
 
@@ -741,23 +769,29 @@ document.addEventListener("DOMContentLoaded", () => {
           if (resultEl) resultEl.textContent = String(data.result);
           if (votesEl) votesEl.textContent = `(${data.total} голосов)`;
           ratingBlock.dataset.voted = "true";
-          ratingBlock.querySelectorAll("button").forEach((b) => {
-            b.disabled = true;
-          });
         } else {
           console.warn("⚠️ Сервер вернул ошибку:", data.message || data.error);
-          if (res.status === 401) {
-            alert("Голосование доступно только зарегистрированным пользователям");
-          }
+          // Включаем кнопки обратно при ошибке
+          ratingBlock.querySelectorAll("button").forEach((b) => {
+            b.disabled = false;
+          });
+          
           if (res.status === 409) {
+            // Уже голосовал - помечаем как проголосовавший
             ratingBlock.dataset.voted = "true";
             ratingBlock.querySelectorAll("button").forEach((b) => {
               b.disabled = true;
             });
+          } else {
+            alert(data.message || "Ошибка при голосовании");
           }
         }
       } catch (err) {
         console.error("❌ Ошибка сохранения рейтинга:", err);
+        // Включаем кнопки обратно при ошибке
+        ratingBlock.querySelectorAll("button").forEach((b) => {
+          b.disabled = false;
+        });
       }
     }
   });
