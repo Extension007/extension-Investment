@@ -172,6 +172,7 @@
                   <div class="product-actions">
                     <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Перейти</a>
                     <% if (p.video_url) { %>
+                      <!-- Кнопка "Обзор" доступна для всех пользователей, включая гостей -->
                       <button class="btn small" data-video="<%= p.video_url %>">Обзор</button>
                     <% } %>
                   </div>
@@ -343,8 +344,10 @@
                   <div class="product-actions">
                     <a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">Перейти</a>
                     <% if (s.video_url) { %>
+                      <!-- Кнопка "Обзор" доступна для всех пользователей, включая гостей -->
                       <button class="btn small" data-video="<%= s.video_url %>">Обзор</button>
                     <% } %>
+                  </div>
                   </div>
 
                   <!-- 🔹 Блок рейтинга -->
@@ -423,7 +426,7 @@
 </footer>
 
 <!-- FIX: Полноэкранный overlay для YouTube видео -->
-<div id="videoOverlay" class="video-overlay" aria-hidden="true">
+<div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
   <div class="video-overlay-container">
     <button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
     <div class="video-overlay-iframe-container" id="videoIframeContainer">
@@ -488,6 +491,15 @@
 </div>
 
 <script>window.IS_AUTH = <%= JSON.stringify(isAuth) %>;</script>
+
+<!-- Загружаем YouTube IFrame API перед основным скриптом -->
+<script>
+  // Загрузка YouTube IFrame API
+  var tag = document.createElement('script');
+  tag.src = "https://www.youtube.com/iframe_api";
+  var firstScriptTag = document.getElementsByTagName('script')[0];
+  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+</script>
 
 <!-- Подключаем основной скрипт (включает весь JS: youtube init, модалки, рейтинг, категории, регистрация) -->
 <script src="/script.js"></script>
