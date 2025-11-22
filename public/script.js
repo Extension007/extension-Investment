@@ -362,6 +362,24 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     
+    // FIX: Обработчик клика на баннеры для открытия в overlay (но не на кнопку ссылки)
+    if (e.target.closest('.banner-link-icon')) {
+      // Клик на кнопку ссылки - не обрабатываем, позволяем перейти по ссылке
+      return;
+    }
+    
+    if (e.target.classList.contains('banner-clickable')) {
+      e.preventDefault();
+      e.stopPropagation();
+      const bannerImage = e.target.getAttribute('data-banner-image') || e.target.src;
+      if (bannerImage && imageOverlay && imageOverlayImg) {
+        currentImages = [bannerImage];
+        currentImageIndex = 0;
+        openImageOverlay(bannerImage, 0, [bannerImage], null);
+      }
+      return;
+    }
+    
     // FIX: Обработчик клика на изображения с классом image-clickable
     if (e.target.classList.contains('image-clickable')) {
       e.preventDefault();

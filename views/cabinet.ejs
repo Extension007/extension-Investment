@@ -137,6 +137,69 @@
     </section>
 
     <section class="section">
+      <h2>Загрузить баннер рекламы</h2>
+      <p style="margin-bottom: 15px; color: #666;">Загрузите баннер для секции "Тут ваша реклама" на главной странице. Баннер будет отправлен на модерацию.</p>
+      <form id="createBannerForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/banner">
+        <div class="form-section">
+          <label for="bannerImage">Изображение баннера:</label>
+          <input type="file" id="bannerImage" name="image" accept="image/*" required>
+          <div id="bannerPreview" class="image-preview-container" style="display: none; margin-top: 10px;">
+            <img id="bannerPreviewImg" src="" alt="Предпросмотр баннера" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+          </div>
+          <small class="form-hint">Максимальный размер файла: 5MB. Рекомендуемые размеры: 1200x400px</small>
+        </div>
+        <input type="url" name="link" placeholder="Ссылка для перехода (необязательно)">
+        <button type="submit" class="btn primary">Отправить на модерацию</button>
+      </form>
+      <div id="createBannerMsg" class="note" style="margin-top:10px;"></div>
+    </section>
+
+    <section class="section">
+      <h2>Мои баннеры</h2>
+      <% if (banners && banners.length) { %>
+        <div class="product-grid">
+          <% banners.forEach(b => { %>
+            <div class="product-card">
+              <h3 class="product-title">Баннер</h3>
+              <% if (b.image_url) { %>
+                <img src="<%= b.image_url %>" alt="Баннер" style="max-height: 200px; object-fit: cover;">
+              <% } else { %>
+                <div class="no-image">Нет изображения</div>
+              <% } %>
+              <div class="product-bottom">
+                <div style="text-align:center;margin-bottom:10px;">
+                  <% if (b.status === "pending") { %>
+                    <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ⏳ На модерации
+                    </span>
+                  <% } else if (b.status === "approved") { %>
+                    <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ✅ Опубликовано
+                    </span>
+                  <% } else if (b.status === "rejected") { %>
+                    <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+                      ❌ Отклонено
+                    </span>
+                    <% if (b.rejection_reason) { %>
+                      <p style="color:#f44336;font-size:0.85rem;margin-top:5px;"><%= b.rejection_reason %></p>
+                    <% } %>
+                  <% } %>
+                </div>
+                <% if (b.link) { %>
+                  <div class="product-actions">
+                    <a class="btn small outline" href="<%= b.link %>" target="_blank" rel="noopener">Ссылка</a>
+                  </div>
+                <% } %>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="empty-state">У вас пока нет баннеров.</p>
+      <% } %>
+    </section>
+
+    <section class="section">
       <h2>Мои услуги</h2>
       <% if (services && services.length) { %>
         <div class="product-grid">
@@ -581,6 +644,88 @@
         };
         reader.readAsDataURL(file);
       });
+    });
+  }
+
+  // Обработка формы загрузки баннера
+  const bannerForm = document.getElementById("createBannerForm");
+  const bannerMsg = document.getElementById("createBannerMsg");
+  const bannerPreview = document.getElementById("bannerPreview");
+  const bannerPreviewImg = document.getElementById("bannerPreviewImg");
+  const bannerImageInput = document.getElementById("bannerImage");
+
+  if (bannerForm) {
+    // Превью баннера
+    if (bannerImageInput && bannerPreviewImg) {
+      bannerImageInput.addEventListener("change", function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          // Проверка размера файла
+          if (file.size > 5 * 1024 * 1024) {
+            alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
+            e.target.value = '';
+            bannerPreview.style.display = 'none';
+            return;
+          }
+          
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            bannerPreviewImg.src = e.target.result;
+            bannerPreview.style.display = 'block';
+          };
+          reader.readAsDataURL(file);
+        } else {
+          bannerPreview.style.display = 'none';
+        }
+      });
+    }
+
+    bannerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      
+      // Проверка размера файла
+      if (bannerImageInput && bannerImageInput.files.length > 0) {
+        const file = bannerImageInput.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+          bannerMsg.textContent = `Файл "${file.name}" превышает 5MB`;
+          bannerMsg.style.color = "#b00020";
+          return;
+        }
+      }
+      
+      bannerMsg.textContent = "Отправка...";
+      bannerMsg.style.color = "#666";
+      
+      const formData = new FormData(bannerForm);
+      
+      try {
+        const res = await fetch("/cabinet/banner", { method: "POST", body: formData });
+        
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          bannerMsg.textContent = "Ошибка: " + (text || "Неверный формат ответа");
+          bannerMsg.style.color = "#b00020";
+          return;
+        }
+        
+        const json = await res.json();
+        
+        if (json.success) {
+          bannerMsg.textContent = "Баннер отправлен на модерацию.";
+          bannerMsg.style.color = "green";
+          bannerForm.reset();
+          bannerPreview.style.display = 'none';
+          setTimeout(() => location.reload(), 800);
+        } else {
+          bannerMsg.textContent = json.message || "Ошибка при загрузке баннера";
+          bannerMsg.style.color = "#b00020";
+        }
+      } catch (err) {
+        console.error("❌ Ошибка при отправке:", err);
+        bannerMsg.textContent = "Ошибка сети: " + err.message;
+        bannerMsg.style.color = "#b00020";
+      }
     });
   }
 </script>

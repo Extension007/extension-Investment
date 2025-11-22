@@ -8,7 +8,9 @@ const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const MongoStore = require("connect-mongo");
 const Product = require("./models/Product");
+const Banner = require("./models/Banner");
 const User = require("./models/User");
+const Statistics = require("./models/Statistics");
 const upload = require("./utils/upload");
 const cloudinary = require("cloudinary").v2;
 const helmet = require("helmet");
@@ -191,7 +193,7 @@ app.get("/", async (req, res) => {
     const categoryKeys = typeof CATEGORY_KEYS !== 'undefined' ? CATEGORY_KEYS : [];
 
     if (!HAS_MONGO) {
-      return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, categories, selectedCategory: selected || "all" });
+      return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
     }
     
     // Проверяем подключение к БД (readyState: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting)
@@ -215,11 +217,11 @@ app.get("/", async (req, res) => {
           // Продолжаем выполнение ниже
         } else {
           console.warn("⚠️ MongoDB все еще не подключена после ожидания, показываем пустой каталог");
-          return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+          return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
         }
       } else {
         // Для других состояний сразу показываем пустой каталог
-        return res.render("index", { products: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+        return res.render("index", { products: [], services: [], banners: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
       }
     }
     
@@ -282,8 +284,60 @@ app.get("/", async (req, res) => {
       }
     });
     
+    // Получаем одобренные баннеры для секции рекламы
+    let approvedBanners = [];
+    try {
+      approvedBanners = await Banner.find({ status: "approved" }).sort({ _id: -1 }).maxTimeMS(5000);
+    } catch (bannerErr) {
+      console.warn("⚠️ Ошибка получения баннеров:", bannerErr.message);
+    }
+    
+    // Подсчет посетителей (только если еще не посещал в этой сессии)
+    let visitorCount = 0;
+    try {
+      if (!req.session.hasVisited) {
+        // Увеличиваем счетчик посетителей
+        const stats = await Statistics.findOneAndUpdate(
+          { key: "visitors" },
+          { $inc: { value: 1 } },
+          { upsert: true, new: true }
+        );
+        visitorCount = stats.value;
+        req.session.hasVisited = true;
+      } else {
+        // Получаем текущее значение без увеличения
+        const stats = await Statistics.findOne({ key: "visitors" });
+        visitorCount = stats ? stats.value : 0;
+      }
+    } catch (visitorErr) {
+      console.warn("⚠️ Ошибка подсчета посетителей:", visitorErr.message);
+    }
+    
+    // Количество зарегистрированных пользователей
+    let userCount = 0;
+    try {
+      userCount = await User.countDocuments({});
+    } catch (userErr) {
+      console.warn("⚠️ Ошибка подсчета пользователей:", userErr.message);
+    }
+    
     // page/totalPages оставлены для совместимости с твоим рендером
-    res.render("index", { products, services, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap, categories, selectedCategory: selected || "all" });
+    res.render("index", { 
+      products, 
+      services, 
+      banners: approvedBanners, 
+      visitorCount, 
+      userCount,
+      page: 1, 
+      totalPages: 1, 
+      isAuth, 
+      isAdmin, 
+      isUser, 
+      userRole, 
+      votedMap, 
+      categories, 
+      selectedCategory: selected || "all" 
+    });
   } catch (err) {
     console.error("❌ Ошибка получения товаров:", err);
     console.error("❌ Детали ошибки:", err.message);
@@ -301,6 +355,10 @@ app.get("/", async (req, res) => {
       // Убеждаемся, что все переменные определены
       res.render("index", { 
         products: [], 
+        services: [],
+        banners: [],
+        visitorCount: 0,
+        userCount: 0,
         page: 1, 
         totalPages: 1, 
         isAuth: isAuth || false, 
@@ -401,7 +459,12 @@ app.get("/cabinet", requireUser, async (req, res) => {
       type: "service"
     }).sort({ _id: -1 });
     
-    res.render("cabinet", { user: req.session.user, products: myProducts, services: myServices || [] });
+    // Получаем баннеры пользователя
+    const myBanners = await Banner.find({ 
+      owner: req.session.user._id
+    }).sort({ _id: -1 });
+    
+    res.render("cabinet", { user: req.session.user, products: myProducts, services: myServices || [], banners: myBanners || [] });
   } catch (err) {
     console.error("❌ Ошибка загрузки кабинета:", err);
     res.status(500).send("Ошибка загрузки кабинета");
@@ -720,6 +783,67 @@ app.post("/cabinet/product/:id/edit", requireUser, (req, res, next) => {
     res.status(500).json({ success: false, message: "Ошибка редактирования карточки: " + err.message });
   }
 });
+
+// Загрузка баннера пользователем (на модерацию: статус pending)
+app.post("/cabinet/banner", requireUser, upload.single("image"), async (req, res) => {
+  if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+  try {
+    const { link } = req.body;
+    
+    // Валидация
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Изображение баннера обязательно" });
+    }
+    
+    // Получаем путь к изображению
+    let imageUrl = null;
+    if (req.file.path && !req.file.path.startsWith('http')) {
+      imageUrl = '/uploads/' + req.file.filename;
+    } else {
+      imageUrl = req.file.path;
+    }
+    
+    // Используем mongoose.Types.ObjectId для правильного преобразования
+    let ownerId = null;
+    if (req.session.user._id) {
+      if (mongoose.isValidObjectId && mongoose.isValidObjectId(req.session.user._id)) {
+        ownerId = new mongoose.Types.ObjectId(req.session.user._id);
+      } else if (mongoose.Types.ObjectId.isValid(req.session.user._id)) {
+        ownerId = new mongoose.Types.ObjectId(req.session.user._id);
+      } else {
+        ownerId = req.session.user._id;
+      }
+    }
+    
+    const bannerData = {
+      image_url: imageUrl,
+      link: link ? link.trim() : "",
+      owner: ownerId,
+      status: "pending"
+    };
+    
+    console.log("📝 Создание баннера пользователем:", {
+      owner: ownerId.toString(),
+      status: "pending",
+      username: req.session.user.username,
+      userId: req.session.user._id
+    });
+    
+    const created = await Banner.create(bannerData);
+    
+    console.log("✅ Баннер создан:", {
+      id: created._id.toString(),
+      status: created.status,
+      owner: created.owner.toString()
+    });
+    
+    res.json({ success: true, bannerId: created._id });
+  } catch (err) {
+    console.error("❌ Ошибка создания баннера:", err);
+    res.status(500).json({ success: false, message: "Ошибка создания баннера: " + err.message });
+  }
+});
+
 // Вход для админов (POST)
 app.post("/admin/login", async (req, res) => {
   if (!HAS_MONGO) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
@@ -880,11 +1004,37 @@ app.get("/admin", requireAdmin, async (req, res) => {
     console.log(`⏳ Товаров на модерации: ${pendingProducts.length}`);
     console.log(`⏳ Услуг на модерации: ${pendingServices.length}`);
     
+    // Получаем все баннеры
+    const allBanners = await Banner.find()
+      .sort({ _id: -1 })
+      .populate("owner", "username email");
+    
+    // Баннеры на модерации
+    const pendingBanners = await Banner.find({ 
+      $and: [
+        { owner: { $ne: null, $exists: true } },
+        {
+          $or: [
+            { status: "pending" },
+            { status: { $exists: false } },
+            { status: null }
+          ]
+        }
+      ]
+    })
+      .sort({ _id: -1 })
+      .populate("owner", "username email");
+    
+    console.log(`📋 Всего баннеров: ${allBanners.length}`);
+    console.log(`⏳ Баннеров на модерации: ${pendingBanners.length}`);
+    
     res.render("admin", { 
       products: allProducts, 
       services: allServices || [],
       pendingProducts,
       pendingServices: pendingServices || [],
+      banners: allBanners || [],
+      pendingBanners: pendingBanners || [],
       categories: CATEGORY_LABELS
     });
   } catch (err) {
@@ -1238,6 +1388,41 @@ app.post("/admin/product/:id/reject", requireAdmin, async (req, res) => {
   } catch (err) {
     console.error("❌ Ошибка отклонения карточки:", err);
     res.status(500).json({ success: false, message: "Ошибка отклонения карточки" });
+  }
+});
+
+// Модерация баннеров: одобрить баннер
+app.post("/admin/banner/:id/approve", requireAdmin, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const banner = await Banner.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved", rejection_reason: "" },
+      { new: true }
+    );
+    if (!banner) return res.status(404).json({ success: false, message: "Баннер не найден" });
+    res.json({ success: true, status: banner.status });
+  } catch (err) {
+    console.error("❌ Ошибка одобрения баннера:", err);
+    res.status(500).json({ success: false, message: "Ошибка одобрения баннера" });
+  }
+});
+
+// Модерация баннеров: отклонить баннер
+app.post("/admin/banner/:id/reject", requireAdmin, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const { reason } = req.body;
+    const banner = await Banner.findByIdAndUpdate(
+      req.params.id,
+      { status: "rejected", rejection_reason: reason || "Несоответствие правилам публикации" },
+      { new: true }
+    );
+    if (!banner) return res.status(404).json({ success: false, message: "Баннер не найден" });
+    res.json({ success: true, status: banner.status, rejection_reason: banner.rejection_reason });
+  } catch (err) {
+    console.error("❌ Ошибка отклонения баннера:", err);
+    res.status(500).json({ success: false, message: "Ошибка отклонения баннера" });
   }
 });
 

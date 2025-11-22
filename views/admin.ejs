@@ -154,6 +154,67 @@
       <% } %>
     </section>
 
+    <!-- Модерация баннеров -->
+    <section class="section">
+      <div class="section-header">
+        <h2>Модерация баннеров</h2>
+        <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+          <% if (pendingBanners && pendingBanners.length) { %>
+            <%= pendingBanners.length %> на проверке
+          <% } else { %>
+            Нет баннеров на модерации
+          <% } %>
+        </span>
+      </div>
+
+      <% if (pendingBanners && pendingBanners.length) { %>
+        <div class="product-grid">
+          <% pendingBanners.forEach(b => { %>
+            <div class="product-card" style="border:2px solid #ff9800;">
+              <h3 class="product-title">Баннер</h3>
+              <% if (b.image_url) { %>
+                <img src="<%= b.image_url %>" alt="Баннер" style="max-height: 200px; object-fit: cover;">
+              <% } else { %>
+                <div class="no-image">Нет изображения</div>
+              <% } %>
+
+              <div class="product-bottom">
+                <% if (b.owner) { %>
+                  <% if (typeof b.owner === 'object' && b.owner.username) { %>
+                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= b.owner.username %></p>
+                  <% } else { %>
+                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= b.owner %></p>
+                  <% } %>
+                <% } else { %>
+                  <p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
+                <% } %>
+
+                <% if (b.link) { %>
+                  <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+                    🔗 <a href="<%= b.link %>" target="_blank" rel="noopener" style="color:#666;"><%= b.link %></a>
+                  </p>
+                <% } %>
+
+                <div class="product-actions" style="flex-direction:column;gap:8px;">
+                  <button class="btn small approve-banner-btn" data-id="<%= b._id %>" style="background:#4caf50;color:#fff;">
+                    ✅ Одобрить
+                  </button>
+                  <button class="btn small reject-banner-btn" data-id="<%= b._id %>" style="background:#f44336;color:#fff;">
+                    ❌ Отклонить
+                  </button>
+                  <% if (b.link) { %>
+                    <a class="btn small outline" href="<%= b.link %>" target="_blank" rel="noopener">Ссылка</a>
+                  <% } %>
+                </div>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="empty-state">Нет баннеров на модерации</p>
+      <% } %>
+    </section>
+
     <!-- Добавить товар/услугу -->
     <section class="section">
       <div class="section-header">
@@ -497,6 +558,59 @@
         }
       });
     }
+
+    // Модерация баннеров: одобрение
+    const approveBannerBtns = document.querySelectorAll(".approve-banner-btn");
+    approveBannerBtns.forEach(btn => {
+      btn.addEventListener("click", async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.getAttribute("data-id");
+        if (!confirm("Одобрить этот баннер?")) return;
+        try {
+          const res = await fetch(`/admin/banner/${id}/approve`, { method: "POST" });
+          const data = await res.json();
+          if (data.success) {
+            alert("Баннер одобрен!");
+            location.reload();
+          } else {
+            alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+          }
+        } catch (err) {
+          console.error("❌ Ошибка одобрения баннера:", err);
+          alert("Ошибка сети: " + err.message);
+        }
+      });
+    });
+
+    // Модерация баннеров: отклонение
+    document.querySelectorAll(".reject-banner-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-id");
+        const reason = prompt("Укажите причину отклонения (необязательно):") || "Несоответствие правилам публикации";
+        if (reason === null) return; // Пользователь отменил
+        
+        (async () => {
+          try {
+            const res = await fetch(`/admin/banner/${id}/reject`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ reason })
+            });
+            const data = await res.json();
+            if (data.success) {
+              alert("Баннер отклонен");
+              location.reload();
+            } else {
+              alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+            }
+          } catch (err) {
+            console.error("Ошибка отклонения баннера:", err);
+            alert("Ошибка сети: " + err.message);
+          }
+        })();
+      });
+    });
 
     // FIX: Полноэкранный overlay для YouTube видео
     const videoOverlay = document.getElementById('videoOverlay');
