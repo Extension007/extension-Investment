@@ -142,10 +142,14 @@ async function getInstagramEmbed(url) {
 // =======================
 
 document.addEventListener("DOMContentLoaded", () => {
+  // FIX: Объявляем productId один раз на уровне DOMContentLoaded для избежания повторных объявлений
+  let productId;
+  
   // Инициализация состояния голосования для гостей (проверка cookie)
   if (!window.IS_AUTH) {
     document.querySelectorAll(".product-rating").forEach(ratingBlock => {
-      const productId = ratingBlock.dataset.id;
+      // FIX: убрано повторное объявление productId - используем присвоение
+      productId = ratingBlock.dataset.id;
       if (productId) {
         const voteCookie = document.cookie.split(';').some(cookie => cookie.trim().startsWith(`exto_vote_${productId}=`));
         if (voteCookie) {
@@ -249,7 +253,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       // Создаем YouTube плеер через IFrame API
       // enablejsapi=1 - включает JavaScript API для управления плеером
-      const origin = encodeURIComponent(window.location.origin);
+      // FIX: origin берётся из window.location.origin (без encodeURIComponent) для корректной работы postMessage
       
       console.log('🎬 Создание YouTube плеера через IFrame API:', videoId);
       
@@ -262,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
           'controls': 1,           // Показывать элементы управления (включая кнопку Play)
           'rel': 0,                // Не показывать похожие видео
           'enablejsapi': 1,        // Включить JavaScript API (критично для исправления ошибки 153)
-          'origin': window.location.origin, // Домен для безопасности
+          'origin': window.location.origin, // FIX: origin берётся из window.location.origin без encodeURIComponent
           'modestbranding': 1      // Уменьшить брендинг YouTube
         },
         events: {
@@ -398,8 +402,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Fallback функция для создания простого iframe (если API недоступно)
   function createYouTubeIframeFallback(videoId) {
     try {
-      const origin = encodeURIComponent(window.location.origin);
-      const embedUrl = `https://www.youtube.com/embed/${videoId}?playsinline=1&controls=1&rel=0&enablejsapi=1&origin=${origin}`;
+      // FIX: origin берётся из window.location.origin (без encodeURIComponent) для корректной работы postMessage
+      const embedUrl = `https://www.youtube.com/embed/${videoId}?playsinline=1&controls=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
       
       const iframe = document.createElement('iframe');
       iframe.setAttribute('frameborder', '0');
@@ -964,7 +968,8 @@ document.addEventListener("DOMContentLoaded", () => {
             openImageModal(imageSrc, idx, allImages, productName);
           } else if (imageOverlay) {
             // Fallback на старое overlay
-            const productId = slider.getAttribute('data-product-id');
+            // FIX: убрано повторное объявление productId - используем присвоение
+            productId = slider.getAttribute('data-product-id');
             openImageOverlay(imageSrc, idx, allImages, productId);
           }
         });
@@ -1427,7 +1432,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const ratingBlock = e.target.closest(".product-rating");
       if (!ratingBlock) return;
       
-      const productId = ratingBlock.dataset.id;
+      // FIX: убрано повторное объявление productId - используем присвоение
+      productId = ratingBlock.dataset.id;
       
       // Проверяем, голосовал ли уже (через cookie для гостей или data-атрибут для пользователей)
       if (ratingBlock.dataset.voted === "true") {

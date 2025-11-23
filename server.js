@@ -94,15 +94,20 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); // ✅ нужно для API рейтинга
 
 // Безопасность и логирование
+// FIX: CSP настроен для единой логики видео-плееров (YouTube, VK, Instagram) из public/script.js
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
+      // FIX: Разрешаем YouTube IFrame API для единой логики видео-плееров
       scriptSrc: ["'self'", "'unsafe-inline'", "https://www.youtube.com", "https://youtube.com", "https://*.youtube.com"], // Разрешаем inline скрипты и YouTube API
       styleSrc: ["'self'", "'unsafe-inline'", "https:"],
       fontSrc: ["'self'", "https:", "data:"],
       imgSrc: ["'self'", "data:", "https:", "blob:", "https://res.cloudinary.com"], // Добавляем Cloudinary
+      // FIX: Разрешаем Instagram oEmbed API для единой логики видео-плееров
       connectSrc: ["'self'", "https:", "https://api.instagram.com"],
+      // FIX: Разрешаем все необходимые iframe источники для YouTube, VK, Instagram
+      // youtube-nocookie.com оставлен для совместимости (хотя используется youtube.com)
       frameSrc: ["'self'", "https://www.youtube.com", "https://youtube.com", "https://youtu.be", "https://*.youtube.com", "https://www.youtube-nocookie.com", "https://m.youtube.com", "https://vk.com", "https://*.vk.com", "https://www.instagram.com", "https://*.instagram.com"],
       mediaSrc: ["'self'", "https:"],
       objectSrc: ["'none'"]
