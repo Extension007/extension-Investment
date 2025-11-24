@@ -170,6 +170,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let youtubePlayer = null; // Глобальная переменная для YouTube IFrame API плеера
   let isPlaying = false; // Флаг для защиты от двойного вызова play()
   let isPaused = false; // Флаг для защиты от двойного вызова pause()
+  // FIX: Переменные для хранения информации о видео до создания плеера (для gesture context)
+  let pendingVideoType = null; // Тип видео (youtube, vk, instagram)
+  let pendingVideoId = null; // VideoId для YouTube (для создания плеера при клике)
+  let pendingVideoUrl = null; // URL для VK/Instagram (для создания iframe при клике)
+  let isPlayerReadyToCreate = false; // Флаг готовности к созданию плеера при клике
   
   // Проверка наличия элементов видео overlay
   if (!videoOverlay) {
@@ -387,9 +392,12 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       
       // Fallback: если API недоступно, используем простой iframe
+      // FIX: Не вызываем fallback автоматически - он должен вызываться из обработчика клика
+      // Это обеспечит передачу gesture context в Chrome iOS
       if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
-        console.warn('⚠️ YouTube IFrame API не загружен, используем fallback на простой iframe');
-        createYouTubeIframeFallback(videoId);
+        console.warn('⚠️ YouTube IFrame API не загружен, fallback будет создан при клике пользователя');
+        // Не создаём fallback здесь - он будет создан при клике пользователя
+        return;
       } else {
         if (currentVideoUrl) {
           window.open(currentVideoUrl, '_blank');
@@ -400,13 +408,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   
   // Fallback функция для создания простого iframe (если API недоступно)
-  function createYouTubeIframeFallback(videoId) {
+  // FIX: userGesture должен быть true для установки src - это критично для Chrome iOS (gesture context)
+  function createYouTubeIframeFallback(videoId, userGesture = false) {
     try {
       // FIX: origin берётся из window.location.origin (без encodeURIComponent) для корректной работы postMessage
       const embedUrl = `https://www.youtube.com/embed/${videoId}?playsinline=1&controls=1&rel=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
       
       const iframe = document.createElement('iframe');
       iframe.setAttribute('frameborder', '0');
+      // FIX: allow="autoplay" присутствует - это разрешение для автовоспроизведения (но autoplay не включен в URL)
       iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
       iframe.setAttribute('allowfullscreen', '');
       iframe.style.width = '100%';
@@ -417,15 +427,26 @@ document.addEventListener("DOMContentLoaded", () => {
       videoIframeContainer.appendChild(iframe);
       currentVideoIframe = iframe;
       
-      requestAnimationFrame(() => {
+      // FIX: Установка src только внутри обработчика клика (userGesture) для передачи gesture context в Chrome iOS
+      // Это критично для исправления ошибки 153 - без gesture context WKWebView блокирует воспроизведение
+      if (userGesture) {
+        // FIX: src устанавливается при клике пользователя - gesture context передаётся корректно
         iframe.src = embedUrl;
-      });
-      
-      iframe.onload = function() {
-        console.log('✅ Fallback iframe загружен');
-      };
-      
-      console.log('✅ Fallback iframe создан');
+        console.log('✅ Fallback iframe src установлен при клике пользователя (gesture context передан)');
+        
+        iframe.onload = function() {
+          console.log('✅ Fallback iframe загружен');
+        };
+        
+        console.log('✅ Fallback iframe создан и src установлен');
+      } else {
+        // FIX: Если вызов не из обработчика клика, сохраняем embedUrl для установки при клике
+        // Это критично для Chrome на iPhone - без gesture context может возникнуть ошибка 153
+        console.log('⚠️ Fallback iframe создан, но src будет установлен при клике пользователя для gesture context');
+        // Сохраняем embedUrl в data-атрибут для последующей установки
+        iframe.setAttribute('data-pending-src', embedUrl);
+        console.log('✅ Fallback iframe готов к установке src при клике пользователя');
+      }
     } catch (error) {
       console.error('❌ Ошибка создания fallback iframe:', error);
       if (currentVideoUrl) {
@@ -679,42 +700,22 @@ document.addEventListener("DOMContentLoaded", () => {
         
         console.log('▶️ Открытие YouTube видео:', videoId);
         
-        // Используем requestAnimationFrame для гарантии, что overlay полностью отображен
-        requestAnimationFrame(() => {
-          // Двойной requestAnimationFrame для гарантии полной отрисовки overlay
-          requestAnimationFrame(() => {
-            // Проверяем, что YouTube IFrame API загружен
-            if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
-              console.warn('⚠️ YouTube IFrame API еще не загружен, ждем...');
-              
-              // Показываем индикатор загрузки
-              videoIframeContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#fff;font-size:1.2rem;">Загрузка YouTube плеера...</div>';
-              
-              // Ждем загрузки API с таймаутом
-              let apiWaitCount = 0;
-              const maxWaitCount = 50; // 5 секунд максимум
-              
-              const waitForAPI = setInterval(() => {
-                apiWaitCount++;
-                
-                if (typeof YT !== 'undefined' && typeof YT.Player !== 'undefined') {
-                  clearInterval(waitForAPI);
-                  console.log('✅ YouTube IFrame API загружен, создаем плеер');
-                  videoIframeContainer.innerHTML = ''; // Очищаем индикатор загрузки
-                  createYouTubeIframe(videoId);
-                } else if (apiWaitCount >= maxWaitCount) {
-                  clearInterval(waitForAPI);
-                  console.error('❌ YouTube IFrame API не загрузился за 5 секунд, используем fallback');
-                  videoIframeContainer.innerHTML = ''; // Очищаем индикатор загрузки
-                  createYouTubeIframeFallback(videoId);
-                }
-              }, 100);
-            } else {
-              // API уже загружен, создаем плеер сразу
-              createYouTubeIframe(videoId);
-            }
-          });
-        });
+        // FIX: НЕ создаём плеер автоматически - сохраняем данные для создания при клике пользователя
+        // Это критично для Chrome на iPhone - плеер должен создаваться внутри обработчика клика для передачи gesture context
+        pendingVideoType = 'youtube';
+        pendingVideoId = videoId;
+        isPlayerReadyToCreate = true;
+        
+        // FIX: Показываем placeholder с кнопкой Play или инструкцией для пользователя
+        // Плеер будет создан только при клике пользователя (внутри обработчика клика)
+        videoIframeContainer.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#fff;text-align:center;padding:20px;">
+            <div style="font-size:1.5rem;margin-bottom:20px;">▶️ Нажмите для воспроизведения</div>
+            <div style="font-size:0.9rem;opacity:0.8;">Видео будет загружено после клика</div>
+          </div>
+        `;
+        
+        console.log('✅ Overlay показан. Плеер будет создан при клике пользователя (gesture context).');
         
       } else if (videoType === 'vk') {
         const vkParams = extractVKVideoParams(videoUrl);
@@ -726,7 +727,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         const embedUrl = buildVKEmbedUrl(vkParams);
         console.log('▶️ Открытие VK видео:', embedUrl);
-        createVkIframe(embedUrl);
+        // FIX: Для VK сохраняем URL для создания iframe при клике (gesture context)
+        pendingVideoType = 'vk';
+        pendingVideoUrl = embedUrl;
+        isPlayerReadyToCreate = true;
+        
+        // Показываем placeholder
+        videoIframeContainer.innerHTML = `
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#fff;text-align:center;padding:20px;">
+            <div style="font-size:1.5rem;margin-bottom:20px;">▶️ Нажмите для воспроизведения</div>
+          </div>
+        `;
         
       } else if (videoType === 'instagram') {
         console.log('▶️ Открытие Instagram видео:', videoUrl);
@@ -755,6 +766,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function closeVideoOverlay() {
     // Сбрасываем флаг открытия
     isVideoOpening = false;
+    
+    // FIX: Сбрасываем флаги готовности к созданию плеера
+    isPlayerReadyToCreate = false;
+    pendingVideoType = null;
+    pendingVideoId = null;
+    pendingVideoUrl = null;
     
     // Сбрасываем флаги воспроизведения
     isPlaying = false;
@@ -1149,6 +1166,56 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopPropagation();
       closeVideoOverlay();
       return;
+    }
+    
+    // FIX: Создание YouTube/VK плеера при клике пользователя (для передачи gesture context в Chrome iOS)
+    // Это критично для исправления ошибки 153 - плеер должен создаваться внутри обработчика клика
+    if (videoOverlay && videoOverlay.classList.contains('show') && isPlayerReadyToCreate) {
+      // FIX: Проверяем, что клик был внутри videoIframeContainer или videoOverlay (но не на кнопке закрытия)
+      const clickedContainer = e.target.closest('#videoIframeContainer') || (e.target === videoOverlay && !e.target.closest('[data-close-video]'));
+      
+      if (clickedContainer && !e.target.closest('[data-close-video]')) {
+        console.log('🖱️ Клик пользователя на overlay - создаём плеер с gesture context');
+        
+        if (pendingVideoType === 'youtube' && pendingVideoId) {
+          // FIX: Создание YouTube плеера внутри обработчика клика - gesture context передаётся корректно
+          isPlayerReadyToCreate = false;
+          
+          // Проверяем, что YouTube IFrame API загружен
+          if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
+            console.warn('⚠️ YouTube IFrame API еще не загружен, используем fallback');
+            // FIX: Fallback создаётся внутри обработчика клика - gesture context передаётся в WKWebView
+            createYouTubeIframeFallback(pendingVideoId, true); // true = userGesture
+          } else {
+            // FIX: Создаём плеер внутри обработчика клика - gesture context передаётся в WKWebView
+            createYouTubeIframe(pendingVideoId);
+          }
+          
+          // Очищаем pending данные
+          pendingVideoType = null;
+          pendingVideoId = null;
+        } else if (pendingVideoType === 'vk' && pendingVideoUrl) {
+          // FIX: Создание VK iframe внутри обработчика клика - gesture context передаётся корректно
+          isPlayerReadyToCreate = false;
+          createVkIframe(pendingVideoUrl);
+          pendingVideoType = null;
+          pendingVideoUrl = null;
+        }
+        
+        // FIX: Проверяем, есть ли iframe с pending-src (fallback без userGesture)
+        const pendingIframe = videoIframeContainer.querySelector('iframe[data-pending-src]');
+        if (pendingIframe) {
+          const pendingSrc = pendingIframe.getAttribute('data-pending-src');
+          if (pendingSrc) {
+            console.log('✅ Устанавливаем src для pending iframe при клике пользователя (gesture context)');
+            pendingIframe.src = pendingSrc;
+            pendingIframe.removeAttribute('data-pending-src');
+            pendingIframe.onload = function() {
+              console.log('✅ Pending fallback iframe загружен');
+            };
+          }
+        }
+      }
     }
 
     // FIX: Закрытие изображения overlay по кнопке закрытия
