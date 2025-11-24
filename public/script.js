@@ -680,11 +680,11 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('✅ Overlay показан, класс show добавлен');
       
       // FIX: Для YouTube плеер создаётся строго в обработчике клика на кнопку "Обзор" (не через openVideoOverlay)
-      // Это обеспечивает передачу gesture context для устранения ошибки 153 в Chrome на iPhone
+      // Эта функция не должна вызываться для YouTube - обработка перенесена в обработчик клика
+      // Overlay уже показан и очищен, просто выходим (плеер создастся при клике на кнопку)
       if (videoType === 'youtube') {
         console.warn('⚠️ YouTube видео должно обрабатываться через обработчик клика на кнопку "Обзор"');
-        window.open(videoUrl, '_blank');
-        closeVideoOverlay();
+        // FIX: НЕ открываем новую вкладку - overlay уже показан, плеер создастся при клике
         return;
         
       } else if (videoType === 'vk') {
@@ -1035,14 +1035,15 @@ document.addEventListener("DOMContentLoaded", () => {
           const videoId = extractVideoId(videoUrl);
           if (!videoId) {
             console.warn('⚠️ Не удалось извлечь videoId из URL:', videoUrl);
-            window.open(videoUrl, '_blank');
+            // FIX: НЕ открываем новую вкладку - показываем overlay с ошибкой или просто закрываем
+            console.error('❌ Невозможно извлечь videoId из URL');
             return false;
           }
           
           // FIX: Показываем overlay перед созданием плеера
           if (!videoOverlay || !videoIframeContainer) {
-            console.error('❌ Video overlay elements not found, opening in new tab');
-            window.open(videoUrl, '_blank');
+            console.error('❌ Video overlay elements not found');
+            // FIX: НЕ открываем новую вкладку - просто логируем ошибку
             return false;
           }
           
