@@ -2,8 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Редактировать товар</title>
+  <title><%= mode === 'admin' ? 'Редактирование товара (Админ)' : 'Редактировать товар' %></title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="<%= csrfToken %>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -19,38 +20,45 @@
         </ul>
       </nav>
       <div class="header-actions">
-        <% if (isAuth) { %>
-          <% if (isAdmin) { %>
-            <a class="btn outline" href="/admin">Админ-панель</a>
-          <% } else { %>
-            <a class="btn outline" href="/cabinet">Личный кабинет</a>
-          <% } %>
-        <% } %>
+        <a class="btn outline" href="<%= mode === 'admin' ? '/admin' : '/cabinet' %>">← Назад</a>
       </div>
     </div>
   </header>
 
   <main class="container">
     <section class="section">
-      <h2>Редактировать товар</h2>
-      <form id="editProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/products/<%= product._id %>">
-        <!-- FIX: Основные поля товара -->
-        <input type="text" name="title" value="<%= product.name %>" placeholder="Название товара" required>
-        <textarea name="description" placeholder="Описание товара" rows="4"><%= product.description || '' %></textarea>
-        <input type="number" name="price" value="<%= product.price %>" placeholder="Цена" min="0" step="1" required>
-        <input type="url" name="link" value="<%= product.link || '' %>" placeholder="Ссылка на товар">
-        <input type="url" name="video_url" value="<%= product.video_url || '' %>" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)">
+      <h2>Редактировать товар/услугу</h2>
+      <form id="editProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="<%= mode === 'admin' ? (product.type === 'banner' ? `/admin/banners/${product._id}/edit` : (product.type === 'service' ? `/admin/services/${product._id}/edit` : `/admin/products/${product._id}/edit`)) : `/cabinet/product/${product._id}/edit` %>">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <input type="hidden" id="productId" value="<%= product._id %>">
         
-        <!-- FIX: Поля контактов продавца -->
+        <!-- Селектор типа публикации -->
+        <div class="form-section">
+          <label for="type">Тип публикации:</label>
+          <select id="type" name="type" required aria-label="Тип публикации">
+            <option value="product" <%= (product.type || 'product') === 'product' ? 'selected' : '' %>>Товар</option>
+            <option value="service" <%= product.type === 'service' ? 'selected' : '' %>>Услуга</option>
+          </select>
+        </div>
+        
+        <!-- Основные поля товара -->
+        <input type="text" name="name" value="<%= product.name %>" placeholder="Название товара/услуги" required aria-label="Название товара">
+        <textarea name="description" placeholder="Описание товара" rows="4" aria-label="Описание товара"><%= product.description || '' %></textarea>
+        <input type="number" name="price" value="<%= product.price %>" placeholder="Цена" min="0" step="1" required aria-label="Цена">
+        <input type="url" name="link" value="<%= product.link || '' %>" placeholder="Ссылка на товар" aria-label="Ссылка на товар">
+        <input type="url" name="video_url" value="<%= product.video_url || '' %>" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)" aria-label="Ссылка на видео">
+        
+        <!-- Поля контактов продавца -->
         <div class="form-section">
           <h3>Контакты продавца</h3>
-          <input type="tel" name="phone" value="<%= (product.contacts && product.contacts.phone) || '' %>" placeholder="Телефон">
-          <input type="email" name="email" value="<%= (product.contacts && product.contacts.email) || '' %>" placeholder="Email">
-          <input type="text" name="telegram" value="<%= (product.contacts && product.contacts.telegram) || '' %>" placeholder="Telegram (например: @username)">
-          <input type="text" name="whatsapp" value="<%= (product.contacts && product.contacts.whatsapp) || '' %>" placeholder="WhatsApp (номер телефона)">
+          <input type="tel" name="phone" value="<%= (product.contacts && product.contacts.phone) || '' %>" placeholder="Телефон" aria-label="Телефон">
+          <input type="email" name="email" value="<%= (product.contacts && product.contacts.email) || '' %>" placeholder="Email" aria-label="Email">
+          <input type="text" name="telegram" value="<%= (product.contacts && product.contacts.telegram) || '' %>" placeholder="Telegram (например: @username)" aria-label="Telegram">
+          <input type="text" name="whatsapp" value="<%= (product.contacts && product.contacts.whatsapp) || '' %>" placeholder="WhatsApp (номер телефона)" aria-label="WhatsApp">
+          <textarea name="contact_method" placeholder="Способ связи (например: Звоните с 9:00 до 18:00)" rows="2" aria-label="Способ связи"><%= (product.contacts && product.contacts.contact_method) || '' %></textarea>
         </div>
 
-        <!-- FIX: Текущие изображения -->
+        <!-- Текущие изображения -->
         <% 
           const currentImages = product.images && Array.isArray(product.images) && product.images.length > 0 
             ? product.images 
@@ -59,11 +67,11 @@
         <% if (currentImages.length > 0) { %>
           <div class="form-section">
             <h3>Текущие изображения:</h3>
-            <div class="current-images-container">
+            <div class="current-images-container" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:10px;margin-bottom:10px;" role="group" aria-label="Текущие изображения">
               <% currentImages.forEach((img, idx) => { %>
-                <div class="current-image-item" data-image-index="<%= idx %>">
-                  <img src="<%= img %>" alt="Изображение <%= idx + 1 %>" class="current-image-preview">
-                  <button type="button" class="remove-image-btn" data-image-index="<%= idx %>" aria-label="Удалить изображение">×</button>
+                <div class="current-image-item image-wrapper" data-image-index="<%= idx %>" style="position:relative;aspect-ratio:1;overflow:hidden;border-radius:8px;border:2px solid #ddd;">
+                  <img src="<%= img %>" alt="Изображение <%= idx + 1 %>" data-original-url="<%= img %>" style="width:100%;height:100%;object-fit:cover;">
+                  <button type="button" class="remove-image-btn image-delete-button" data-image-index="<%= idx %>" aria-label="Удалить изображение <%= idx + 1 %>" style="position:absolute;top:5px;right:5px;background:#f44336;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:18px;line-height:1;">×</button>
                 </div>
               <% }) %>
             </div>
@@ -71,7 +79,7 @@
           </div>
         <% } %>
 
-        <!-- FIX: Загрузка новых изображений -->
+        <!-- Загрузка новых изображений -->
         <div class="form-section">
           <label for="images">Добавить новые изображения (до 5 штук всего):</label>
           <input 
@@ -81,12 +89,13 @@
             accept="image/png,image/jpeg,image/jpg,image/webp" 
             multiple
             data-max-files="5"
+            aria-label="Выбрать изображения для загрузки"
           >
           <small class="form-hint">Можно загрузить до 5 изображений всего. Форматы: PNG, JPEG, JPG, WEBP. Максимальный размер: 5MB на файл.</small>
-          <div id="imagePreview" class="image-preview-container"></div>
+          <div id="imagePreview" class="image-preview-container" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:10px;margin-top:10px;" role="group" aria-label="Предпросмотр новых изображений"></div>
         </div>
 
-        <select name="category" required>
+        <select name="category" required aria-label="Категория товара">
           <option value="home" <%= product.category === 'home' ? 'selected' : '' %>>Для дома</option>
           <option value="beauty" <%= product.category === 'beauty' ? 'selected' : '' %>>Красота и здоровье</option>
           <option value="auto" <%= product.category === 'auto' ? 'selected' : '' %>>Авто мото</option>
@@ -95,9 +104,9 @@
           <option value="plumbing" <%= product.category === 'plumbing' ? 'selected' : '' %>>Сантехника</option>
         </select>
 
-        <button type="submit" class="btn primary">Сохранить изменения</button>
+        <button type="submit" class="btn primary" aria-label="Сохранить изменения">Сохранить изменения</button>
       </form>
-      <div id="editProductMsg" class="note" style="margin-top:10px;"></div>
+      <div id="editProductMsg" class="note" style="margin-top:10px;" role="status" aria-live="polite"></div>
     </section>
   </main>
 
@@ -105,100 +114,36 @@
     <p>© 2025 EXTO Ecosystem</p>
   </footer>
 
+  <script src="/js/edit-form.js"></script>
   <script>
-    // FIX: Управление текущими изображениями
-    let currentImages = <%= JSON.stringify(currentImages) %>;
-
-    // FIX: Удаление изображения из списка текущих
-    document.querySelectorAll('.remove-image-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const index = parseInt(this.getAttribute('data-image-index'));
-        currentImages.splice(index, 1);
-        updateCurrentImages();
-        this.closest('.current-image-item').remove();
-      });
-    });
-
-    // FIX: Обновление скрытого поля с текущими изображениями
-    function updateCurrentImages() {
-      const input = document.getElementById('currentImagesInput');
-      if (input) {
-        input.value = JSON.stringify(currentImages);
-      }
-    }
-
-    // FIX: Валидация количества файлов перед отправкой
-    document.getElementById('editProductForm').addEventListener('submit', function(e) {
-      const fileInput = document.getElementById('images');
-      const totalImages = currentImages.length + fileInput.files.length;
-      
-      if (totalImages > 5) {
-        e.preventDefault();
-        alert('Максимальное количество изображений: 5. Текущих: ' + currentImages.length + ', новых: ' + fileInput.files.length);
-        return false;
-      }
-    });
-
-    // FIX: Предпросмотр выбранных изображений
-    document.getElementById('images').addEventListener('change', function(e) {
-      const preview = document.getElementById('imagePreview');
-      preview.innerHTML = '';
-      
-      const totalImages = currentImages.length + this.files.length;
-      if (totalImages > 5) {
-        alert('Максимальное количество изображений: 5. Текущих: ' + currentImages.length + ', новых: ' + this.files.length);
-        this.value = '';
-        return;
-      }
-
-      Array.from(this.files).forEach((file, index) => {
-        if (file.size > 5 * 1024 * 1024) {
-          alert(`Файл "${file.name}" превышает размер 5MB`);
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.style.maxWidth = '100px';
-          img.style.maxHeight = '100px';
-          img.style.margin = '5px';
-          img.style.borderRadius = '4px';
-          preview.appendChild(img);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    // FIX: Обработка отправки формы
-    document.getElementById('editProductForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const formData = new FormData(this);
-      const msg = document.getElementById('editProductMsg');
-      
-      try {
-        const res = await fetch('/products/<%= product._id %>', {
-          method: 'POST',
-          body: formData
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-          msg.textContent = 'Товар успешно обновлен!';
-          msg.style.color = 'green';
-          setTimeout(() => {
-            window.location.href = '/products';
-          }, 1500);
+    // Инициализация формы редактирования после загрузки DOM
+    (function() {
+      function initializeForm() {
+        if (typeof initEditForm === 'function') {
+          console.log('🚀 Инициализация формы редактирования', {
+            productId: '<%= product._id %>',
+            mode: '<%= mode || "user" %>',
+            imagesCount: <%= currentImages.length %>
+          });
+          
+          initEditForm({
+            mode: '<%= mode || "user" %>',
+            productId: '<%= product._id %>',
+            currentImages: <%= JSON.stringify(currentImages) %>
+          });
         } else {
-          msg.textContent = data.message || 'Ошибка при обновлении товара';
-          msg.style.color = '#b00020';
+          console.error('❌ Функция initEditForm не найдена');
         }
-      } catch (err) {
-        msg.textContent = 'Ошибка сети: ' + err.message;
-        msg.style.color = '#b00020';
       }
-    });
+      
+      // Инициализируем сразу, если DOM уже загружен, или ждем загрузки
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeForm);
+      } else {
+        // DOM уже загружен
+        setTimeout(initializeForm, 0);
+      }
+    })();
   </script>
 </body>
 </html>

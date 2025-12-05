@@ -680,11 +680,11 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('✅ Overlay показан, класс show добавлен');
       
       // FIX: Для YouTube плеер создаётся строго в обработчике клика на кнопку "Обзор" (не через openVideoOverlay)
-      // Эта функция не должна вызываться для YouTube - обработка перенесена в обработчик клика
-      // Overlay уже показан и очищен, просто выходим (плеер создастся при клике на кнопку)
+      // Это обеспечивает передачу gesture context для устранения ошибки 153 в Chrome на iPhone
       if (videoType === 'youtube') {
         console.warn('⚠️ YouTube видео должно обрабатываться через обработчик клика на кнопку "Обзор"');
-        // FIX: НЕ открываем новую вкладку - overlay уже показан, плеер создастся при клике
+        window.open(videoUrl, '_blank');
+        closeVideoOverlay();
         return;
         
       } else if (videoType === 'vk') {
@@ -1035,15 +1035,14 @@ document.addEventListener("DOMContentLoaded", () => {
           const videoId = extractVideoId(videoUrl);
           if (!videoId) {
             console.warn('⚠️ Не удалось извлечь videoId из URL:', videoUrl);
-            // FIX: НЕ открываем новую вкладку - показываем overlay с ошибкой или просто закрываем
-            console.error('❌ Невозможно извлечь videoId из URL');
+            window.open(videoUrl, '_blank');
             return false;
           }
           
           // FIX: Показываем overlay перед созданием плеера
           if (!videoOverlay || !videoIframeContainer) {
-            console.error('❌ Video overlay elements not found');
-            // FIX: НЕ открываем новую вкладку - просто логируем ошибку
+            console.error('❌ Video overlay elements not found, opening in new tab');
+            window.open(videoUrl, '_blank');
             return false;
           }
           
@@ -1498,10 +1497,19 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       try {
+        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
+        
+        // Унифицированный формат: используем vote вместо value
+        const vote = value === 'like' ? 'up' : 'down';
+        
         const res = await fetch(`/api/rating/${productId}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ value }),
+          headers: { 
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken || ''
+          },
+          body: JSON.stringify({ vote }),
           credentials: 'include' // Важно для отправки cookie
         });
         const data = await res.json();
@@ -1534,6 +1542,487 @@ document.addEventListener("DOMContentLoaded", () => {
           b.disabled = false;
         });
       }
+    }
+  });
+});
+
+// =======================
+// Универсальные функции для работы с карточками
+// =======================
+
+/**
+ * Универсальная функция удаления карточки
+ * @param {string} itemType - тип карточки: 'product', 'service', 'banner'
+ * @param {string} itemId - ID карточки
+ * @param {HTMLElement} cardElement - элемент карточки в DOM
+ * @returns {Promise<boolean>} - успешно ли удалено
+ */
+async function deleteItem(itemType, itemId, cardElement) {
+  const typeNames = { product: 'товар', service: 'услугу', banner: 'баннер' };
+  const confirmed = confirm(`Вы уверены, что хотите удалить этот ${typeNames[itemType]}? Это действие нельзя отменить.`);
+  if (!confirmed) {
+    return false;
+  }
+
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  if (!csrfToken) {
+    alert('Ошибка: отсутствует CSRF токен. Обновите страницу.');
+    return false;
+  }
+
+  // Определяем эндпоинт в зависимости от контекста
+  const isAdminPage = window.location.pathname.includes('/admin/');
+  const endpoint = isAdminPage 
+    ? `/admin/${itemType === 'product' ? 'products' : itemType === 'service' ? 'services' : 'banners'}/${itemId}`
+    : `/api/${itemType === 'product' ? 'products' : itemType === 'service' ? 'services' : 'banners'}/${itemId}`;
+
+  const deleteBtn = cardElement?.querySelector(`.delete-${itemType}-btn`);
+  if (deleteBtn) {
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = 'Удаление...';
+  }
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRF-Token': csrfToken,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'same-origin'
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      // Плавное удаление карточки (с проверкой)
+      if (cardElement && cardElement.style) {
+        cardElement.style.opacity = '0.5';
+        cardElement.style.transition = 'opacity 0.3s';
+        setTimeout(() => {
+          if (cardElement && cardElement.remove) {
+            cardElement.remove();
+          }
+          
+          // Проверяем, остались ли еще карточки
+          const remainingCards = document.querySelectorAll('.catalog-item, .product-card');
+          if (remainingCards && remainingCards.length === 0) {
+            location.reload();
+          }
+        }, 300);
+      }
+      
+      showToast(`✅ ${typeNames[itemType].charAt(0).toUpperCase() + typeNames[itemType].slice(1)} удалён`, 'success');
+      return true;
+    } else {
+      if (deleteBtn && deleteBtn.disabled !== undefined) {
+        deleteBtn.disabled = false;
+      }
+      if (deleteBtn && deleteBtn.textContent !== undefined) {
+        deleteBtn.textContent = '🗑️ Удалить';
+      }
+      showToast('❌ Ошибка удаления: ' + (data.message || 'Неизвестная ошибка'), 'error');
+      return false;
+    }
+  } catch (err) {
+    console.error(`❌ Ошибка сети при удалении ${itemType}:`, err);
+    if (deleteBtn && deleteBtn.disabled !== undefined) {
+      deleteBtn.disabled = false;
+    }
+    if (deleteBtn && deleteBtn.textContent !== undefined) {
+      deleteBtn.textContent = '🗑️ Удалить';
+    }
+    showToast('❌ Ошибка сети. Проверьте подключение к интернету', 'error');
+    return false;
+  }
+}
+
+/**
+ * Универсальная функция голосования за карточку
+ * @param {string} itemType - тип карточки: 'product', 'service', 'banner'
+ * @param {string} itemId - ID карточки
+ * @param {string} vote - 'up' или 'down'
+ * @param {HTMLElement} ratingBlock - блок рейтинга
+ * @returns {Promise<boolean>} - успешно ли проголосовано
+ */
+async function voteItem(itemType, itemId, vote, ratingBlock) {
+  if (!ratingBlock) return false;
+  
+  // Проверяем, голосовал ли уже
+  if (ratingBlock.dataset.voted === 'true') {
+    return false;
+  }
+
+  // Отключаем кнопки (с проверкой существования)
+  const buttons = ratingBlock.querySelectorAll('button');
+  if (buttons && buttons.length > 0) {
+    buttons.forEach(btn => {
+      if (btn && btn.disabled !== undefined) {
+        btn.disabled = true;
+      }
+    });
+  }
+
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+  try {
+    // Определяем эндпоинт
+    let endpoint;
+    let body;
+    
+    // Унифицированный формат: используем vote: "up"/"down" для всех типов
+    if (itemType === 'product') {
+      endpoint = `/api/rating/${itemId}`;
+    } else {
+      endpoint = `/api/${itemType === 'service' ? 'services' : 'banners'}/${itemId}/vote`;
+    }
+    body = JSON.stringify({ vote }); // Единый формат для всех типов
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken || ''
+      },
+      body: body,
+      credentials: 'same-origin'
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      // Обновляем отображение
+      const resultEl = ratingBlock.querySelector(`.${itemType}-result`) || ratingBlock.querySelector('.rating-result');
+      const votesEl = ratingBlock.querySelector(`.${itemType}-votes`) || ratingBlock.querySelector('.rating-votes');
+
+      if (resultEl && resultEl.textContent !== undefined) {
+        resultEl.textContent = data.result !== undefined ? data.result : ((data.rating_up || data.likes || 0) - (data.rating_down || data.dislikes || 0));
+      }
+      if (votesEl && votesEl.textContent !== undefined) {
+        votesEl.textContent = `(${data.total !== undefined ? data.total : ((data.rating_up || data.likes || 0) + (data.rating_down || data.dislikes || 0))} голосов)`;
+      }
+
+      if (ratingBlock && ratingBlock.dataset) {
+        ratingBlock.dataset.voted = 'true';
+      }
+      return true;
+    } else {
+      // Включаем кнопки обратно при ошибке (с проверкой)
+      const buttons = ratingBlock.querySelectorAll('button');
+      if (buttons && buttons.length > 0) {
+        buttons.forEach(btn => {
+          if (btn && btn.disabled !== undefined) {
+            btn.disabled = false;
+          }
+        });
+      }
+      
+      if (res.status === 409) {
+        // Уже голосовал - помечаем как проголосовавший
+        if (ratingBlock && ratingBlock.dataset) {
+          ratingBlock.dataset.voted = 'true';
+        }
+        if (buttons && buttons.length > 0) {
+          buttons.forEach(btn => {
+            if (btn && btn.disabled !== undefined) {
+              btn.disabled = true;
+            }
+          });
+        }
+      } else {
+        showToast('Ошибка: ' + (data.message || 'Не удалось проголосовать'), 'error');
+      }
+      return false;
+    }
+  } catch (err) {
+    console.error('Ошибка голосования:', err);
+    const buttons = ratingBlock.querySelectorAll('button');
+    if (buttons && buttons.length > 0) {
+      buttons.forEach(btn => {
+        if (btn && btn.disabled !== undefined) {
+          btn.disabled = false;
+        }
+      });
+    }
+    showToast('Ошибка сети при голосовании', 'error');
+    return false;
+  }
+}
+
+/**
+ * Универсальная функция блокировки/разблокировки карточки (только для админа)
+ * @param {string} itemType - тип карточки: 'product', 'service', 'banner'
+ * @param {string} itemId - ID карточки
+ * @param {HTMLElement} button - кнопка блокировки
+ * @returns {Promise<boolean>} - успешно ли изменен статус
+ */
+async function toggleBlock(itemType, itemId, button) {
+  if (!button || !button.classList) return false;
+
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  if (!csrfToken) {
+    alert('Ошибка: отсутствует CSRF токен. Обновите страницу.');
+    return false;
+  }
+
+  const action = button.classList.contains(`block-${itemType}-btn`) ? 'block' : 'publish';
+  if (button.disabled !== undefined) {
+    button.disabled = true;
+  }
+  if (button.textContent !== undefined) {
+    button.textContent = action === 'block' ? 'Блокировка...' : 'Публикация...';
+  }
+
+  try {
+    // Используем правильные эндпоинты для блокировки
+    let endpoint;
+    if (itemType === 'product') {
+      endpoint = `/admin/products/${itemId}/toggle-visibility`;
+    } else if (itemType === 'service') {
+      endpoint = `/admin/services/${itemId}/toggle-visibility`;
+    } else {
+      endpoint = `/admin/banners/${itemId}/toggle-visibility`;
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'X-CSRF-Token': csrfToken,
+        'Content-Type': 'application/json'
+      },
+      credentials: 'same-origin'
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      showToast(data.message || 'Статус успешно изменен', 'success');
+      setTimeout(() => location.reload(), 1000); // Перезагружаем страницу через 1 секунду
+      return true;
+    } else {
+      showToast('Ошибка: ' + (data.message || 'Не удалось изменить статус'), 'error');
+      if (button && button.disabled !== undefined) {
+        button.disabled = false;
+      }
+      if (button && button.textContent !== undefined) {
+        button.textContent = action === 'block' ? '🚫 Заблокировать' : '✅ Опубликовать';
+      }
+      return false;
+    }
+  } catch (err) {
+    console.error('Ошибка изменения статуса:', err);
+    showToast('Ошибка сети', 'error');
+    if (button && button.disabled !== undefined) {
+      button.disabled = false;
+    }
+    if (button && button.textContent !== undefined) {
+      button.textContent = action === 'block' ? '🚫 Заблокировать' : '✅ Опубликовать';
+    }
+    return false;
+  }
+}
+
+/**
+ * Универсальная функция перехода к редактированию карточки
+ * @param {string} itemType - тип карточки: 'product', 'service', 'banner'
+ * @param {string} itemId - ID карточки
+ */
+function editItem(itemType, itemId) {
+  if (!itemId) {
+    alert('Ошибка: отсутствует ID');
+    return;
+  }
+
+  // Определяем URL для редактирования
+  let editUrl;
+  const isAdminPage = window.location.pathname.includes('/admin/');
+  const isCabinetPage = window.location.pathname.includes('/cabinet/');
+  
+  if (isAdminPage) {
+    if (itemType === 'product') {
+      editUrl = `/admin/products/${itemId}/edit`;
+    } else if (itemType === 'service') {
+      editUrl = `/admin/services/${itemId}/edit`;
+    } else {
+      editUrl = `/admin/banners/${itemId}/edit`;
+    }
+  } else if (isCabinetPage) {
+    // Пользовательский кабинет
+    if (itemType === 'product' || itemType === 'service') {
+      editUrl = `/cabinet/product/${itemId}/edit`;
+    } else {
+      editUrl = `/cabinet/banner/${itemId}/edit`;
+    }
+  } else {
+    // Публичная страница - редирект в кабинет
+    if (itemType === 'product' || itemType === 'service') {
+      editUrl = `/cabinet/product/${itemId}/edit`;
+    } else {
+      editUrl = `/cabinet/banner/${itemId}/edit`;
+    }
+  }
+
+  window.location.href = editUrl;
+}
+
+/**
+ * Показ toast-уведомления
+ * @param {string} message - сообщение
+ * @param {string} type - тип: 'success', 'error', 'info'
+ */
+function showToast(message, type = 'info') {
+  let toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.id = 'toast-container';
+    toastContainer.style.cssText = 'position:fixed;top:20px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:10px;';
+    document.body.appendChild(toastContainer);
+  }
+
+  const toast = document.createElement('div');
+  if (toast.className !== undefined) {
+    toast.className = 'toast toast-' + type;
+  }
+  if (toast.setAttribute) {
+    toast.setAttribute('role', 'alert');
+    toast.setAttribute('aria-live', 'assertive');
+  }
+  if (toast.style && toast.style.cssText !== undefined) {
+    toast.style.cssText = `
+      padding: 12px 20px;
+      background: ${type === 'success' ? '#4caf50' : type === 'error' ? '#f44336' : '#2196f3'};
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      min-width: 250px;
+      max-width: 400px;
+      animation: slideIn 0.3s ease-out;
+    `;
+  }
+  if (toast.textContent !== undefined) {
+    toast.textContent = message;
+  }
+
+  if (!document.getElementById('toast-styles')) {
+    const style = document.createElement('style');
+    style.id = 'toast-styles';
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    if (toast && toast.style && toast.style.animation !== undefined) {
+      toast.style.animation = 'slideOut 0.3s ease-out';
+    }
+    setTimeout(() => {
+      if (toast && toast.parentNode && toast.parentNode.removeChild) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }, 5000);
+}
+
+  // Инициализация универсальных обработчиков при загрузке DOM
+document.addEventListener('DOMContentLoaded', () => {
+  // Обработчики удаления (с безопасными проверками)
+  document.addEventListener('click', async (e) => {
+    if (!e || !e.target) return;
+    
+    const deleteBtn = e.target.closest && e.target.closest('.delete-product-btn, .delete-service-btn, .delete-banner-btn');
+    if (deleteBtn && deleteBtn.classList) {
+      e.preventDefault();
+      const itemType = deleteBtn.classList.contains('delete-product-btn') ? 'product' 
+        : deleteBtn.classList.contains('delete-service-btn') ? 'service' 
+        : 'banner';
+      const itemId = deleteBtn.dataset && deleteBtn.dataset.id ? deleteBtn.dataset.id : null;
+      if (!itemId) {
+        console.error('❌ Отсутствует ID карточки');
+        return;
+      }
+      const cardElement = deleteBtn.closest && deleteBtn.closest('.catalog-item, .product-card');
+      await deleteItem(itemType, itemId, cardElement);
+    }
+  });
+
+  // Обработчики голосования (с безопасными проверками)
+  document.addEventListener('click', async (e) => {
+    if (!e || !e.target) return;
+    
+    const likeBtn = e.target.closest && e.target.closest('.product-like-btn, .service-like-btn, .banner-like-btn');
+    const dislikeBtn = e.target.closest && e.target.closest('.product-dislike-btn, .service-dislike-btn, .banner-dislike-btn');
+    
+    if (likeBtn || dislikeBtn) {
+      e.preventDefault();
+      const ratingBlock = e.target.closest && e.target.closest('.product-rating, .service-rating, .banner-rating, .item-rating');
+      if (!ratingBlock || !ratingBlock.dataset) return;
+      
+      const itemId = ratingBlock.dataset.id;
+      if (!itemId) {
+        console.error('❌ Отсутствует ID карточки для голосования');
+        return;
+      }
+      const itemType = ratingBlock.dataset.type || 
+        (ratingBlock.classList && ratingBlock.classList.contains('product-rating') ? 'product' :
+         ratingBlock.classList && ratingBlock.classList.contains('service-rating') ? 'service' : 'banner');
+      const vote = likeBtn ? 'up' : 'down';
+      
+      await voteItem(itemType, itemId, vote, ratingBlock);
+    }
+  });
+
+  // Обработчики блокировки/публикации (только для админа, с безопасными проверками)
+  document.addEventListener('click', async (e) => {
+    if (!e || !e.target) return;
+    
+    const blockBtn = e.target.closest && e.target.closest('.block-product-btn, .block-service-btn, .block-banner-btn');
+    const publishBtn = e.target.closest && e.target.closest('.publish-product-btn, .publish-service-btn, .publish-banner-btn');
+    
+    if (blockBtn || publishBtn) {
+      e.preventDefault();
+      const btn = blockBtn || publishBtn;
+      if (!btn || !btn.classList || !btn.dataset) return;
+      
+      const itemType = blockBtn ? 
+        (blockBtn.classList.contains('block-product-btn') ? 'product' :
+         blockBtn.classList.contains('block-service-btn') ? 'service' : 'banner') :
+        (publishBtn.classList.contains('publish-product-btn') ? 'product' :
+         publishBtn.classList.contains('publish-service-btn') ? 'service' : 'banner');
+      const itemId = btn.dataset.id;
+      if (!itemId) {
+        console.error('❌ Отсутствует ID карточки для блокировки/публикации');
+        return;
+      }
+      await toggleBlock(itemType, itemId, btn);
+    }
+  });
+
+  // Обработчики редактирования (с безопасными проверками)
+  document.addEventListener('click', (e) => {
+    if (!e || !e.target) return;
+    
+    const editBtn = e.target.closest && e.target.closest('.edit-product-btn, .edit-service-btn, .edit-banner-btn');
+    if (editBtn && editBtn.classList && editBtn.dataset) {
+      e.preventDefault();
+      const itemType = editBtn.classList.contains('edit-product-btn') ? 'product' 
+        : editBtn.classList.contains('edit-service-btn') ? 'service' 
+        : 'banner';
+      const itemId = editBtn.dataset.id;
+      if (!itemId) {
+        console.error('❌ Отсутствует ID карточки для редактирования');
+        return;
+      }
+      editItem(itemType, itemId);
     }
   });
 });

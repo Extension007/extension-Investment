@@ -7,4 +7,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ["user", "admin"], default: "user" }
 }, { timestamps: true });
 
+// Индексы уже созданы через unique: true в полях выше
+// Дополнительные индексы не нужны, чтобы избежать дублирования
+
 module.exports = mongoose.model("User", userSchema);

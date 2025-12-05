@@ -26,7 +26,13 @@ if (hasCloudinary) {
       cloudinary,
       params: {
         folder: "products",
-        allowed_formats: ["jpg", "png", "jpeg", "webp"]
+        allowed_formats: ["jpg", "png", "jpeg", "webp"],
+        // Оптимизация при загрузке
+        transformation: [
+          { width: 1200, height: 1200, crop: 'limit' }, // Ограничиваем максимальный размер
+          { quality: 'auto' }, // Автоматическое качество
+          { fetch_format: 'auto' } // WebP для поддерживающих браузеров
+        ]
       }
     });
     console.log("✅ Cloudinary настроен");

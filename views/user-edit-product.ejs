@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Редактировать товар</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="<%= csrfToken %>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -28,6 +29,8 @@
     <section class="section">
       <h2>Редактировать товар/услугу</h2>
       <form id="editProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/product/<%= product._id %>/edit">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <input type="hidden" id="productId" value="<%= product._id %>">
         <!-- Селектор типа публикации -->
         <div class="form-section">
           <label for="type">Тип публикации:</label>
@@ -63,11 +66,11 @@
         <% if (currentImages.length > 0) { %>
           <div class="form-section">
             <h3>Текущие изображения:</h3>
-            <div class="current-images-container" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:10px;margin-bottom:10px;">
+            <div class="current-images-container" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:10px;margin-bottom:10px;" role="group" aria-label="Текущие изображения">
               <% currentImages.forEach((img, idx) => { %>
-                <div class="current-image-item" data-image-index="<%= idx %>" style="position:relative;aspect-ratio:1;overflow:hidden;border-radius:8px;border:2px solid #ddd;">
-                  <img src="<%= img %>" alt="Изображение <%= idx + 1 %>" style="width:100%;height:100%;object-fit:cover;">
-                  <button type="button" class="remove-image-btn" data-image-index="<%= idx %>" aria-label="Удалить изображение" style="position:absolute;top:5px;right:5px;background:#f44336;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:18px;line-height:1;">×</button>
+                <div class="current-image-item image-wrapper" data-image-index="<%= idx %>" style="position:relative;aspect-ratio:1;overflow:hidden;border-radius:8px;border:2px solid #ddd;">
+                  <img src="<%= img %>" alt="Изображение <%= idx + 1 %>" data-original-url="<%= img %>" style="width:100%;height:100%;object-fit:cover;">
+                  <button type="button" class="remove-image-btn image-delete-button" data-image-index="<%= idx %>" aria-label="Удалить изображение <%= idx + 1 %>" style="position:absolute;top:5px;right:5px;background:#f44336;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:18px;line-height:1;">×</button>
                 </div>
               <% }) %>
             </div>
@@ -102,6 +105,11 @@
         <button type="submit" class="btn primary">Сохранить изменения</button>
       </form>
       <div id="editProductMsg" class="note" style="margin-top:10px;"></div>
+      <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+        <button type="button" id="deleteProductBtn" class="btn" style="background: #f44336; color: #fff; width: 100%;">
+          🗑️ Удалить карточку
+        </button>
+      </div>
     </section>
   </main>
 
@@ -109,126 +117,36 @@
     <p>© 2025 EXTO Ecosystem</p>
   </footer>
 
+  <script src="/js/edit-form.js"></script>
   <script>
-    // Управление текущими изображениями
-    let currentImages = <%= JSON.stringify(currentImages) %>;
-
-    // Удаление изображения из списка текущих
-    document.querySelectorAll('.remove-image-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const index = parseInt(this.getAttribute('data-image-index'));
-        // Пересчитываем индексы после удаления
-        const newImages = [];
-        currentImages.forEach((img, idx) => {
-          if (idx !== index) newImages.push(img);
-        });
-        currentImages = newImages;
-        updateCurrentImages();
-        this.closest('.current-image-item').remove();
-      });
-    });
-
-    // Обновление скрытого поля с текущими изображениями
-    function updateCurrentImages() {
-      const input = document.getElementById('currentImagesInput');
-      if (input) {
-        input.value = JSON.stringify(currentImages);
-      }
-    }
-
-    // Валидация количества файлов перед отправкой
-    document.getElementById('editProductForm').addEventListener('submit', function(e) {
-      const fileInput = document.getElementById('images');
-      const totalImages = currentImages.length + fileInput.files.length;
-      
-      if (totalImages > 5) {
-        e.preventDefault();
-        alert('Максимальное количество изображений: 5. Текущих: ' + currentImages.length + ', новых: ' + fileInput.files.length);
-        return false;
-      }
-    });
-
-    // Предпросмотр выбранных изображений
-    document.getElementById('images').addEventListener('change', function(e) {
-      const preview = document.getElementById('imagePreview');
-      preview.innerHTML = '';
-      
-      const totalImages = currentImages.length + this.files.length;
-      if (totalImages > 5) {
-        alert('Максимальное количество изображений: 5. Текущих: ' + currentImages.length + ', новых: ' + this.files.length);
-        this.value = '';
-        return;
-      }
-
-      Array.from(this.files).forEach((file, index) => {
-        if (file.size > 5 * 1024 * 1024) {
-          alert(`Файл "${file.name}" превышает размер 5MB`);
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const div = document.createElement('div');
-          div.style.position = 'relative';
-          div.style.aspectRatio = '1';
-          div.style.overflow = 'hidden';
-          div.style.borderRadius = '8px';
-          div.style.border = '2px solid #ddd';
+    // Инициализация формы редактирования после загрузки DOM
+    (function() {
+      function initializeForm() {
+        if (typeof initEditForm === 'function') {
+          console.log('🚀 Инициализация формы редактирования', {
+            productId: '<%= product._id %>',
+            mode: 'user',
+            imagesCount: <%= currentImages.length %>
+          });
           
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'cover';
-          
-          div.appendChild(img);
-          preview.appendChild(div);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    // Обработка отправки формы
-    document.getElementById('editProductForm').addEventListener('submit', async function(e) {
-      e.preventDefault();
-      const formData = new FormData(this);
-      const msg = document.getElementById('editProductMsg');
-      
-      msg.textContent = "Отправка...";
-      msg.style.color = "#666";
-      
-      try {
-        const res = await fetch('/cabinet/product/<%= product._id %>/edit', {
-          method: 'POST',
-          body: formData
-        });
-        
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          const text = await res.text();
-          console.error("❌ Ответ не JSON:", text);
-          msg.textContent = "Ошибка: " + (text || "Неверный формат ответа");
-          msg.style.color = "#b00020";
-          return;
-        }
-        
-        const data = await res.json();
-        
-        if (data.success) {
-          msg.textContent = 'Товар успешно обновлен!';
-          msg.style.color = 'green';
-          setTimeout(() => {
-            window.location.href = '/cabinet';
-          }, 1500);
+          initEditForm({
+            mode: 'user',
+            productId: '<%= product._id %>',
+            currentImages: <%= JSON.stringify(currentImages) %>
+          });
         } else {
-          msg.textContent = data.message || 'Ошибка при обновлении товара';
-          msg.style.color = '#b00020';
+          console.error('❌ Функция initEditForm не найдена');
         }
-      } catch (err) {
-        msg.textContent = 'Ошибка сети: ' + err.message;
-        msg.style.color = '#b00020';
       }
-    });
+      
+      // Инициализируем сразу, если DOM уже загружен, или ждем загрузки
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeForm);
+      } else {
+        // DOM уже загружен
+        setTimeout(initializeForm, 0);
+      }
+    })();
   </script>
 </body>
 </html>

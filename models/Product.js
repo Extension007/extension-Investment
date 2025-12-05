@@ -2,8 +2,32 @@ const mongoose = require("mongoose");
 
 // FIX: Схема контактов продавца
 const contactsSchema = new mongoose.Schema({
-  phone: { type: String, trim: true, default: "" },
-  email: { type: String, trim: true, default: "" },
+  phone: { 
+    type: String, 
+    trim: true, 
+    default: "",
+    validate: {
+      validator: function(v) {
+        if (!v) return true; // Пустое значение допустимо
+        // Простая валидация телефона (цифры, +, -, пробелы, скобки)
+        return /^[\d\s\+\-\(\)]+$/.test(v);
+      },
+      message: 'Некорректный формат телефона'
+    }
+  },
+  email: { 
+    type: String, 
+    trim: true, 
+    default: "",
+    lowercase: true,
+    validate: {
+      validator: function(v) {
+        if (!v) return true; // Пустое значение допустимо
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: 'Некорректный формат email'
+    }
+  },
   telegram: { type: String, trim: true, default: "" },
   whatsapp: { type: String, trim: true, default: "" },
   contact_method: { type: String, trim: true, default: "" } // FIX: Способ связи
@@ -12,7 +36,7 @@ const contactsSchema = new mongoose.Schema({
 const productSchema = new mongoose.Schema({
   // FIX: Основные поля товара
   name: { type: String, required: true, trim: true },
-  description: { type: String, default: "" },
+  description: { type: String, default: "", maxlength: 5000 },
   price: { type: Number, required: true },
   link: { type: String, trim: true },
   
@@ -61,7 +85,10 @@ const productSchema = new mongoose.Schema({
     enum: ["pending", "approved", "rejected"],
     default: "pending"
   },
-  rejection_reason: { type: String, default: "" }
+  rejection_reason: { type: String, default: "", maxlength: 1000 },
+  
+  // Soft delete
+  deleted: { type: Boolean, default: false }
 }, { timestamps: true });
 
 // FIX: Предварительная валидация перед сохранением - проверка лимита изображений
@@ -85,5 +112,44 @@ productSchema.virtual("total").get(function () {
 // Включаем виртуальные поля при преобразовании в JSON/объект
 productSchema.set("toJSON", { virtuals: true });
 productSchema.set("toObject", { virtuals: true });
+
+// Индексы для оптимизации запросов
+productSchema.index({ status: 1 });
+productSchema.index({ owner: 1 });
+productSchema.index({ category: 1 });
+productSchema.index({ createdAt: -1 });
+productSchema.index({ deleted: 1 });
+// Составной индекс для частых запросов
+productSchema.index({ status: 1, type: 1 });
+productSchema.index({ status: 1, category: 1 });
+productSchema.index({ status: 1, deleted: 1 });
+
+// Hook для удаления изображений при удалении карточки (soft delete или полное удаление)
+productSchema.pre(['findOneAndDelete', 'findOneAndUpdate'], async function() {
+  try {
+    // Проверяем, это операция удаления (soft delete через deleted: true)
+    const update = this.getUpdate();
+    if (update && update.$set && update.$set.deleted === true) {
+      // Это soft delete - получаем документ
+      const product = await this.model.findOne(this.getQuery());
+      if (product && product.images && product.images.length > 0) {
+        console.log(`🗑️  Soft delete карточки ${product._id}, удаляем ${product.images.length} изображений`);
+        const { deleteProductImages } = require("../services/imageService");
+        await deleteProductImages(product.images);
+      }
+    } else if (this.op === 'findOneAndDelete') {
+      // Это полное удаление
+      const product = await this.model.findOne(this.getQuery());
+      if (product && product.images && product.images.length > 0) {
+        console.log(`🗑️  Полное удаление карточки ${product._id}, удаляем ${product.images.length} изображений`);
+        const { deleteProductImages } = require("../services/imageService");
+        await deleteProductImages(product.images);
+      }
+    }
+  } catch (err) {
+    console.error("❌ Ошибка в pre-hook удаления изображений:", err);
+    // Не прерываем удаление, даже если не удалось удалить изображения
+  }
+});
 
 module.exports = mongoose.model("Product", productSchema);

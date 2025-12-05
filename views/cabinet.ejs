@@ -4,10 +4,48 @@
   <meta charset="UTF-8">
   <title>Личный кабинет</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
+  <style>
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #ddd;
+    }
+    .tab {
+      padding: 12px 24px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.2s;
+    }
+    .tab:hover {
+      color: #2196f3;
+    }
+    .tab.active {
+      color: #2196f3;
+      border-bottom-color: #2196f3;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+    }
+  </style>
 </head>
 <body>
   <header class="main-header">
@@ -27,530 +65,423 @@
 
   <main class="container">
     <section class="section">
-      <h2>Создать карточку товара/услуги</h2>
-      <form id="createProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/product">
-        <!-- Селектор типа публикации -->
-        <div class="form-section">
-          <label for="type">Тип публикации:</label>
-          <select id="type" name="type" required>
-            <option value="product">Товар</option>
-            <option value="service">Услуга</option>
-          </select>
-        </div>
-        
-        <input type="text" name="name" placeholder="Название" required>
-        <input type="text" name="description" placeholder="Описание">
-        <input type="url" name="link" placeholder="Ссылка">
-        <input type="url" name="video_url" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)">
-        <input type="number" name="price" placeholder="Цена" min="0" step="1" required>
-        <!-- FIX: Загрузка до 5 изображений -->
-        <div class="form-section">
-          <label for="images">Изображения (до 5 шт.):</label>
-          <input type="file" id="images" name="images" accept="image/*" multiple data-max-files="5">
-          <div id="imagePreview" class="image-preview-container" style="display: none; margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;"></div>
-          <small class="form-hint">Можно выбрать до 5 изображений</small>
-        </div>
-        <select name="category" required>
-          <option value="home">Для дома</option>
-          <option value="beauty">Красота и здоровье</option>
-          <option value="auto">Авто мото</option>
-          <option value="electric">Электрика</option>
-          <option value="electronics">Электроника</option>
-          <option value="plumbing">Сантехника</option>
-        </select>
-        
-        <!-- FIX: Секция контактов продавца -->
-        <div class="form-section">
-          <h3 style="margin-bottom: 10px;">Контакты продавца</h3>
-          <input type="tel" name="phone" placeholder="Телефон">
-          <input type="email" name="email" placeholder="Email">
-          <input type="text" name="telegram" placeholder="Telegram (например: @username)">
-          <input type="text" name="whatsapp" placeholder="WhatsApp (номер телефона)">
-          <label for="contact_method">Способ связи:</label>
-          <textarea id="contact_method" name="contact_method" placeholder="Укажите предпочтительный способ связи (например: Звоните с 9:00 до 18:00, Пишите в Telegram)" rows="2"></textarea>
-        </div>
-        
-        <button type="submit" class="btn primary">Отправить</button>
-      </form>
-      <div id="createProductMsg" class="note" style="margin-top:10px;"></div>
-    </section>
+      <h1>Личный кабинет</h1>
+      
+      <!-- Вкладки -->
+      <div class="tabs">
+        <button class="tab active" data-tab="products">Мои товары</button>
+        <button class="tab" data-tab="services">Мои услуги</button>
+        <button class="tab" data-tab="banners">Мои баннеры</button>
+        <button class="tab" data-tab="create">Создать карточку</button>
+      </div>
 
-    <section class="section">
-      <h2>Мои товары</h2>
-      <% if (products && products.length) { %>
-        <div class="product-grid">
-          <% products.forEach(p => { %>
-            <div class="product-card">
-              <h3 class="product-title"><%= p.name %></h3>
-              <% if (p.image_url) { %>
-                <img src="<%= p.image_url %>" alt="<%= p.name %>">
-              <% } else { %>
-                <div class="no-image">Нет изображения</div>
-              <% } %>
-              <div class="product-bottom">
-                <div style="text-align:center;margin-bottom:10px;">
-                  <% if (p.status === "pending") { %>
-                    <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ⏳ На модерации
-                    </span>
-                  <% } else if (p.status === "approved") { %>
-                    <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ✅ Опубликовано
-                    </span>
-                  <% } else if (p.status === "rejected") { %>
-                    <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ❌ Отклонено
-                    </span>
-                    <% if (p.rejection_reason) { %>
-                      <p style="color:#f44336;font-size:0.85rem;margin-top:5px;"><%= p.rejection_reason %></p>
-                    <% } %>
-                  <% } %>
-                </div>
-
-                <div class="row">
-                  <span class="muted">Текущая цена:</span>
-                  <strong class="price" data-id="<%= p._id %>"><%= p.price %></strong>
-                </div>
-                <% if (p.status === "approved" || p.status === "pending") { %>
-                  <form class="priceForm" data-id="<%= p._id %>">
-                    <input type="number" name="price" min="0" step="1" placeholder="Новая цена" required>
-                    <button type="submit" class="btn small">Обновить цену</button>
-                  </form>
-                <% } %>
-                <p class="product-desc"><%= p.description || "—" %></p>
-                <div class="product-actions">
-                  <a class="btn small outline" href="/cabinet/product/<%= p._id %>/edit">✏️ Редактировать</a>
-                  <% if (p.link) { %>
-                    <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
-                  <% } %>
-                  <% if (p.video_url) { %>
-                    <button class="btn small" data-video="<%= p.video_url %>">Обзор</button>
-                  <% } %>
-                </div>
-              </div>
-            </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <p class="empty-state">У вас пока нет товаров.</p>
-      <% } %>
-    </section>
-
-    <section class="section">
-      <h2>Загрузить баннер рекламы</h2>
-      <p style="margin-bottom: 15px; color: #666;">Загрузите баннер для секции "Тут ваша реклама" на главной странице. Баннер будет отправлен на модерацию.</p>
-      <form id="createBannerForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/banner">
-        <div class="form-section">
-          <label for="bannerImage">Изображение баннера:</label>
-          <input type="file" id="bannerImage" name="image" accept="image/*" required>
-          <div id="bannerPreview" class="image-preview-container" style="display: none; margin-top: 10px;">
-            <img id="bannerPreviewImg" src="" alt="Предпросмотр баннера" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+      <!-- Вкладка: Мои товары -->
+      <div class="tab-content active" id="tab-products">
+        <h2>Мои товары</h2>
+        <% if (products && products.length > 0) { %>
+          <div class="product-grid">
+            <% products.forEach(product => { %>
+              <%- include('partials/card', { product, itemType: 'product', mode: 'user', user }) %>
+            <% }) %>
           </div>
-          <small class="form-hint">Максимальный размер файла: 5MB. Рекомендуемые размеры: 1200x400px</small>
-        </div>
-        <input type="url" name="link" placeholder="Ссылка для перехода (необязательно)">
-        <button type="submit" class="btn primary">Отправить на модерацию</button>
-      </form>
-      <div id="createBannerMsg" class="note" style="margin-top:10px;"></div>
-    </section>
+        <% } else { %>
+          <div class="empty-state">
+            <p>У вас пока нет товаров.</p>
+            <button class="tab btn primary" data-tab="create" style="margin-top: 20px;">Создать товар</button>
+          </div>
+        <% } %>
+      </div>
 
-    <section class="section">
-      <h2>Мои баннеры</h2>
-      <% if (banners && banners.length) { %>
-        <div class="product-grid">
-          <% banners.forEach(b => { %>
-            <div class="product-card">
-              <h3 class="product-title">Баннер</h3>
-              <% if (b.image_url) { %>
-                <img src="<%= b.image_url %>" alt="Баннер" style="max-height: 200px; object-fit: cover;">
-              <% } else { %>
-                <div class="no-image">Нет изображения</div>
-              <% } %>
-              <div class="product-bottom">
-                <div style="text-align:center;margin-bottom:10px;">
-                  <% if (b.status === "pending") { %>
-                    <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ⏳ На модерации
-                    </span>
-                  <% } else if (b.status === "approved") { %>
-                    <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ✅ Опубликовано
-                    </span>
-                  <% } else if (b.status === "rejected") { %>
-                    <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ❌ Отклонено
-                    </span>
-                    <% if (b.rejection_reason) { %>
-                      <p style="color:#f44336;font-size:0.85rem;margin-top:5px;"><%= b.rejection_reason %></p>
-                    <% } %>
-                  <% } %>
-                </div>
-                <% if (b.link) { %>
-                  <div class="product-actions">
-                    <a class="btn small outline" href="<%= b.link %>" target="_blank" rel="noopener">Ссылка</a>
-                  </div>
-                <% } %>
-              </div>
+      <!-- Вкладка: Мои услуги -->
+      <div class="tab-content" id="tab-services">
+        <h2>Мои услуги</h2>
+        <% if (services && services.length > 0) { %>
+          <div class="product-grid">
+            <% services.forEach(service => { %>
+              <%- include('partials/card', { service, itemType: 'service', mode: 'user', user }) %>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>У вас пока нет услуг.</p>
+            <button class="tab btn primary" data-tab="create" style="margin-top: 20px;">Создать услугу</button>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Вкладка: Мои баннеры -->
+      <div class="tab-content" id="tab-banners">
+        <h2>Мои баннеры</h2>
+        <% if (banners && banners.length > 0) { %>
+          <div class="product-grid">
+            <% banners.forEach(banner => { %>
+              <%- include('partials/card', { banner, itemType: 'banner', mode: 'user', user }) %>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>У вас пока нет баннеров.</p>
+            <button class="tab btn primary" data-tab="create" style="margin-top: 20px;">Создать баннер</button>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Вкладка: Создать карточку -->
+      <div class="tab-content" id="tab-create">
+        <h2>Создать карточку</h2>
+        
+        <!-- Форма создания товара/услуги -->
+        <div id="createProductSection">
+          <h3>Товар или услуга</h3>
+          <form id="createProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/product">
+            <div class="form-section">
+              <label for="type">Тип публикации:</label>
+              <select id="type" name="type" required>
+                <option value="product">Товар</option>
+                <option value="service">Услуга</option>
+              </select>
             </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <p class="empty-state">У вас пока нет баннеров.</p>
-      <% } %>
-    </section>
-
-    <section class="section">
-      <h2>Мои услуги</h2>
-      <% if (services && services.length) { %>
-        <div class="product-grid">
-          <% services.forEach(s => { %>
-            <div class="product-card">
-              <h3 class="product-title"><%= s.name %></h3>
-              <% if (s.image_url) { %>
-                <img src="<%= s.image_url %>" alt="<%= s.name %>">
-              <% } else { %>
-                <div class="no-image">Нет изображения</div>
-              <% } %>
-              <div class="product-bottom">
-                <div style="text-align:center;margin-bottom:10px;">
-                  <% if (s.status === "pending") { %>
-                    <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ⏳ На модерации
-                    </span>
-                  <% } else if (s.status === "approved") { %>
-                    <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ✅ Опубликовано
-                    </span>
-                  <% } else if (s.status === "rejected") { %>
-                    <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ❌ Отклонено
-                    </span>
-                    <% if (s.rejection_reason) { %>
-                      <p style="color:#f44336;font-size:0.85rem;margin-top:5px;"><%= s.rejection_reason %></p>
-                    <% } %>
-                  <% } %>
-                </div>
-
-                <div class="row">
-                  <span class="muted">Текущая цена:</span>
-                  <strong class="price" data-id="<%= s._id %>"><%= s.price %></strong>
-                </div>
-                <% if (s.status === "approved" || s.status === "pending") { %>
-                  <form class="priceForm" data-id="<%= s._id %>">
-                    <input type="number" name="price" min="0" step="1" placeholder="Новая цена" required>
-                    <button type="submit" class="btn small">Обновить цену</button>
-                  </form>
-                <% } %>
-                <p class="product-desc"><%= s.description || "—" %></p>
-                <div class="product-actions">
-                  <a class="btn small outline" href="/cabinet/product/<%= s._id %>/edit">✏️ Редактировать</a>
-                  <% if (s.link) { %>
-                    <a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">Ссылка</a>
-                  <% } %>
-                  <% if (s.video_url) { %>
-                    <button class="btn small" data-video="<%= s.video_url %>">Обзор</button>
-                  <% } %>
-                </div>
-              </div>
+            
+            <input type="text" name="name" placeholder="Название" required>
+            <textarea name="description" placeholder="Описание" rows="4"></textarea>
+            <input type="url" name="link" placeholder="Ссылка">
+            <input type="url" name="video_url" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)">
+            <input type="number" name="price" placeholder="Цена" min="0" step="1" required>
+            
+            <div class="form-section">
+              <label for="images">Изображения (до 5 шт.):</label>
+              <input type="file" id="images" name="images" accept="image/*" multiple data-max-files="5">
+              <div id="imagePreview" class="image-preview-container" style="display: none; margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;"></div>
+              <small class="form-hint">Можно выбрать до 5 изображений</small>
             </div>
-          <% }) %>
+            
+            <select name="category" required>
+              <option value="home">Для дома</option>
+              <option value="beauty">Красота и здоровье</option>
+              <option value="auto">Авто мото</option>
+              <option value="electric">Электрика</option>
+              <option value="electronics">Электроника</option>
+              <option value="plumbing">Сантехника</option>
+            </select>
+            
+            <div class="form-section">
+              <h3 style="margin-bottom: 10px;">Контакты продавца</h3>
+              <input type="tel" name="phone" placeholder="Телефон">
+              <input type="email" name="email" placeholder="Email">
+              <input type="text" name="telegram" placeholder="Telegram (например: @username)">
+              <input type="text" name="whatsapp" placeholder="WhatsApp (номер телефона)">
+              <label for="contact_method">Способ связи:</label>
+              <textarea id="contact_method" name="contact_method" placeholder="Укажите предпочтительный способ связи (например: Звоните с 9:00 до 18:00, Пишите в Telegram)" rows="2"></textarea>
+            </div>
+            
+            <button type="submit" class="btn primary">Отправить на модерацию</button>
+          </form>
+          <div id="createProductMsg" class="note" style="margin-top:10px;"></div>
         </div>
-      <% } else { %>
-        <p class="empty-state">У вас пока нет услуг.</p>
-      <% } %>
+
+        <!-- Форма создания баннера -->
+        <div id="createBannerSection" style="margin-top: 40px;">
+          <h3>Баннер рекламы</h3>
+          <p style="margin-bottom: 15px; color: #666;">Загрузите баннер для секции "Тут ваша реклама" на главной странице. Баннер будет отправлен на модерацию.</p>
+          <form id="createBannerForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/banner">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+            <div class="form-section">
+              <label for="bannerImage">Изображение баннера:</label>
+              <input type="file" id="bannerImage" name="image" accept="image/*" required>
+              <div id="bannerPreview" class="image-preview-container" style="display: none; margin-top: 10px;">
+                <img id="bannerPreviewImg" src="" alt="Предпросмотр баннера" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+              </div>
+              <small class="form-hint">Максимальный размер файла: 5MB. Рекомендуемые размеры: 1200x400px</small>
+            </div>
+            <input type="url" name="link" placeholder="Ссылка для перехода (необязательно)">
+            <button type="submit" class="btn primary">Отправить на модерацию</button>
+          </form>
+          <div id="createBannerMsg" class="note" style="margin-top:10px;"></div>
+        </div>
+      </div>
     </section>
   </main>
 
-<footer class="footer">
-  <p>© 2025 EXTO Ecosystem</p>
-</footer>
+  <footer class="footer">
+    <p>© 2025 EXTO Ecosystem</p>
+  </footer>
 
-<!-- FIX: Полноэкранный overlay для YouTube видео -->
-<div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
-  <div class="video-overlay-container">
-    <button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
-    <div class="video-overlay-iframe-container" id="videoIframeContainer">
-      <!-- FIX: iframe создается динамически по клику -->
+  <!-- Полноэкранный overlay для видео -->
+  <div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
+    <div class="video-overlay-container">
+      <button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
+      <div class="video-overlay-iframe-container" id="videoIframeContainer"></div>
     </div>
   </div>
-</div>
 
-<script>
-  // FIX: УДАЛЕН ДУБЛИРУЮЩИЙ КОД - теперь используется единая логика из public/script.js
-  // Все функции для работы с видео (getVideoType, extractVideoId, createYouTubeIframe и т.д.)
-  // теперь находятся в public/script.js и используются через единый API
-  
-  document.addEventListener("DOMContentLoaded", () => {
-    // Обработка выхода
-    const logoutForm = document.getElementById("logoutForm");
-    if (logoutForm) {
-      logoutForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        if (!confirm("Вы уверены, что хотите выйти?")) return;
-        try {
-          const res = await fetch("/logout", { method: "POST" });
-          if (res.ok) {
+  <script>
+    // Переключение вкладок
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabs = document.querySelectorAll('.tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const targetTab = tab.dataset.tab;
+          
+          // Обновляем активные вкладки
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          
+          // Обновляем активный контент
+          tabContents.forEach(content => {
+            content.classList.remove('active');
+            if (content.id === `tab-${targetTab}`) {
+              content.classList.add('active');
+            }
+          });
+        });
+      });
+
+      // Обработка выхода
+      const logoutForm = document.getElementById("logoutForm");
+      if (logoutForm) {
+        logoutForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          if (!confirm("Вы уверены, что хотите выйти?")) return;
+          try {
+            const res = await fetch("/logout", { method: "POST" });
+            if (res.ok) {
+              window.location.href = "/";
+            }
+          } catch (err) {
+            console.error("Ошибка выхода:", err);
             window.location.href = "/";
           }
-        } catch (err) {
-          console.error("Ошибка выхода:", err);
-          window.location.href = "/";
-        }
-      });
-    }
+        });
+      }
 
-    const form = document.getElementById("createProductForm");
-    const msg = document.getElementById("createProductMsg");
+      // Обработка формы создания товара/услуги
+      const form = document.getElementById("createProductForm");
+      const msg = document.getElementById("createProductMsg");
 
-    if (form) {
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        
-        // FIX: Проверка количества изображений перед отправкой
-        const imagesInput = form.querySelector('input[name="images"]');
-        if (imagesInput && imagesInput.files.length > 5) {
-          msg.textContent = "Максимальное количество изображений: 5";
-          msg.style.color = "#b00020";
-          return;
-        }
-        
-        // FIX: Проверка размера файлов
-        if (imagesInput && imagesInput.files.length > 0) {
-          for (let i = 0; i < imagesInput.files.length; i++) {
-            const file = imagesInput.files[i];
-            if (file.size > 5 * 1024 * 1024) {
-              msg.textContent = `Файл "${file.name}" превышает 5MB`;
+      if (form) {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          
+          const imagesInput = form.querySelector('input[name="images"]');
+          if (imagesInput && imagesInput.files.length > 5) {
+            msg.textContent = "Максимальное количество изображений: 5";
+            msg.style.color = "#b00020";
+            return;
+          }
+          
+          if (imagesInput && imagesInput.files.length > 0) {
+            for (let i = 0; i < imagesInput.files.length; i++) {
+              const file = imagesInput.files[i];
+              if (file.size > 5 * 1024 * 1024) {
+                msg.textContent = `Файл "${file.name}" превышает 5MB`;
+                msg.style.color = "#b00020";
+                return;
+              }
+            }
+          }
+          
+          msg.textContent = "Отправка...";
+          msg.style.color = "#666";
+          
+          const formData = new FormData(form);
+          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+          
+          try {
+            const res = await fetch("/cabinet/product", { 
+              method: "POST", 
+              body: formData,
+              headers: {
+                'X-CSRF-Token': csrfToken || ''
+              },
+              credentials: 'same-origin'
+            });
+            
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+              const text = await res.text();
+              msg.textContent = "Ошибка: " + (text || "Неверный формат ответа");
               msg.style.color = "#b00020";
               return;
             }
-          }
-        }
-        
-        // FIX: Показываем сообщение о загрузке
-        msg.textContent = "Отправка...";
-        msg.style.color = "#666";
-        
-        const formData = new FormData(form);
-        
-        try {
-          console.log("📤 Отправка формы...");
-          console.log("📸 Количество изображений:", imagesInput ? imagesInput.files.length : 0);
-          
-          const res = await fetch("/cabinet/product", { method: "POST", body: formData });
-          
-          console.log("📥 Ответ получен, статус:", res.status);
-          
-          // FIX: Проверяем, что ответ - JSON
-          const contentType = res.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) {
-            const text = await res.text();
-            console.error("❌ Ответ не JSON:", text);
-            msg.textContent = "Ошибка: " + (text || "Неверный формат ответа");
-            msg.style.color = "#b00020";
-            return;
-          }
-          
-          const json = await res.json();
-          console.log("📋 JSON ответ:", json);
-          
-          if (json.success) {
-            msg.textContent = "Карточка отправлена на модерацию.";
-            msg.style.color = "green";
-            setTimeout(() => location.reload(), 800);
-          } else {
-            msg.textContent = json.message || "Ошибка при создании карточки";
+            
+            const json = await res.json();
+            
+            if (json.success) {
+              msg.textContent = "Карточка отправлена на модерацию.";
+              msg.style.color = "green";
+              form.reset();
+              document.getElementById('imagePreview').style.display = 'none';
+              setTimeout(() => location.reload(), 800);
+            } else {
+              msg.textContent = json.message || "Ошибка при создании карточки";
+              msg.style.color = "#b00020";
+            }
+          } catch (err) {
+            console.error("❌ Ошибка при отправке:", err);
+            msg.textContent = "Ошибка сети: " + err.message;
             msg.style.color = "#b00020";
           }
-        } catch (err) {
-          console.error("❌ Ошибка при отправке:", err);
-          msg.textContent = "Ошибка сети: " + err.message;
-          msg.style.color = "#b00020";
-        }
-      });
-    }
-
-    document.querySelectorAll(".priceForm").forEach((f) => {
-      f.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const id = f.getAttribute("data-id");
-        const price = f.querySelector("input[name='price']").value;
-        try {
-          const res = await fetch(`/cabinet/product/${id}/price`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ price })
-          });
-          const json = await res.json();
-          if (json.success) {
-            const priceEl = document.querySelector(`.price[data-id='${id}']`);
-            if (priceEl) priceEl.textContent = json.price;
-          } else {
-            alert(json.message || "Ошибка обновления цены");
-          }
-        } catch (err) {
-          alert("Ошибка сети: " + err.message);
-        }
-      });
-    });
-
-    // FIX: УДАЛЕН ДУБЛИРУЮЩИЙ КОД ВИДЕО-ЛОГИКИ - теперь используется единая логика из public/script.js
-    // Функции openVideoOverlay, closeVideoOverlay и обработчики кликов находятся в public/script.js
-  });
-
-  // FIX: Превью выбранных изображений
-  const imagesInput = document.getElementById('images');
-  const imagePreview = document.getElementById('imagePreview');
-  
-  if (imagesInput && imagePreview) {
-    imagesInput.addEventListener('change', function(e) {
-      const files = Array.from(e.target.files);
-      const maxFiles = parseInt(imagesInput.getAttribute('data-max-files')) || 5;
-      
-      // Ограничиваем количество файлов
-      if (files.length > maxFiles) {
-        alert(`Можно выбрать не более ${maxFiles} изображений`);
-        e.target.value = '';
-        imagePreview.innerHTML = '';
-        imagePreview.style.display = 'none';
-        return;
+        });
       }
-      
-      // Очищаем предыдущие превью
-      imagePreview.innerHTML = '';
-      
-      if (files.length === 0) {
-        imagePreview.style.display = 'none';
-        return;
-      }
-      
-      imagePreview.style.display = 'grid';
-      
-      files.forEach((file, index) => {
-        // Проверка размера файла (макс 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
-          return;
-        }
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const div = document.createElement('div');
-          div.className = 'preview-item';
-          div.style.position = 'relative';
-          div.style.aspectRatio = '1';
-          div.style.overflow = 'hidden';
-          div.style.borderRadius = '8px';
-          div.style.border = '2px solid #ddd';
-          
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.objectFit = 'cover';
-          
-          div.appendChild(img);
-          imagePreview.appendChild(div);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-  }
 
-  // Обработка формы загрузки баннера
-  const bannerForm = document.getElementById("createBannerForm");
-  const bannerMsg = document.getElementById("createBannerMsg");
-  const bannerPreview = document.getElementById("bannerPreview");
-  const bannerPreviewImg = document.getElementById("bannerPreviewImg");
-  const bannerImageInput = document.getElementById("bannerImage");
-
-  if (bannerForm) {
-    // Превью баннера
-    if (bannerImageInput && bannerPreviewImg) {
-      bannerImageInput.addEventListener("change", function(e) {
-        const file = e.target.files[0];
-        if (file) {
-          // Проверка размера файла
-          if (file.size > 5 * 1024 * 1024) {
-            alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
+      // Превью изображений
+      const imagesInput = document.getElementById('images');
+      const imagePreview = document.getElementById('imagePreview');
+      
+      if (imagesInput && imagePreview) {
+        imagesInput.addEventListener('change', function(e) {
+          const files = Array.from(e.target.files);
+          const maxFiles = parseInt(imagesInput.getAttribute('data-max-files')) || 5;
+          
+          if (files.length > maxFiles) {
+            alert(`Можно выбрать не более ${maxFiles} изображений`);
             e.target.value = '';
-            bannerPreview.style.display = 'none';
+            imagePreview.innerHTML = '';
+            imagePreview.style.display = 'none';
             return;
           }
           
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            bannerPreviewImg.src = e.target.result;
-            bannerPreview.style.display = 'block';
-          };
-          reader.readAsDataURL(file);
-        } else {
-          bannerPreview.style.display = 'none';
-        }
-      });
-    }
-
-    bannerForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      
-      // Проверка размера файла
-      if (bannerImageInput && bannerImageInput.files.length > 0) {
-        const file = bannerImageInput.files[0];
-        if (file.size > 5 * 1024 * 1024) {
-          bannerMsg.textContent = `Файл "${file.name}" превышает 5MB`;
-          bannerMsg.style.color = "#b00020";
-          return;
-        }
+          imagePreview.innerHTML = '';
+          
+          if (files.length === 0) {
+            imagePreview.style.display = 'none';
+            return;
+          }
+          
+          imagePreview.style.display = 'grid';
+          
+          files.forEach((file) => {
+            if (file.size > 5 * 1024 * 1024) {
+              alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
+              return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              const div = document.createElement('div');
+              div.className = 'preview-item';
+              div.style.position = 'relative';
+              div.style.aspectRatio = '1';
+              div.style.overflow = 'hidden';
+              div.style.borderRadius = '8px';
+              div.style.border = '2px solid #ddd';
+              
+              const img = document.createElement('img');
+              img.src = e.target.result;
+              img.style.width = '100%';
+              img.style.height = '100%';
+              img.style.objectFit = 'cover';
+              
+              div.appendChild(img);
+              imagePreview.appendChild(div);
+            };
+            reader.readAsDataURL(file);
+          });
+        });
       }
-      
-      bannerMsg.textContent = "Отправка...";
-      bannerMsg.style.color = "#666";
-      
-      const formData = new FormData(bannerForm);
-      
-      try {
-        const res = await fetch("/cabinet/banner", { method: "POST", body: formData });
-        
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          const text = await res.text();
-          bannerMsg.textContent = "Ошибка: " + (text || "Неверный формат ответа");
-          bannerMsg.style.color = "#b00020";
-          return;
+
+      // Обработка формы загрузки баннера
+      const bannerForm = document.getElementById("createBannerForm");
+      const bannerMsg = document.getElementById("createBannerMsg");
+      const bannerPreview = document.getElementById("bannerPreview");
+      const bannerPreviewImg = document.getElementById("bannerPreviewImg");
+      const bannerImageInput = document.getElementById("bannerImage");
+
+      if (bannerForm) {
+        if (bannerImageInput && bannerPreviewImg) {
+          bannerImageInput.addEventListener("change", function(e) {
+            const file = e.target.files[0];
+            if (file) {
+              if (file.size > 5 * 1024 * 1024) {
+                alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
+                e.target.value = '';
+                bannerPreview.style.display = 'none';
+                return;
+              }
+              
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                bannerPreviewImg.src = e.target.result;
+                bannerPreview.style.display = 'block';
+              };
+              reader.readAsDataURL(file);
+            } else {
+              bannerPreview.style.display = 'none';
+            }
+          });
         }
-        
-        const json = await res.json();
-        
-        if (json.success) {
-          bannerMsg.textContent = "Баннер отправлен на модерацию.";
-          bannerMsg.style.color = "green";
-          bannerForm.reset();
-          bannerPreview.style.display = 'none';
-          setTimeout(() => location.reload(), 800);
-        } else {
-          bannerMsg.textContent = json.message || "Ошибка при загрузке баннера";
-          bannerMsg.style.color = "#b00020";
-        }
-      } catch (err) {
-        console.error("❌ Ошибка при отправке:", err);
-        bannerMsg.textContent = "Ошибка сети: " + err.message;
-        bannerMsg.style.color = "#b00020";
+
+        bannerForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          
+          if (bannerImageInput && bannerImageInput.files.length > 0) {
+            const file = bannerImageInput.files[0];
+            if (file.size > 5 * 1024 * 1024) {
+              bannerMsg.textContent = `Файл "${file.name}" превышает 5MB`;
+              bannerMsg.style.color = "#b00020";
+              return;
+            }
+          }
+          
+          bannerMsg.textContent = "Отправка...";
+          bannerMsg.style.color = "#666";
+          
+          const formData = new FormData(bannerForm);
+          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+          
+          try {
+            const res = await fetch("/cabinet/banner", { 
+              method: "POST", 
+              body: formData,
+              headers: {
+                'X-CSRF-Token': csrfToken || ''
+              },
+              credentials: 'same-origin'
+            });
+            
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+              const text = await res.text();
+              bannerMsg.textContent = "Ошибка: " + (text || "Неверный формат ответа");
+              bannerMsg.style.color = "#b00020";
+              return;
+            }
+            
+            const json = await res.json();
+            
+            if (json.success) {
+              bannerMsg.textContent = "Баннер отправлен на модерацию.";
+              bannerMsg.style.color = "green";
+              bannerForm.reset();
+              bannerPreview.style.display = 'none';
+              setTimeout(() => location.reload(), 800);
+            } else {
+              bannerMsg.textContent = json.message || "Ошибка при загрузке баннера";
+              bannerMsg.style.color = "#b00020";
+            }
+          } catch (err) {
+            console.error("❌ Ошибка при отправке:", err);
+            bannerMsg.textContent = "Ошибка сети: " + err.message;
+            bannerMsg.style.color = "#b00020";
+          }
+        });
       }
     });
-  }
-</script>
+  </script>
 
-<!-- FIX: Загружаем YouTube IFrame API перед основным скриптом для единой логики видео -->
-<script>
-  // Загрузка YouTube IFrame API
-  var tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  var firstScriptTag = document.getElementsByTagName('script')[0];
-  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-</script>
+  <!-- Загрузка YouTube IFrame API -->
+  <script>
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  </script>
 
-<!-- FIX: Подключаем единую логику видео-плееров из public/script.js -->
-<script src="/script.js"></script>
-
+  <!-- Подключаем единую логику -->
+  <script src="/script.js"></script>
+  <!-- Подключаем логику для каталога (удаление, редактирование) -->
+  <script src="/js/admin-catalog.js"></script>
 </body>
 </html>
-
