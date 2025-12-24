@@ -3,9 +3,9 @@
 # ============================================
 
 # Секретный ключ для сессий (минимум 32 символа)
-# Сгенерировать: openssl rand -base64 32
+# Сгенерировать: openssl rand -base64 32 или node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 # ❌ НЕ используйте дефолтное значение "exto-secret"
-SESSION_SECRET=REPLACE_WITH_GENERATED_SECRET_MIN_32_CHARS
+SESSION_SECRET=ADOuTPFOMKTZajSAcqTnU8jHhkUcu0BCD1E3Nbnxmgc=
 
 # MongoDB Atlas connection string
 # Формат: mongodb+srv://username:password@cluster.mongodb.net/exto?retryWrites=true&w=majority
@@ -52,18 +52,3 @@ PORT=3000
 
 # 4. Запустите сервер:
 #    npm start
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,5 +1,5 @@
 module.exports = {
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   testMatch: [
     '**/tests/**/*.test.js'
   ],
@@ -14,7 +14,3 @@ module.exports = {
   verbose: true,
   testTimeout: 30000
 };
-
-
-
-
