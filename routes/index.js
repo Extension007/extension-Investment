@@ -41,7 +41,7 @@ app.get("/", csrfToken, async (req, res) => {
     const categoryKeys = typeof CATEGORY_KEYS !== 'undefined' ? CATEGORY_KEYS : [];
 
     if (!HAS_MONGO) {
-      return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+      return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all", csrfToken: res.locals.csrfToken });
     }
 
     // Проверяем подключение к БД (readyState: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting)
@@ -69,7 +69,7 @@ app.get("/", csrfToken, async (req, res) => {
         }
       } else {
         // Для других состояний сразу показываем пустой каталог
-        return res.render("index", { products: [], services: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+        return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
       }
     }
 
@@ -120,7 +120,7 @@ app.get("/", csrfToken, async (req, res) => {
       services = await Product.find(servicesFilter).sort({ _id: -1 }).maxTimeMS(5000);
     } catch (queryErr) {
       console.warn("⚠️ Ошибка запроса к БД:", queryErr.message);
-      return res.render("index", { products: [], services: [], page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
+      return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
     }
 
     // пометим где пользователь голосовал (для товаров и услуг)
