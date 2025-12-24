@@ -1,6 +1,6 @@
 // Middleware для авторизации
 function requireAdmin(req, res, next) {
-  if (!req.session.user) {
+  if (!req.session?.user) {
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.status(401).json({ success: false, error: "Unauthorized", message: "Требуется авторизация" });
     return res.redirect("/admin/login");
@@ -15,7 +15,7 @@ function requireAdmin(req, res, next) {
 }
 
 function requireUser(req, res, next) {
-  if (!req.session.user) {
+  if (!req.session?.user) {
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.status(401).json({ success: false, error: "Unauthorized", message: "Требуется авторизация" });
     return res.redirect("/user/login");
@@ -57,12 +57,12 @@ function requireOwnerOrAdmin(modelName = 'Product', paramName = 'id') {
       }
 
       // Админ имеет полный доступ
-      if (req.session.user && req.session.user.role === "admin") {
+      if (req.session?.user && req.session.user.role === "admin") {
         return next();
       }
 
       // Проверяем владельца
-      const userId = req.session.user?._id?.toString();
+      const userId = req.session?.user?._id?.toString();
       const ownerId = item.owner?.toString();
 
       if (!userId || userId !== ownerId) {

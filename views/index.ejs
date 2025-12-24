@@ -491,7 +491,8 @@
   </div>
 </div>
 
-<script>window.IS_AUTH = <%= JSON.stringify(isAuth) %>;</script>
+<% let isAuthValue = typeof isAuth !== 'undefined' ? isAuth : false; %>
+<script>window.IS_AUTH = <%= JSON.stringify(isAuthValue) %>;</script>
 
 <!-- Загружаем YouTube IFrame API перед основным скриптом -->
 <script>

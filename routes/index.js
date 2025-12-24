@@ -28,10 +28,10 @@ const adminRoutes = require("./admin");
 app.use("/admin", adminRoutes);
 
 // Главная страница — каталог (только опубликованные карточки)
-app.get("/", csrfToken, async (req, res) => {
+app.get("/", async (req, res) => {
   try {
-    const isAuth = Boolean(req.session.user);
-    const userRole = req.session.user?.role || null;
+    const isAuth = Boolean(req.session?.user);
+    const userRole = req.session?.user?.role || null;
     const isAdmin = userRole === "admin";
     const isUser = userRole === "user";
     const selected = req.query.category;
@@ -124,7 +124,7 @@ app.get("/", csrfToken, async (req, res) => {
     }
 
     // пометим где пользователь голосовал (для товаров и услуг)
-    const userId = req.session.user?._id?.toString();
+    const userId = req.session?.user?._id?.toString();
     const votedMap = {};
     [...products, ...services].forEach(p => {
       if (Array.isArray(p.voters) && p.voters.map(v => v.toString()).includes(userId)) {
@@ -203,8 +203,8 @@ app.get("/", csrfToken, async (req, res) => {
 
     // Пытаемся показать страницу с пустым каталогом вместо ошибки 500
     try {
-      const isAuth = Boolean(req.session.user);
-      const userRole = req.session.user?.role || null;
+      const isAuth = Boolean(req.session?.user);
+      const userRole = req.session?.user?.role || null;
       const isAdmin = userRole === "admin";
       const isUser = userRole === "user";
       const selected = req.query.category || "all";
