@@ -120,7 +120,6 @@ describe('removeImageByIndex', () => {
       expect.objectContaining({
         method: 'DELETE',
         headers: {
-          'Content-Type': 'application/json',
           'X-CSRF-Token': 'test-csrf-token'
         },
         credentials: 'same-origin'
@@ -168,7 +167,7 @@ describe('removeImageByIndex', () => {
 
     await removeImageByIndex(1);
 
-    expect(showToast).toHaveBeenCalledWith('Изображение удалено', 'success');
+    expect(showToast).toHaveBeenCalledWith('Изображение успешно удалено', 'success');
   });
 
   test('показывает toast при ошибке', async () => {
