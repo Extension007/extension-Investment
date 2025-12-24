@@ -1255,14 +1255,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (registerForm) {
-    // Получаем CSRF токен из существующей формы входа
-    const existingCsrfToken = document.querySelector('input[name="_csrf"]')?.value ||
-                             document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    // В Vercel serverless CSRF отключен, поэтому не ищем токены
+    const isVercel = window.location.hostname.includes('vercel.app') ||
+                     window.location.hostname.includes('extension-investment');
 
-    // Устанавливаем CSRF токен в форму регистрации
-    const registerCsrfField = document.getElementById('registerCsrfToken');
-    if (registerCsrfField && existingCsrfToken) {
-      registerCsrfField.value = existingCsrfToken;
+    let existingCsrfToken = null;
+    if (!isVercel) {
+      // Получаем CSRF токен из существующей формы входа (только не в Vercel)
+      existingCsrfToken = document.querySelector('input[name="_csrf"]')?.value ||
+                         document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+      // Устанавливаем CSRF токен в форму регистрации
+      const registerCsrfField = document.getElementById('registerCsrfToken');
+      if (registerCsrfField && existingCsrfToken) {
+        registerCsrfField.value = existingCsrfToken;
+      }
     }
 
     registerForm.addEventListener("submit", async (e) => {
@@ -1273,12 +1280,18 @@ document.addEventListener("DOMContentLoaded", () => {
       if (registerSuccess) registerSuccess.style.display = "none";
 
       try {
+        const headers = {
+          "Content-Type": "application/json"
+        };
+
+        // Добавляем CSRF токен только если не в Vercel
+        if (!isVercel && (formData._csrf || existingCsrfToken)) {
+          headers["X-CSRF-Token"] = formData._csrf || existingCsrfToken;
+        }
+
         const res = await fetch("/auth/register", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRF-Token": formData._csrf || existingCsrfToken || ''
-          },
+          headers: headers,
           body: JSON.stringify(formData),
           credentials: 'same-origin'
         });

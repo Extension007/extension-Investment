@@ -2,6 +2,8 @@
 const mongoose = require("mongoose");
 
 const HAS_MONGO_URI = Boolean(process.env.MONGODB_URI);
+const isVercel = Boolean(process.env.VERCEL);
+const isProduction = process.env.NODE_ENV === 'production' || isVercel;
 let isDbConnected = false;
 
 function connectDatabase() {
@@ -17,7 +19,31 @@ function connectDatabase() {
     return Promise.resolve(false);
   }
 
-  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+  // В Vercel serverless создаем новое соединение для каждого запроса
+  if (isVercel) {
+    return mongoose.createConnection(mongoUri, {
+      serverSelectionTimeoutMS: 5000, // Короткий таймаут для serverless
+      socketTimeoutMS: 10000,
+      connectTimeoutMS: 5000,
+      maxPoolSize: 1, // Ограниченный пул для serverless
+      bufferCommands: false,
+      bufferMaxEntries: 0
+    })
+      .then(conn => {
+        console.log("✅ MongoDB подключена (Vercel serverless)");
+        return { connection: conn, isConnected: true };
+      })
+      .catch(err => {
+        console.error("❌ Ошибка подключения MongoDB (Vercel):", err.message);
+        return { connection: null, isConnected: false };
+      });
+  }
+
+  // В обычной среде используем глобальное соединение
+  if (isDbConnected && mongoose.connection.readyState === 1) {
+    return Promise.resolve(true);
+  }
+
   const serverTimeout = isProduction ? 30000 : 10000;
   const connectTimeout = isProduction ? 30000 : 10000;
 

@@ -4,9 +4,12 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 const { hasMongo } = require("../config/database");
+const mongoose = require("mongoose");
 const { loginLimiter } = require("../middleware/rateLimiter");
 const { validateLogin, validateRegister } = require("../middleware/validators");
 const { csrfProtection } = require("../middleware/csrf");
+
+const isVercel = Boolean(process.env.VERCEL);
 
 // Вход для админов (GET)
 router.get("/admin/login", (req, res) => {
@@ -27,7 +30,11 @@ router.get("/user/login", (req, res) => {
 });
 
 // Вход для админов (POST)
-router.post("/admin/login", loginLimiter, csrfProtection, validateLogin, async (req, res) => {
+const adminLoginMiddleware = isVercel
+  ? [loginLimiter, validateLogin] // Без CSRF в Vercel
+  : [loginLimiter, csrfProtection, validateLogin]; // С CSRF в обычной среде
+
+router.post("/admin/login", ...adminLoginMiddleware, async (req, res) => {
   if (!hasMongo()) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
   const { username, password } = req.body;
   try {
@@ -62,7 +69,11 @@ router.post("/admin/login", loginLimiter, csrfProtection, validateLogin, async (
 });
 
 // Вход для пользователей (POST)
-router.post("/user/login", loginLimiter, csrfProtection, validateLogin, async (req, res) => {
+const userLoginMiddleware = isVercel
+  ? [loginLimiter, validateLogin] // Без CSRF в Vercel
+  : [loginLimiter, csrfProtection, validateLogin]; // С CSRF в обычной среде
+
+router.post("/user/login", ...userLoginMiddleware, async (req, res) => {
   if (!hasMongo()) return res.status(503).send("Вход недоступен: отсутствует подключение к БД");
   const { username, password } = req.body;
   try {
@@ -97,7 +108,11 @@ router.post("/user/login", loginLimiter, csrfProtection, validateLogin, async (r
 });
 
 // Регистрация пользователя
-router.post("/auth/register", loginLimiter, csrfProtection, validateRegister, async (req, res) => {
+const registerMiddleware = isVercel
+  ? [loginLimiter, validateRegister] // Без CSRF в Vercel
+  : [loginLimiter, csrfProtection, validateRegister]; // С CSRF в обычной среде
+
+router.post("/auth/register", ...registerMiddleware, async (req, res) => {
   if (!hasMongo()) return res.status(503).json({ success: false, message: "Регистрация недоступна: нет БД" });
   try {
     const { username, email, password } = req.body;

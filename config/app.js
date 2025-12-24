@@ -9,6 +9,7 @@ const { createSecurityMiddleware } = require("./security");
 const { HAS_MONGO, connectMongoDB } = require("./database");
 
 const app = express();
+const isVercel = Boolean(process.env.VERCEL);
 
 // Настройка шаблонов
 app.set("view engine", "ejs");
@@ -33,29 +34,37 @@ const CATEGORY_LABELS = {
 };
 const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
 
-// Сессии (MongoDB)
-const sessionOptions = {
-  secret: process.env.SESSION_SECRET || "exto-secret",
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 1000 * 60 * 60 } // 1 час
-};
+// Сессии - отключаем в Vercel serverless
+if (!isVercel) {
+  const sessionOptions = {
+    secret: process.env.SESSION_SECRET || "exto-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 1000 * 60 * 60 } // 1 час
+  };
 
-if (HAS_MONGO) {
-  sessionOptions.store = MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI,
-    collectionName: "sessions"
-  });
+  if (HAS_MONGO) {
+    sessionOptions.store = MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI,
+      collectionName: "sessions"
+    });
+  } else {
+    console.warn("⚠️  MONGODB_URI не задан. Используется MemoryStore для сессий (только для локальной разработки).");
+  }
+
+  app.use(cookieParser());
+  app.use(session(sessionOptions));
+
+  // CSRF защита - только в обычной среде
+  const { csrfToken } = require("../middleware/csrf");
+  app.use(csrfToken);
+
+  console.log("✅ Сессии и CSRF включены (обычная среда)");
 } else {
-  console.warn("⚠️  MONGODB_URI не задан. Используется MemoryStore для сессий (только для локальной разработки).");
+  // В Vercel просто cookie parser без сессий
+  app.use(cookieParser());
+  console.log("⚠️  Сессии и CSRF отключены (Vercel serverless)");
 }
-
-app.use(cookieParser());
-app.use(session(sessionOptions));
-
-// CSRF защита
-const { csrfToken } = require("../middleware/csrf");
-app.use(csrfToken);
 
 // Статика
 app.use(express.static(path.join(__dirname, "../public")));

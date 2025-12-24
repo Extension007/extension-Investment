@@ -1,13 +1,43 @@
 // Конфигурация запуска сервера
 const { app } = require("./app");
-const { connectMongoDB } = require("./database");
+const { connectMongoDB, hasMongo } = require("./database");
 
 // Глобальный обработчик ошибок
 const errorHandler = require("../middleware/errorHandler");
 app.use(errorHandler);
 
+// Middleware для подключения к БД в serverless среде
+if (process.env.VERCEL) {
+  app.use(async (req, res, next) => {
+    try {
+      // В Vercel создаем новое соединение для каждого запроса
+      const dbResult = await connectMongoDB();
+
+      // Сохраняем соединение в req для использования в роутах
+      if (dbResult && dbResult.isConnected) {
+        req.dbConnection = dbResult.connection;
+        req.dbConnected = true;
+      } else {
+        req.dbConnected = false;
+      }
+
+      next();
+    } catch (err) {
+      console.error("❌ Ошибка подключения к БД в middleware:", err);
+      req.dbConnected = false;
+      next(); // Продолжаем без БД
+    }
+  });
+}
+
 function startServer(port = process.env.PORT || 3000, attemptsLeft = 5) {
-  // Подключаемся к БД перед запуском сервера
+  // В Vercel serverless не нужно предварительное подключение
+  if (process.env.VERCEL) {
+    console.log("✅ Vercel serverless режим - подключение к БД будет создаваться для каждого запроса");
+    return app;
+  }
+
+  // В обычной среде подключаемся к БД перед запуском сервера
   connectMongoDB().then(() => {
     const server = app
       .listen(port, "0.0.0.0", () => {
