@@ -26,7 +26,7 @@
     "compression": "^1.7.4",
     "connect-mongo": "^5.1.0",
     "cookie-parser": "^1.4.7",
-    "csurf": "^1.11.0",
+    "csurf": "^1.2.2",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "express": "^4.18.2",
@@ -43,11 +43,11 @@
     "sanitize-html": "^2.11.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10",
+    "@types/jest": "^29.5.8",
     "jest": "^29.7.0",
-    "supertest": "^6.3.3",
+    "nodemon": "^3.1.10",
     "puppeteer": "^21.5.0",
-    "@types/jest": "^29.5.8"
+    "supertest": "^6.3.3"
   },
   "overrides": {
     "cloudinary": "^2.8.0"

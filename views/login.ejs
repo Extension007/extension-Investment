@@ -53,6 +53,7 @@
   <form method="POST" action="/admin/login">
     <input type="text" name="username" placeholder="Логин" required>
     <input type="password" name="password" placeholder="Пароль" required>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <button type="submit">Войти</button>
   </form>
 
