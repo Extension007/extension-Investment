@@ -27,5 +27,6 @@ function createSecurityMiddleware() {
   });
 }
 
-module.exports = createSecurityMiddleware;
-
+module.exports = {
+  createSecurityMiddleware
+};

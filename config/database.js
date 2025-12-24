@@ -1,10 +1,11 @@
 // Конфигурация подключения к MongoDB
 const mongoose = require("mongoose");
 
-const HAS_MONGO = Boolean(process.env.MONGODB_URI);
+const HAS_MONGO_URI = Boolean(process.env.MONGODB_URI);
+let isDbConnected = false;
 
 function connectDatabase() {
-  if (!HAS_MONGO) {
+  if (!HAS_MONGO_URI) {
     console.warn("⚠️  MONGODB_URI не задан. Приложение запущено без БД (каталог пуст, админ/рейтинг отключены).");
     return Promise.resolve(false);
   }
@@ -31,6 +32,7 @@ function connectDatabase() {
       console.log("✅ MongoDB подключена");
       console.log("📊 Состояние подключения:", mongoose.connection.readyState, "(1=connected)");
       console.log("📊 Имя базы данных:", mongoose.connection.name);
+      isDbConnected = true;
       return true;
     })
     .catch(err => {
@@ -44,12 +46,18 @@ function connectDatabase() {
         console.error("⚠️  Проблема с DNS. Проверьте правильность hostname в MONGODB_URI");
       }
       console.warn("⚠️  Приложение будет работать без БД (каталог пуст, админ/рейтинг отключены).");
+      isDbConnected = false;
       return false;
     });
 }
 
+// Функция для проверки доступности БД
+function hasMongo() {
+  return HAS_MONGO_URI && isDbConnected;
+}
+
 // Обработчики событий подключения
-if (HAS_MONGO) {
+if (HAS_MONGO_URI) {
   mongoose.connection.on('connecting', () => {
     console.log("🔄 Подключение к MongoDB...");
   });
@@ -72,6 +80,7 @@ if (HAS_MONGO) {
 }
 
 module.exports = {
-  connectDatabase,
-  HAS_MONGO
+  connectMongoDB: connectDatabase,
+  hasMongo,
+  HAS_MONGO: HAS_MONGO_URI
 };

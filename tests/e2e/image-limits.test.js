@@ -3,6 +3,10 @@
  */
 
 const puppeteer = require('puppeteer');
+const path = require('path');
+const os = require('os');
+const fs = require('fs');
+const { execSync } = require('child_process');
 
 describe('E2E: Лимит 5 изображений', () => {
   let browser;
@@ -10,23 +14,41 @@ describe('E2E: Лимит 5 изображений', () => {
   const baseUrl = process.env.TEST_URL || 'http://localhost:3000';
 
   beforeAll(async () => {
+    // Kill any existing Chrome processes
+    try {
+      execSync('taskkill /F /IM chrome.exe /T', { stdio: 'ignore' });
+    } catch (e) {
+      // Ignore errors
+    }
+    const userDataDir = path.join(os.tmpdir(), `puppeteer_test_${Date.now()}_${process.pid}_${Math.random().toString(36).substring(7)}`);
+    // Remove the directory if it exists
+    if (fs.existsSync(userDataDir)) {
+      fs.rmSync(userDataDir, { recursive: true, force: true });
+    }
     browser = await puppeteer.launch({
       headless: process.env.CI === 'true',
+      userDataDir,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
   });
 
   afterAll(async () => {
-    await browser.close();
+    if (browser) {
+      await browser.close();
+    }
   });
 
   beforeEach(async () => {
-    page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 720 });
+    if (browser) {
+      page = await browser.newPage();
+      await page.setViewport({ width: 1280, height: 720 });
+    }
   });
 
   afterEach(async () => {
-    await page.close();
+    if (page) {
+      await page.close();
+    }
   });
 
   test('последовательное удаление и догрузка до лимита 5', async () => {
@@ -147,7 +169,3 @@ describe('E2E: Лимит 5 изображений', () => {
     }
   }, 15000);
 });
-
-
-
-

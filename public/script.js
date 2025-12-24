@@ -1255,6 +1255,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (registerForm) {
+    // Получаем CSRF токен из существующей формы входа
+    const existingCsrfToken = document.querySelector('input[name="_csrf"]')?.value ||
+                             document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    // Устанавливаем CSRF токен в форму регистрации
+    const registerCsrfField = document.getElementById('registerCsrfToken');
+    if (registerCsrfField && existingCsrfToken) {
+      registerCsrfField.value = existingCsrfToken;
+    }
+
     registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const formData = Object.fromEntries(new FormData(registerForm).entries());
@@ -1265,8 +1275,12 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const res = await fetch("/auth/register", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData)
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": formData._csrf || existingCsrfToken || ''
+          },
+          body: JSON.stringify(formData),
+          credentials: 'same-origin'
         });
         const data = await res.json();
 
@@ -1279,6 +1293,13 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Регистрация завершена");
           }
           registerForm.reset();
+          // Закрываем модальное окно через 2 секунды
+          setTimeout(() => {
+            if (registerModal) {
+              registerModal.style.display = "none";
+              registerModal.setAttribute("aria-hidden", "true");
+            }
+          }, 2000);
         } else {
           if (registerError) {
             registerError.textContent = data.message || "Ошибка регистрации";
@@ -1288,6 +1309,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
       } catch (err) {
+        console.error("Registration error:", err);
         if (registerError) {
           registerError.textContent = "Сеть недоступна или сервер не отвечает";
           registerError.style.display = "block";
