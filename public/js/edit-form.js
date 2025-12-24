@@ -535,8 +535,9 @@
     }, 5000);
   }
 
-  // Экспорт функции инициализации
+  // Экспорт функций для тестирования
   window.initEditForm = initEditForm;
+  window.removeImageByIndex = removeImageByIndex;
 
   // Автоматическая инициализация при загрузке DOM
   if (document.readyState === 'loading') {
@@ -545,4 +546,3 @@
     });
   }
 })();
-

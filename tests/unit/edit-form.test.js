@@ -10,7 +10,18 @@ describe('removeImageByIndex', () => {
   let container;
   let showToast;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    // Загружаем скрипт edit-form.js
+    const script = document.createElement('script');
+    script.src = 'file://' + require('path').resolve(__dirname, '../../public/js/edit-form.js');
+    document.head.appendChild(script);
+
+    // Ждем загрузки скрипта
+    await new Promise((resolve) => {
+      script.onload = resolve;
+      script.onerror = resolve; // Continue even if script fails to load in test environment
+    });
+
     // Мокаем fetch
     mockFetch = jest.fn();
     global.fetch = mockFetch;
@@ -18,21 +29,22 @@ describe('removeImageByIndex', () => {
     // Мокаем DOM элементы
     document.body.innerHTML = `
       <div class="current-images-container">
-        <div class="current-image-item" data-image-index="0">
+        <div class="image-wrapper" data-image-index="0">
           <img src="image1.jpg" data-original-url="image1.jpg">
           <button class="remove-image-btn" data-image-index="0">×</button>
         </div>
-        <div class="current-image-item" data-image-index="1">
+        <div class="image-wrapper" data-image-index="1">
           <img src="image2.jpg" data-original-url="image2.jpg">
           <button class="remove-image-btn" data-image-index="1">×</button>
         </div>
-        <div class="current-image-item" data-image-index="2">
+        <div class="image-wrapper" data-image-index="2">
           <img src="image3.jpg" data-original-url="image3.jpg">
           <button class="remove-image-btn" data-image-index="2">×</button>
         </div>
       </div>
       <input type="hidden" id="currentImagesInput" value='["image1.jpg","image2.jpg","image3.jpg"]'>
-      <input type="hidden" name="_csrf" value="test-csrf-token">
+      <input type="hidden" id="productId" value="test-product-id">
+      <meta name="csrf-token" content="test-csrf-token">
     `;
 
     container = document.querySelector('.current-images-container');
@@ -180,7 +192,3 @@ describe('removeImageByIndex', () => {
     expect(showToast).toHaveBeenCalledWith('Ошибка: ID товара не найден', 'error');
   });
 });
-
-
-
-
