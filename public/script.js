@@ -1274,7 +1274,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const formData = Object.fromEntries(new FormData(registerForm).entries());
+
+      // Получаем данные формы, исключая CSRF токен в Vercel
+      let formData = Object.fromEntries(new FormData(registerForm).entries());
+
+      // В Vercel удаляем CSRF поле из данных формы
+      if (isVercel && formData._csrf) {
+        delete formData._csrf;
+      }
 
       if (registerError) registerError.style.display = "none";
       if (registerSuccess) registerSuccess.style.display = "none";
