@@ -40,7 +40,11 @@ app.get("/", async (req, res) => {
     const categories = typeof CATEGORY_LABELS !== 'undefined' ? CATEGORY_LABELS : {};
     const categoryKeys = typeof CATEGORY_KEYS !== 'undefined' ? CATEGORY_KEYS : [];
 
-    if (!HAS_MONGO) {
+    // В Vercel проверяем per-request соединение
+    const isVercel = Boolean(process.env.VERCEL);
+    const hasDbAccess = isVercel ? req.dbConnected : HAS_MONGO;
+
+    if (!hasDbAccess) {
       return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all", csrfToken: res.locals.csrfToken });
     }
 

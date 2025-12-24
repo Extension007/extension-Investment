@@ -13,7 +13,9 @@ const isVercel = Boolean(process.env.VERCEL);
 
 // Вход для админов (GET)
 router.get("/admin/login", (req, res) => {
-  if (!hasMongo()) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
+  const isVercel = Boolean(process.env.VERCEL);
+  const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
+  if (!hasDbAccess) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
   if (req.session.user && req.session.user.role === "admin") {
     return res.redirect("/admin");
   }
@@ -22,7 +24,9 @@ router.get("/admin/login", (req, res) => {
 
 // Вход для пользователей (GET)
 router.get("/user/login", (req, res) => {
-  if (!hasMongo()) return res.status(503).send("Вход недоступен: отсутствует подключение к БД");
+  const isVercel = Boolean(process.env.VERCEL);
+  const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
+  if (!hasDbAccess) return res.status(503).send("Вход недоступен: отсутствует подключение к БД");
   if (req.session.user) {
     return res.redirect("/cabinet");
   }
@@ -35,7 +39,9 @@ const adminLoginMiddleware = isVercel
   : [loginLimiter, csrfProtection, validateLogin]; // С CSRF в обычной среде
 
 router.post("/admin/login", ...adminLoginMiddleware, async (req, res) => {
-  if (!hasMongo()) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
+  const isVercel = Boolean(process.env.VERCEL);
+  const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
+  if (!hasDbAccess) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
   const { username, password } = req.body;
   try {
     const user = await User.findOne({ username });
@@ -74,7 +80,9 @@ const userLoginMiddleware = isVercel
   : [loginLimiter, csrfProtection, validateLogin]; // С CSRF в обычной среде
 
 router.post("/user/login", ...userLoginMiddleware, async (req, res) => {
-  if (!hasMongo()) return res.status(503).send("Вход недоступен: отсутствует подключение к БД");
+  const isVercel = Boolean(process.env.VERCEL);
+  const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
+  if (!hasDbAccess) return res.status(503).send("Вход недоступен: отсутствует подключение к БД");
   const { username, password } = req.body;
   try {
     const user = await User.findOne({ username });
@@ -113,7 +121,9 @@ const registerMiddleware = isVercel
   : [loginLimiter, csrfProtection, validateRegister]; // С CSRF в обычной среде
 
 router.post("/auth/register", ...registerMiddleware, async (req, res) => {
-  if (!hasMongo()) return res.status(503).json({ success: false, message: "Регистрация недоступна: нет БД" });
+  const isVercel = Boolean(process.env.VERCEL);
+  const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
+  if (!hasDbAccess) return res.status(503).json({ success: false, message: "Регистрация недоступна: нет БД" });
   try {
     const { username, email, password } = req.body;
     
