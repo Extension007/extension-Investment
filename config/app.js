@@ -11,6 +11,14 @@ const { HAS_MONGO, connectMongoDB } = require("./database");
 const app = express();
 const isVercel = Boolean(process.env.VERCEL);
 
+// Trust proxy for serverless environments (Vercel, etc.)
+// This is required for rate limiting and proper IP detection
+if (isVercel) {
+  app.set('trust proxy', 1); // Trust first proxy
+} else {
+  app.set('trust proxy', false); // Default for local development
+}
+
 // Настройка шаблонов
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "../views"));
