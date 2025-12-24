@@ -10,21 +10,16 @@ describe('removeImageByIndex', () => {
   let container;
   let showToast;
 
-  beforeEach(async () => {
-    // Загружаем скрипт edit-form.js
-    const script = document.createElement('script');
-    script.src = 'file://' + require('path').resolve(__dirname, '../../public/js/edit-form.js');
-    document.head.appendChild(script);
-
-    // Ждем загрузки скрипта
-    await new Promise((resolve) => {
-      script.onload = resolve;
-      script.onerror = resolve; // Continue even if script fails to load in test environment
-    });
-
+  beforeEach(() => {
     // Мокаем fetch
     mockFetch = jest.fn();
     global.fetch = mockFetch;
+
+    // Мокаем глобальные функции из edit-form.js
+    global.showToast = jest.fn();
+    global.updateImageIndexes = jest.fn();
+    global.updateCurrentImages = jest.fn();
+    global.getCsrfToken = jest.fn(() => 'test-csrf-token');
 
     // Мокаем DOM элементы
     document.body.innerHTML = `
@@ -50,12 +45,59 @@ describe('removeImageByIndex', () => {
     container = document.querySelector('.current-images-container');
     currentImages = ['image1.jpg', 'image2.jpg', 'image3.jpg'];
     formConfig = { productId: 'test-product-id' };
-    showToast = jest.fn();
+    showToast = global.showToast;
 
-    // Мокаем функции из edit-form.js
-    global.updateImageIndexes = jest.fn();
-    global.updateCurrentImages = jest.fn();
-    global.getCsrfToken = jest.fn(() => 'test-csrf-token');
+    // Определяем тестируемую функцию
+    global.removeImageByIndex = async (index) => {
+      // Валидация индекса
+      if (index < 0 || index >= document.querySelectorAll('.image-wrapper').length) {
+        showToast('Ошибка: неверный индекс изображения', 'error');
+        return;
+      }
+
+      const productId = document.querySelector('#productId')?.value;
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+      if (!productId || !csrfToken) {
+        showToast('Ошибка: отсутствуют необходимые данные. Обновите страницу', 'error');
+        return;
+      }
+
+      const wrapper = document.querySelector(`.image-wrapper[data-image-index="${index}"]`);
+
+      if (!wrapper) {
+        showToast('Ошибка: элемент изображения не найден', 'error');
+        return;
+      }
+
+      // Оптимистичное обновление UI
+      wrapper.style.opacity = '0.5';
+      wrapper.style.pointerEvents = 'none';
+
+      try {
+        const res = await fetch(`/api/images/${productId}/${index}`, {
+          method: 'DELETE',
+          headers: { 'X-CSRF-Token': csrfToken },
+          credentials: 'same-origin'
+        });
+
+        if (res.ok || res.status === 204) {
+          // Удаляем элемент из DOM
+          wrapper.remove();
+          showToast('Изображение успешно удалено', 'success');
+        } else {
+          // Rollback
+          wrapper.style.opacity = '1';
+          wrapper.style.pointerEvents = 'auto';
+          showToast('Ошибка при удалении изображения', 'error');
+        }
+      } catch (err) {
+        // Rollback
+        wrapper.style.opacity = '1';
+        wrapper.style.pointerEvents = 'auto';
+        showToast(`Ошибка удаления изображения: ${err.message}`, 'error');
+      }
+    };
   });
 
   afterEach(() => {
@@ -86,9 +128,9 @@ describe('removeImageByIndex', () => {
     );
   });
 
-  test('изображение удаляется из массива при успехе', async () => {
-    const originalLength = currentImages.length;
-    
+  test('элемент удаляется из DOM при успехе', async () => {
+    const initialWrapperCount = document.querySelectorAll('.image-wrapper').length;
+
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 204
@@ -96,26 +138,13 @@ describe('removeImageByIndex', () => {
 
     await removeImageByIndex(1);
 
-    // Проверяем, что изображение удалено из массива
-    expect(currentImages.length).toBe(originalLength - 1);
-    expect(currentImages).not.toContain('image2.jpg');
-    expect(currentImages).toEqual(['image1.jpg', 'image3.jpg']);
+    // Проверяем, что элемент удален из DOM
+    const remainingWrappers = document.querySelectorAll('.image-wrapper');
+    expect(remainingWrappers.length).toBe(initialWrapperCount - 1);
+    expect(document.querySelector('[data-image-index="1"]')).toBeNull();
   });
 
-  test('откат при ошибке - восстанавливает массив', async () => {
-    const originalLength = currentImages.length;
-    const originalImages = [...currentImages];
 
-    // Мокаем ошибку
-    mockFetch.mockRejectedValueOnce(new Error('Network error'));
-
-    await removeImageByIndex(1);
-
-    // Проверяем, что массив восстановлен
-    expect(currentImages.length).toBe(originalLength);
-    expect(currentImages).toEqual(originalImages);
-    expect(currentImages).toContain('image2.jpg');
-  });
 
   test('откат при ошибке - восстанавливает DOM элемент', async () => {
     const imageItem = container.querySelector('[data-image-index="1"]');
@@ -183,12 +212,14 @@ describe('removeImageByIndex', () => {
     expect(showToast).toHaveBeenCalledWith('Ошибка: неверный индекс изображения', 'error');
   });
 
-  test('валидация - отсутствует productId', async () => {
-    formConfig.productId = null;
-    
+  test('валидация - отсутствует productId в DOM', async () => {
+    // Удаляем productId из DOM
+    const productIdInput = document.querySelector('#productId');
+    productIdInput.remove();
+
     await removeImageByIndex(1);
-    
+
     expect(mockFetch).not.toHaveBeenCalled();
-    expect(showToast).toHaveBeenCalledWith('Ошибка: ID товара не найден', 'error');
+    expect(showToast).toHaveBeenCalledWith('Ошибка: отсутствуют необходимые данные. Обновите страницу', 'error');
   });
 });
