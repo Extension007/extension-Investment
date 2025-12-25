@@ -19,19 +19,23 @@ function connectDatabase() {
     return Promise.resolve(false);
   }
 
-  // В Vercel serverless создаем новое соединение для каждого запроса
+  // В Vercel serverless подключаемся к глобальному соединению с короткими таймаутами
   if (isVercel) {
-    return mongoose.createConnection(mongoUri, {
-      serverSelectionTimeoutMS: 5000, // Короткий таймаут для serverless
+    if (mongoose.connection.readyState >= 1) {
+      return Promise.resolve({ connection: mongoose.connection, isConnected: true });
+    }
+    return mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 10000,
       connectTimeoutMS: 5000,
-      maxPoolSize: 1, // Ограниченный пул для serverless
       bufferCommands: false,
-      bufferMaxEntries: 0
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      maxPoolSize: 1
     })
-      .then(conn => {
+      .then(() => {
         console.log("✅ MongoDB подключена (Vercel serverless)");
-        return { connection: conn, isConnected: true };
+        return { connection: mongoose.connection, isConnected: true };
       })
       .catch(err => {
         console.error("❌ Ошибка подключения MongoDB (Vercel):", err.message);
