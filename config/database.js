@@ -6,6 +6,14 @@ const isVercel = Boolean(process.env.VERCEL);
 const isProduction = process.env.NODE_ENV === 'production' || isVercel;
 let isDbConnected = false;
 
+// Логирование отсутствующих переменных окружения
+if (!process.env.MONGODB_URI) {
+  console.warn("⚠️  MONGODB_URI не задан. Приложение запущено без БД (каталог пуст, админ/рейтинг отключены).");
+}
+if (!process.env.SESSION_SECRET) {
+  console.warn("⚠️  SESSION_SECRET не задан. Используется значение по умолчанию (небезопасно для production).");
+}
+
 function connectDatabase() {
   console.log('MONGODB_URI set:', Boolean(process.env.MONGODB_URI));
   if (!HAS_MONGO_URI) {
@@ -84,6 +92,10 @@ function connectDatabase() {
 
 // Функция для проверки доступности БД
 function hasMongo() {
+  if (isVercel) {
+    // В Vercel соединение проверяется для каждого запроса
+    return HAS_MONGO_URI;
+  }
   return HAS_MONGO_URI && isDbConnected;
 }
 

@@ -74,6 +74,13 @@ if (!isVercel) {
   console.log("⚠️  Сессии и CSRF отключены (Vercel serverless)");
 }
 
+// Глобальный middleware для передачи переменных в шаблоны
+app.use((req, res, next) => {
+  res.locals.user = req.session?.user || null;
+  // csrfToken уже установлен в middleware csrfToken для обычной среды
+  next();
+});
+
 // Статика
 app.use(express.static(path.join(__dirname, "../public")));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));

@@ -115,10 +115,13 @@ router.post("/user/login", ...userLoginMiddleware, async (req, res) => {
   }
 });
 
-// Регистрация пользователя
-const registerMiddleware = isVercel
-  ? [loginLimiter, validateRegister] // Без CSRF в Vercel
-  : [loginLimiter, csrfProtection, validateRegister]; // С CSRF в обычной среде
+// Получение CSRF токена для AJAX запросов
+router.get("/csrf-token", (req, res) => {
+  res.json({ csrfToken: res.locals.csrfToken });
+});
+
+// Регистрация пользователя - без CSRF для API эндпоинта
+const registerMiddleware = [loginLimiter, validateRegister];
 
 router.post("/auth/register", ...registerMiddleware, async (req, res) => {
   const isVercel = Boolean(process.env.VERCEL);
