@@ -210,10 +210,8 @@ const validateRegister = [
   body("password")
     .notEmpty()
     .withMessage("Пароль обязателен")
-    .isLength({ min: 8 })
-    .withMessage("Пароль должен быть не менее 8 символов")
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage("Пароль должен содержать хотя бы одну заглавную букву, одну строчную букву и одну цифру"),
+    .isLength({ min: 6 })
+    .withMessage("Пароль должен быть не менее 6 символов"),
   
   handleValidationErrors
 ];
@@ -283,5 +281,3 @@ module.exports = {
   validateInstagramUrl,
   handleValidationErrors
 };
-
-
