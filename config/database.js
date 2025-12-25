@@ -7,6 +7,7 @@ const isProduction = process.env.NODE_ENV === 'production' || isVercel;
 let isDbConnected = false;
 
 function connectDatabase() {
+  console.log('MONGODB_URI set:', Boolean(process.env.MONGODB_URI));
   if (!HAS_MONGO_URI) {
     console.warn("⚠️  MONGODB_URI не задан. Приложение запущено без БД (каталог пуст, админ/рейтинг отключены).");
     return Promise.resolve(false);
