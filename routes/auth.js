@@ -15,22 +15,22 @@ const isVercel = Boolean(process.env.VERCEL);
 router.get("/admin/login", (req, res) => {
   const isVercel = Boolean(process.env.VERCEL);
   const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
-  if (!hasDbAccess) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
   if (req.session.user && req.session.user.role === "admin") {
     return res.redirect("/admin");
   }
-  res.render("login", { error: null, debug: null, csrfToken: res.locals.csrfToken });
+  const error = hasDbAccess ? null : "Админка недоступна: отсутствует подключение к БД";
+  res.render("login", { error, debug: null, csrfToken: res.locals.csrfToken });
 });
 
 // Вход для пользователей (GET)
 router.get("/user/login", (req, res) => {
   const isVercel = Boolean(process.env.VERCEL);
   const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
-  if (!hasDbAccess) return res.status(503).send("Вход недоступен: отсутствует подключение к БД");
   if (req.session.user) {
     return res.redirect("/cabinet");
   }
-  res.render("user-login", { error: null, csrfToken: res.locals.csrfToken });
+  const error = hasDbAccess ? null : "База данных недоступна, вход невозможен";
+  res.render("user-login", { error, csrfToken: res.locals.csrfToken });
 });
 
 // Вход для админов (POST)

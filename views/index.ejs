@@ -348,10 +348,9 @@
                       <button class="btn small" data-video="<%= s.video_url %>">Обзор</button>
                     <% } %>
                   </div>
-                  </div>
 
                   <!-- 🔹 Блок рейтинга -->
-                  <div class="product-rating" data-id="<%= s._id %>" data-voted="<%= (votedMap && votedMap[s._id.toString()]) ? 'true' : 'false' %>">
+                  <div class="product-rating" data-id="<%= s._id %>" data-voted="false">
                     <button class="like-btn btn icon" type="button" aria-label="Лайк">▲</button>
 
                     <span class="result">
@@ -491,7 +490,11 @@
 </div>
 
 <% let isAuthValue = typeof isAuth !== 'undefined' ? isAuth : false; %>
-<script>window.IS_AUTH = <%= JSON.stringify(isAuthValue) %>;</script>
+<% if (isAuthValue) { %>
+<script>window.IS_AUTH = true;</script>
+<% } else { %>
+<script>window.IS_AUTH = false;</script>
+<% } %>
 
 <!-- Загружаем YouTube IFrame API перед основным скриптом -->
 <script>
