@@ -1,4 +1,5 @@
 // Mocks must be at the top before any imports
+// csurf removed from dependencies, but keeping mock for backward compatibility
 jest.mock('csurf', () => {
   return jest.fn(() => (req, res, next) => {
     // Mock CSRF token generation
