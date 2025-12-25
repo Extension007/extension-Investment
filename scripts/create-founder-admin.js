@@ -1,50 +1,56 @@
-require("dotenv").config();
-const mongoose = require("mongoose");
+// Скрипт для создания администратора founder
 const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
 const User = require("../models/User");
 
 async function createFounderAdmin() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    console.log("✅ MongoDB подключена\n");
+    // Подключаемся к MongoDB
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      console.error("❌ MONGODB_URI не задан");
+      process.exit(1);
+    }
 
-    // Проверяем, существует ли уже пользователь "founder"
-    const existingFounder = await User.findOne({ username: "founder" });
-    if (existingFounder) {
-      console.log("ℹ️  Админ-аккаунт 'founder' уже существует");
-      console.log(`📋 Роль: ${existingFounder.role}`);
-      console.log(`📋 Email: ${existingFounder.email}`);
-      await mongoose.connection.close();
+    await mongoose.connect(mongoUri);
+    console.log("✅ Подключились к MongoDB");
+
+    // Проверяем, существует ли уже пользователь с таким email
+    const existingUser = await User.findOne({ email: "x77771227722@gmail.com" });
+    if (existingUser) {
+      console.log("✅ Администратор founder уже существует");
+      console.log("Данные для входа:");
+      console.log("Email:", existingUser.email);
+      console.log("Username:", existingUser.username);
+      console.log("Role:", existingUser.role);
       return;
     }
 
-    // Данные для создания founder админа
-    const founderData = {
+    // Создаем хэш пароля
+    const password = "founder123";
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Создаем пользователя
+    const user = new User({
       username: "founder",
       email: "x77771227722@gmail.com",
-      password_hash: await bcrypt.hash("founder123", 10),
+      password_hash: passwordHash,
       role: "admin"
-    };
+    });
 
-    // Создаем админ-аккаунт
-    const founder = await User.create(founderData);
-    console.log("✅ Админ-аккаунт создан:");
-    console.log(`📋 Username: ${founder.username}`);
-    console.log(`📋 Email: ${founder.email}`);
-    console.log(`📋 Role: ${founder.role}`);
-    console.log(`📋 ID: ${founder._id}`);
-    console.log("\n⚠️  ОБЯЗАТЕЛЬНО измените пароль для аккаунта 'founder' после первого входа!");
-
-    await mongoose.connection.close();
-    console.log("\n🔌 Соединение закрыто");
+    await user.save();
+    console.log("✅ Администратор founder создан");
+    console.log("Данные для входа:");
+    console.log("Email:", user.email);
+    console.log("Username:", user.username);
+    console.log("Role:", user.role);
+    console.log("Password: founder123");
   } catch (err) {
-    console.error("❌ Ошибка создания founder админа:", err);
+    console.error("❌ Ошибка создания администратора:", err);
     process.exit(1);
+  } finally {
+    await mongoose.disconnect();
   }
 }
 
-if (require.main === module) {
-  createFounderAdmin();
-}
-
-module.exports = createFounderAdmin;
+createFounderAdmin();

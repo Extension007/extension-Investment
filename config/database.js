@@ -14,6 +14,15 @@ if (!process.env.SESSION_SECRET) {
   console.warn("⚠️  SESSION_SECRET не задан. Используется значение по умолчанию (небезопасно для production).");
 }
 
+// Функция для проверки доступности БД
+function hasMongo() {
+  if (isVercel) {
+    // В Vercel соединение проверяется для каждого запроса
+    return HAS_MONGO_URI;
+  }
+  return HAS_MONGO_URI && isDbConnected;
+}
+
 function connectDatabase() {
   console.log('MONGODB_URI set:', Boolean(process.env.MONGODB_URI));
   if (!HAS_MONGO_URI) {
@@ -88,15 +97,6 @@ function connectDatabase() {
       isDbConnected = false;
       return false;
     });
-}
-
-// Функция для проверки доступности БД
-function hasMongo() {
-  if (isVercel) {
-    // В Vercel соединение проверяется для каждого запроса
-    return HAS_MONGO_URI;
-  }
-  return HAS_MONGO_URI && isDbConnected;
 }
 
 // Обработчики событий подключения
