@@ -117,7 +117,7 @@ describe('DELETE /api/images/:productId/:imageIndex', () => {
         .set('X-CSRF-Token', 'test-token')
         .expect(404)
         .expect(res => {
-          expect(res.body.message).toContain('Товар не найден');
+          expect(res.body.message).toContain('Продукт не найден');
         });
     });
 
@@ -168,7 +168,7 @@ describe('DELETE /api/images/:productId/:imageIndex', () => {
         .set('X-CSRF-Token', 'test-token')
         .expect(400)
         .expect(res => {
-          expect(res.body.message).toContain('Индекс изображения вне диапазона');
+          expect(res.body.message).toContain('Неверный индекс изображения');
         });
     });
 
@@ -207,7 +207,3 @@ describe('DELETE /api/images/:productId/:imageIndex', () => {
     });
   });
 });
-
-
-
-
