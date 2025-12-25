@@ -76,7 +76,26 @@ if (!isVercel) {
 
 // Глобальный middleware для передачи переменных в шаблоны
 app.use((req, res, next) => {
-  res.locals.user = req.session?.user || null;
+  // В Vercel serverless сессии отключены, поэтому используем cookie для хранения данных пользователя
+  if (process.env.VERCEL) {
+    // Пытаемся получить данные пользователя из cookie
+    const userCookie = req.cookies.exto_user;
+    if (userCookie) {
+      try {
+        const userData = JSON.parse(userCookie);
+        res.locals.user = userData;
+      } catch (err) {
+        // Если cookie повреждена, удаляем её
+        res.clearCookie('exto_user');
+        res.locals.user = null;
+      }
+    } else {
+      res.locals.user = null;
+    }
+  } else {
+    // В обычной среде используем сессии
+    res.locals.user = req.session?.user || null;
+  }
   // csrfToken уже установлен в middleware csrfToken для обычной среды
   next();
 });

@@ -56,12 +56,27 @@ router.post("/admin/login", ...adminLoginMiddleware, async (req, res) => {
     if (!ok) {
       return res.render("login", { error: "Неверный логин или пароль", debug: null, csrfToken: res.locals.csrfToken });
     }
+    
     // Сохраняем _id как строку для совместимости
-    req.session.user = {
+    const userData = {
       _id: user._id.toString(),
       username: user.username,
       role: user.role
     };
+    
+    if (isVercel) {
+      // В Vercel serverless используем cookie для хранения данных пользователя
+      res.cookie('exto_user', JSON.stringify(userData), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 // 1 час
+      });
+    } else {
+      // В обычной среде используем сессии
+      req.session.user = userData;
+    }
+    
     console.log("✅ Админ залогинен:", {
       username: user.username,
       role: user.role,
@@ -97,12 +112,27 @@ router.post("/user/login", ...userLoginMiddleware, async (req, res) => {
     if (!ok) {
       return res.render("user-login", { error: "Неверный логин или пароль", csrfToken: res.locals.csrfToken });
     }
+    
     // Сохраняем _id как строку для совместимости
-    req.session.user = {
+    const userData = {
       _id: user._id.toString(),
       username: user.username,
       role: user.role
     };
+    
+    if (isVercel) {
+      // В Vercel serverless используем cookie для хранения данных пользователя
+      res.cookie('exto_user', JSON.stringify(userData), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 // 1 час
+      });
+    } else {
+      // В обычной среде используем сессии
+      req.session.user = userData;
+    }
+    
     console.log("✅ Пользователь залогинен:", {
       username: user.username,
       role: user.role,
@@ -136,12 +166,27 @@ router.post("/auth/register", ...registerMiddleware, async (req, res) => {
     }
     const password_hash = await bcrypt.hash(password, 10);
     const user = await User.create({ username, email, password_hash, role: "user" });
-    // автологин в сессию
-    req.session.user = { 
-      _id: user._id.toString(), 
-      username: user.username, 
-      role: user.role 
+    
+    // Сохраняем _id как строку для совместимости
+    const userData = {
+      _id: user._id.toString(),
+      username: user.username,
+      role: user.role
     };
+    
+    if (isVercel) {
+      // В Vercel serverless используем cookie для хранения данных пользователя
+      res.cookie('exto_user', JSON.stringify(userData), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 // 1 час
+      });
+    } else {
+      // В обычной среде используем сессии
+      req.session.user = userData;
+    }
+    
     console.log("✅ Пользователь зарегистрирован и залогинен:", {
       username: user.username,
       role: user.role,
@@ -156,24 +201,42 @@ router.post("/auth/register", ...registerMiddleware, async (req, res) => {
 
 // Выход (logout) - POST
 router.post("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("❌ Ошибка выхода:", err);
-      return res.status(500).json({ success: false, message: "Ошибка выхода" });
-    }
-    res.json({ success: true, message: "Вы успешно вышли" });
-  });
+  const isVercel = Boolean(process.env.VERCEL);
+  
+  if (isVercel) {
+    // В Vercel serverless удаляем cookie
+    res.clearCookie('exto_user');
+  } else {
+    // В обычной среде уничтожаем сессию
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("❌ Ошибка выхода:", err);
+        return res.status(500).json({ success: false, message: "Ошибка выхода" });
+      }
+    });
+  }
+  
+  res.json({ success: true, message: "Вы успешно вышли" });
 });
 
 // Выход (logout) - GET
 router.get("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("❌ Ошибка выхода:", err);
-      return res.redirect("/");
-    }
-    res.redirect("/");
-  });
+  const isVercel = Boolean(process.env.VERCEL);
+  
+  if (isVercel) {
+    // В Vercel serverless удаляем cookie
+    res.clearCookie('exto_user');
+  } else {
+    // В обычной среде уничтожаем сессию
+    req.session.destroy((err) => {
+      if (err) {
+        console.error("❌ Ошибка выхода:", err);
+        return res.redirect("/");
+      }
+    });
+  }
+  
+  res.redirect("/");
 });
 
 module.exports = router;
