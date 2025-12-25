@@ -21,8 +21,8 @@ async function createFounderAdmin() {
     // Данные для создания founder админа
     const founderData = {
       username: "founder",
-      email: "founder@exto.app", // Можно изменить на нужный email
-      password_hash: await bcrypt.hash("FounderPass123!", 10), // Рекомендуется изменить пароль
+      email: "x77771227722@gmail.com",
+      password_hash: await bcrypt.hash("founder123", 10),
       role: "admin"
     };
 
