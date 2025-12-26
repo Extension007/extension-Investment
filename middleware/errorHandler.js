@@ -1,5 +1,6 @@
 module.exports = (err, req, res, next) => {
   const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+  const isVercel = Boolean(process.env.VERCEL);
 
   // Всегда логируем полную информацию для отладки
   console.error('Error occurred:', {
@@ -9,7 +10,9 @@ module.exports = (err, req, res, next) => {
     method: req.method,
     ip: req.ip,
     userAgent: req.get('User-Agent'),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: isVercel ? 'Vercel' : 'Local',
+    node_env: process.env.NODE_ENV
   });
 
   // Специфические обработчики ошибок

@@ -52,10 +52,16 @@ async function connectDatabase() {
   // Настройка таймаутов в зависимости от среды
   const timeoutConfig = isVercel 
     ? {
-        serverSelectionTimeoutMS: 5000,
-        socketTimeoutMS: 10000,
-        connectTimeoutMS: 5000,
-        maxPoolSize: 1
+        serverSelectionTimeoutMS: 10000,  // Увеличим таймаут для Vercel
+        socketTimeoutMS: 20000,          // Увеличим таймаут сокета
+        connectTimeoutMS: 10000,         // Увеличим таймаут подключения
+        maxPoolSize: 1,                  // Один соединение для Vercel
+        minPoolSize: 0,                  // Минимальное количество соединений
+        maxIdleTimeMS: 30000,            // Максимальное время простоя
+        waitQueueTimeoutMS: 5000,        // Таймаут ожидания в очереди
+        retryWrites: true,
+        retryReads: true,
+        w: 'majority'
       }
     : {
         serverSelectionTimeoutMS: isProduction ? 30000 : 10000,
@@ -86,12 +92,30 @@ async function connectDatabase() {
     console.error("❌ Тип ошибки:", err.name);
     console.error("❌ Stack trace:", err.stack);
     
+    // Детальная диагностика ошибок
     if (err.message.includes('authentication')) {
       console.error("⚠️  Проблема с аутентификацией. Проверьте username и password в MONGODB_URI");
+      console.error("💡 Решение: Убедитесь, что пользователь существует в MongoDB Atlas и имеет права на чтение/запись");
     } else if (err.message.includes('timeout')) {
-      console.error("⚠️  Таймаут подключения. Проверьте Network Access в MongoDB Atlas");
+      console.error("⚠️  Таймаут подключения. Возможные причины:");
+      console.error("   - Неправильный IP в Network Access MongoDB Atlas");
+      console.error("   - Проблемы с сетью в Vercel");
+      console.error("   - Блокировка брандмауэром");
+      console.error("💡 Решение: Добавьте IP 0.0.0.0/0 в Network Access для тестирования");
     } else if (err.message.includes('ENOTFOUND') || err.message.includes('DNS')) {
       console.error("⚠️  Проблема с DNS. Проверьте правильность hostname в MONGODB_URI");
+      console.error("💡 Решение: Скопируйте URI напрямую из MongoDB Atlas");
+    } else if (err.message.includes('ECONNREFUSED')) {
+      console.error("⚠️  Соединение отклонено. Проверьте:");
+      console.error("   - Доступность MongoDB сервера");
+      console.error("   - Правильность порта");
+      console.error("💡 Решение: Проверьте URI и настройки сети");
+    } else if (err.message.includes('not master')) {
+      console.error("⚠️  Ошибка репликации. MongoDB Atlas не может выбрать primary");
+      console.error("💡 Решение: Проверьте статус кластера в MongoDB Atlas");
+    } else if (err.message.includes('TLS')) {
+      console.error("⚠️  Проблема с TLS/SSL соединением");
+      console.error("💡 Решение: Убедитесь, что URI содержит ssl=true или использует mongodb+srv://");
     }
     
     console.warn("⚠️  Приложение будет работать без БД (каталог пуст, админ/рейтинг отключены).");

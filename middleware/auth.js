@@ -1,12 +1,33 @@
 // Middleware для авторизации
 function requireAdmin(req, res, next) {
-  if (!req.session?.user) {
+  // В Vercel serverless режиме используем cookie, в обычной среде - сессии
+  const isVercel = Boolean(process.env.VERCEL);
+  let user = null;
+  
+  if (isVercel) {
+    // В Vercel serverless получаем данные из cookie
+    const userCookie = req.cookies.exto_user;
+    if (userCookie) {
+      try {
+        user = JSON.parse(userCookie);
+      } catch (err) {
+        // Если cookie повреждена, удаляем её
+        res.clearCookie('exto_user');
+      }
+    }
+  } else {
+    // В обычной среде используем сессии
+    user = req.session?.user;
+  }
+
+  if (!user) {
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.status(401).json({ success: false, error: "Unauthorized", message: "Требуется авторизация" });
     return res.redirect("/admin/login");
   }
+  
   // Проверяем роль админа
-  if (req.session.user.role !== "admin") {
+  if (user.role !== "admin") {
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.status(403).json({ success: false, error: "Forbidden", message: "Доступ запрещен: требуется роль администратора" });
     return res.status(403).send("Доступ запрещен: требуется роль администратора");
@@ -15,7 +36,27 @@ function requireAdmin(req, res, next) {
 }
 
 function requireUser(req, res, next) {
-  if (!req.session?.user) {
+  // В Vercel serverless режиме используем cookie, в обычной среде - сессии
+  const isVercel = Boolean(process.env.VERCEL);
+  let user = null;
+  
+  if (isVercel) {
+    // В Vercel serverless получаем данные из cookie
+    const userCookie = req.cookies.exto_user;
+    if (userCookie) {
+      try {
+        user = JSON.parse(userCookie);
+      } catch (err) {
+        // Если cookie повреждена, удаляем её
+        res.clearCookie('exto_user');
+      }
+    }
+  } else {
+    // В обычной среде используем сессии
+    user = req.session?.user;
+  }
+
+  if (!user) {
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.status(401).json({ success: false, error: "Unauthorized", message: "Требуется авторизация" });
     return res.redirect("/user/login");
@@ -56,13 +97,33 @@ function requireOwnerOrAdmin(modelName = 'Product', paramName = 'id') {
         return res.status(404).send("Карточка не найдена");
       }
 
+      // В Vercel serverless режиме используем cookie, в обычной среде - сессии
+      const isVercel = Boolean(process.env.VERCEL);
+      let user = null;
+      
+      if (isVercel) {
+        // В Vercel serverless получаем данные из cookie
+        const userCookie = req.cookies.exto_user;
+        if (userCookie) {
+          try {
+            user = JSON.parse(userCookie);
+          } catch (err) {
+            // Если cookie повреждена, удаляем её
+            res.clearCookie('exto_user');
+          }
+        }
+      } else {
+        // В обычной среде используем сессии
+        user = req.session?.user;
+      }
+
       // Админ имеет полный доступ
-      if (req.session?.user && req.session.user.role === "admin") {
+      if (user && user.role === "admin") {
         return next();
       }
 
       // Проверяем владельца
-      const userId = req.session?.user?._id?.toString();
+      const userId = user?._id?.toString();
       const ownerId = item.owner?.toString();
 
       if (!userId || userId !== ownerId) {

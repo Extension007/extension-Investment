@@ -1,65 +1,67 @@
 // CSRF защита
-const csrf = require("csurf");
+const csrf = require("csrf");
 
-// Настройка CSRF с поддержкой заголовка X-CSRF-Token и multipart форм
-const csrfProtection = csrf({ 
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
-  },
-  value: (req) => {
-    // Поддержка различных способов передачи токена
-    // 1. Из req.body._csrf (для обычных форм и multipart после multer)
-    // 2. Из заголовков (для AJAX запросов)
-    // 3. Из query параметров (для обратной совместимости, не рекомендуется)
-    return req.body?._csrf || 
-           req.query?._csrf ||
-           req.headers['csrf-token'] || 
-           req.headers['xsrf-token'] || 
-           req.headers['x-csrf-token'] || 
-           req.headers['x-xsrf-token'];
+// Создаем экземпляр CSRF
+const tokens = new csrf();
+
+// Настройка CSRF middleware
+function csrfProtection(req, res, next) {
+  // Пропускаем CSRF проверку для GET запросов
+  if (req.method === 'GET') {
+    return next();
   }
-});
 
-// Middleware для генерации CSRF токена (без проверки) - для GET запросов
-// Создаем отдельный экземпляр csurf для генерации токенов
-const csrfTokenGenerator = csrf({ 
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
-  },
-  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'] // Не проверяем токен для GET запросов
-});
+  // Получаем токен из заголовка или тела запроса
+  const token = req.get('X-CSRF-Token') || 
+                req.body._csrf || 
+                req.query._csrf ||
+                req.headers['x-csrf-token'];
 
-// Middleware для добавления CSRF токена в локальные переменные для шаблонов
-// CSRF защита применяется только к POST/PUT/DELETE запросам через csrfProtection middleware
-function csrfToken(req, res, next) {
-  // Для GET запросов генерируем токен без проверки
-  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
-    csrfTokenGenerator(req, res, (err) => {
-      if (err && err.code !== 'EBADCSRFTOKEN') {
-        // Игнорируем CSRF ошибки для GET запросов, но обрабатываем другие ошибки
-        return next(err);
-      }
-      res.locals.csrfToken = req.csrfToken ? req.csrfToken() : null;
-      next();
+  // Получаем секрет из cookie
+  const secret = req.cookies._csrfSecret;
+
+  if (!secret) {
+    return res.status(403).json({ 
+      success: false, 
+      message: "CSRF secret not found" 
     });
-  } else {
-    // Для других методов пытаемся получить токен, если CSRF middleware уже применен
-    try {
-      res.locals.csrfToken = req.csrfToken ? req.csrfToken() : null;
-    } catch (err) {
-      // Если CSRF middleware еще не применен, токен будет null
-      res.locals.csrfToken = null;
-    }
-    next();
   }
+
+  if (!token || !tokens.verify(secret, token)) {
+    return res.status(403).json({ 
+      success: false, 
+      message: "Invalid CSRF token" 
+    });
+  }
+
+  next();
+}
+
+// Middleware для генерации CSRF токена
+function csrfToken(req, res, next) {
+  // Генерируем секрет, если его нет
+  if (!req.cookies._csrfSecret) {
+    const secret = tokens.secretSync();
+    res.cookie('_csrfSecret', secret, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+    req.csrfSecret = secret;
+  } else {
+    req.csrfSecret = req.cookies._csrfSecret;
+  }
+
+  // Генерируем токен
+  req.csrfToken = () => tokens.create(req.csrfSecret);
+  
+  // Добавляем токен в локальные переменные для шаблонов
+  res.locals.csrfToken = req.csrfToken();
+  
+  next();
 }
 
 module.exports = {
   csrfProtection,
   csrfToken
 };
-
