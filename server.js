@@ -1,14 +1,29 @@
-// 📂 server.js - Главный файл приложения
+// Главный файл приложения
 require("dotenv").config();
+const { connectMongoDB } = require("./config/database");
+const { app } = require("./config/app"); // берём готовый app из config/app.js
 
-// Импорт конфигураций и маршрутов
-require("./routes/index"); // Настраивает все маршруты
-const { startServer } = require("./config/server");
+// Подключаемся к MongoDB при старте
+(async () => {
+  const { isConnected } = await connectMongoDB();
+  if (isConnected) {
+    console.log("✅ База данных готова к работе");
+  } else {
+    console.warn("⚠️ Приложение запущено без подключения к БД");
+  }
+})();
 
-// Запуск сервера (только если файл запущен напрямую)
+// Подключаем маршруты
+const routes = require("./routes/index");
+app.use("/", routes);
+
+// Экспорт приложения для Vercel
+module.exports = app;
+
+// Локальный запуск
 if (require.main === module) {
-  startServer();
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Сервер запущен на http://localhost:${PORT}`);
+  });
 }
-
-// Экспорт приложения для тестов
-module.exports = require("./config/app").app;

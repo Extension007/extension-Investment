@@ -1,4 +1,3 @@
-// Конфигурация Express приложения
 const express = require("express");
 const path = require("path");
 const session = require("express-session");
@@ -6,18 +5,13 @@ const cookieParser = require("cookie-parser");
 const MongoStore = require("connect-mongo");
 const morgan = require("morgan");
 const { createSecurityMiddleware } = require("./security");
-const { HAS_MONGO, connectMongoDB } = require("./database");
+const { HAS_MONGO } = require("./database");
 
 const app = express();
 const isVercel = Boolean(process.env.VERCEL);
 
-// Trust proxy for serverless environments (Vercel, etc.)
-// This is required for rate limiting and proper IP detection
-if (isVercel) {
-  app.set('trust proxy', 1); // Trust first proxy
-} else {
-  app.set('trust proxy', false); // Default for local development
-}
+// Proxy
+app.set("trust proxy", isVercel ? 1 : false);
 
 // Настройка шаблонов
 app.set("view engine", "ejs");
@@ -31,7 +25,7 @@ app.use(express.json());
 app.use(createSecurityMiddleware());
 app.use(morgan("dev"));
 
-// Справочник категорий
+// Категории
 const CATEGORY_LABELS = {
   home: "Для дома",
   beauty: "Красота и здоровье",
@@ -42,7 +36,7 @@ const CATEGORY_LABELS = {
 };
 const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
 
-// Сессии - отключаем в Vercel serverless
+// Сессии
 if (!isVercel) {
   const sessionOptions = {
     secret: process.env.SESSION_SECRET || "exto-secret",
@@ -56,47 +50,32 @@ if (!isVercel) {
       mongoUrl: process.env.MONGODB_URI,
       collectionName: "sessions"
     });
-  } else {
-    console.warn("⚠️  MONGODB_URI не задан. Используется MemoryStore для сессий (только для локальной разработки).");
   }
 
   app.use(cookieParser());
   app.use(session(sessionOptions));
 
-  // CSRF защита - только в обычной среде
   const { csrfToken } = require("../middleware/csrf");
   app.use(csrfToken);
 
-  console.log("✅ Сессии и CSRF включены (обычная среда)");
+  console.log("✅ Сессии и CSRF включены");
 } else {
-  // В Vercel просто cookie parser без сессий
   app.use(cookieParser());
-  console.log("⚠️  Сессии и CSRF отключены (Vercel serverless)");
+  console.log("⚠️ Сессии и CSRF отключены (Vercel)");
 }
 
-// Глобальный middleware для передачи переменных в шаблоны
+// Глобальные переменные для шаблонов
 app.use((req, res, next) => {
-  // В Vercel serverless сессии отключены, поэтому используем cookie для хранения данных пользователя
-  if (process.env.VERCEL) {
-    // Пытаемся получить данные пользователя из cookie
-    const userCookie = req.cookies.exto_user;
-    if (userCookie) {
-      try {
-        const userData = JSON.parse(userCookie);
-        res.locals.user = userData;
-      } catch (err) {
-        // Если cookie повреждена, удаляем её
-        res.clearCookie('exto_user');
-        res.locals.user = null;
-      }
-    } else {
-      res.locals.user = null;
-    }
-  } else {
-    // В обычной среде используем сессии
-    res.locals.user = req.session?.user || null;
-  }
-  // csrfToken уже установлен в middleware csrfToken для обычной среды
+  res.locals.user = isVercel
+    ? (() => {
+        try {
+          return req.cookies.exto_user ? JSON.parse(req.cookies.exto_user) : null;
+        } catch {
+          res.clearCookie("exto_user");
+          return null;
+        }
+      })()
+    : req.session?.user || null;
   next();
 });
 
@@ -104,7 +83,7 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, "../public")));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// favicon (глушим запросы)
+// favicon
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.get("/favicon.png", (req, res) => res.status(204).end());
 

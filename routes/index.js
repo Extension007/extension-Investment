@@ -1,5 +1,6 @@
-// Настройка всех маршрутов приложения
-const { app, CATEGORY_LABELS, CATEGORY_KEYS } = require("../config/app");
+const express = require("express");
+const router = express.Router();
+
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const Banner = require("../models/Banner");
@@ -7,28 +8,22 @@ const User = require("../models/User");
 const Statistics = require("../models/Statistics");
 const cloudinary = require("cloudinary").v2;
 const { HAS_MONGO } = require("../config/database");
-const { deleteImages } = require("../utils/imageUtils");
-const { requireAdmin, requireUser } = require("../middleware/auth");
-const { csrfToken } = require("../middleware/csrf");
+const { CATEGORY_LABELS, CATEGORY_KEYS } = require("../config/app");
 
-// Подключение роутов авторизации
-const authRoutes = require("./auth");
-app.use("/", authRoutes);
+// Авторизация
+router.use("/", require("./auth"));
 
-// Подключение API роутов
-const apiRoutes = require("./api");
-app.use("/api", apiRoutes);
+// API
+router.use("/api", require("./api"));
 
-// Подключение маршрутов кабинета пользователя
-const cabinetRoutes = require("./cabinet");
-app.use("/cabinet", cabinetRoutes);
+// Кабинет пользователя
+router.use("/cabinet", require("./cabinet"));
 
-// Подключение маршрутов админ-панели
-const adminRoutes = require("./admin");
-app.use("/admin", adminRoutes);
+// Админ-панель
+router.use("/admin", require("./admin"));
 
-// Главная страница — каталог (только опубликованные карточки)
-app.get("/", async (req, res) => {
+// Главная страница — каталог
+router.get("/", async (req, res) => {
   try {
     const isAuth = Boolean(req.session?.user);
     const userRole = req.session?.user?.role || null;
@@ -36,77 +31,41 @@ app.get("/", async (req, res) => {
     const isUser = userRole === "user";
     const selected = req.query.category;
 
-    // Определяем категории (если не определены, используем пустой объект)
-    const categories = typeof CATEGORY_LABELS !== 'undefined' ? CATEGORY_LABELS : {};
-    const categoryKeys = typeof CATEGORY_KEYS !== 'undefined' ? CATEGORY_KEYS : [];
+    const categories = CATEGORY_LABELS || {};
+    const categoryKeys = CATEGORY_KEYS || [];
 
-    // В Vercel проверяем per-request соединение
     const isVercel = Boolean(process.env.VERCEL);
     const hasDbAccess = isVercel ? req.dbConnected : HAS_MONGO;
 
     if (!hasDbAccess) {
-      return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all", csrfToken: res.locals.csrfToken });
+      return res.render("index", {
+        products: [],
+        services: [],
+        banners: [],
+        visitorCount: 0,
+        userCount: 0,
+        page: 1,
+        totalPages: 1,
+        isAuth,
+        isAdmin,
+        isUser,
+        userRole,
+        votedMap: {},
+        categories,
+        selectedCategory: selected || "all"
+      });
     }
 
-    // Проверяем подключение к БД (readyState: 0=disconnected, 1=connected, 2=connecting, 3=disconnecting)
-    const dbState = mongoose.connection.readyState;
-    if (dbState !== 1) {
-      const stateNames = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
-      console.warn(`⚠️ MongoDB не подключена (состояние: ${dbState} = ${stateNames[dbState] || 'unknown'}), показываем пустой каталог`);
-
-      // Если в процессе подключения (состояние 2), ждем немного перед показом пустого каталога
-      // Это дает MongoDB время на подключение при первом запросе
-      if (dbState === 2) {
-        // Ждем до 2 секунд для подключения
-        let waited = 0;
-        while (mongoose.connection.readyState === 2 && waited < 2000) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          waited += 100;
-        }
-        // Если подключилось, продолжаем нормально
-        if (mongoose.connection.readyState === 1) {
-          console.log("✅ MongoDB подключилась после ожидания");
-          // Продолжаем выполнение ниже
-        } else {
-          console.warn("⚠️ MongoDB все еще не подключена после ожидания, показываем пустой каталог");
-          return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
-        }
-      } else {
-        // Для других состояний сразу показываем пустой каталог
-        return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
-      }
-    }
-
-    // Фильтр для товаров (type: "product" или без поля type для обратной совместимости)
+    // Фильтры
     const productsFilter = {
       $and: [
-        {
-          $or: [
-            { status: "approved" },
-            { status: { $exists: false } },
-            { status: null }
-          ]
-        },
-        {
-          $or: [
-            { type: "product" },
-            { type: { $exists: false } },
-            { type: null }
-          ]
-        }
+        { $or: [{ status: "approved" }, { status: { $exists: false } }, { status: null }] },
+        { $or: [{ type: "product" }, { type: { $exists: false } }, { type: null }] }
       ]
     };
-
-    // Фильтр для услуг (type: "service")
     const servicesFilter = {
       $and: [
-        {
-          $or: [
-            { status: "approved" },
-            { status: { $exists: false } },
-            { status: null }
-          ]
-        },
+        { $or: [{ status: "approved" }, { status: { $exists: false } }, { status: null }] },
         { type: "service" }
       ]
     };
@@ -116,43 +75,18 @@ app.get("/", async (req, res) => {
       servicesFilter.$and.push({ category: selected });
     }
 
-    // Выполняем запросы параллельно для оптимизации производительности
-    let products = [];
-    let services = [];
-    let approvedBanners = [];
-    let visitorCount = 0;
-    let userCount = 0;
+    // Запросы
+    const [products, services, banners, visitors, users] = await Promise.all([
+      Product.find(productsFilter).sort({ _id: -1 }).maxTimeMS(5000),
+      Product.find(servicesFilter).sort({ _id: -1 }).maxTimeMS(5000),
+      Banner.find({ status: "approved" }).sort({ _id: -1 }).maxTimeMS(5000),
+      Statistics.findOne({ key: "visitors" }),
+      User.countDocuments()
+    ]);
 
-    try {
-      // Параллельные запросы к БД
-      const [productsResult, servicesResult, bannersResult, visitorResult, userResult] = await Promise.allSettled([
-        Product.find(productsFilter).sort({ _id: -1 }).maxTimeMS(5000),
-        Product.find(servicesFilter).sort({ _id: -1 }).maxTimeMS(5000),
-        Banner.find({ status: "approved" }).sort({ _id: -1 }).maxTimeMS(5000),
-        // Подсчет посетителей (упрощенная версия без обновления)
-        Statistics.findOne({ key: "visitors" }),
-        User.countDocuments()
-      ]);
+    const visitorCount = visitors ? visitors.value : 0;
+    const userCount = users || 0;
 
-      products = productsResult.status === 'fulfilled' ? productsResult.value : [];
-      services = servicesResult.status === 'fulfilled' ? servicesResult.value : [];
-      approvedBanners = bannersResult.status === 'fulfilled' ? bannersResult.value : [];
-      visitorCount = visitorResult.status === 'fulfilled' && visitorResult.value ? visitorResult.value.value : 0;
-      userCount = userResult.status === 'fulfilled' ? userResult.value : 0;
-
-      // Обработка ошибок для каждого запроса
-      if (productsResult.status === 'rejected') console.warn("⚠️ Ошибка запроса товаров:", productsResult.reason.message);
-      if (servicesResult.status === 'rejected') console.warn("⚠️ Ошибка запроса услуг:", servicesResult.reason.message);
-      if (bannersResult.status === 'rejected') console.warn("⚠️ Ошибка запроса баннеров:", bannersResult.reason.message);
-      if (visitorResult.status === 'rejected') console.warn("⚠️ Ошибка подсчета посетителей:", visitorResult.reason.message);
-      if (userResult.status === 'rejected') console.warn("⚠️ Ошибка подсчета пользователей:", userResult.reason.message);
-
-    } catch (queryErr) {
-      console.warn("⚠️ Критическая ошибка запросов к БД:", queryErr.message);
-      return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
-    }
-
-    // пометим где пользователь голосовал (для товаров и услуг)
     const userId = req.session?.user?._id?.toString();
     const votedMap = {};
     [...products, ...services].forEach(p => {
@@ -161,39 +95,10 @@ app.get("/", async (req, res) => {
       }
     });
 
-    // Подсчет посетителей (только один раз для каждого уникального гостя)
-    try {
-      // Проверяем наличие cookie, которая хранится 1 год
-      const visitorCookie = req.cookies.exto_visitor;
-
-      if (!visitorCookie) {
-        // Это новый уникальный посетитель - увеличиваем счетчик
-        const stats = await Statistics.findOneAndUpdate(
-          { key: "visitors" },
-          { $inc: { value: 1 } },
-          { upsert: true, new: true }
-        );
-        visitorCount = stats.value;
-
-        // Устанавливаем cookie на 1 год, чтобы гость учитывался только один раз
-        res.cookie('exto_visitor', '1', {
-          maxAge: 365 * 24 * 60 * 60 * 1000, // 1 год
-          httpOnly: true,
-          secure: process.env.NODE_ENV === 'production', // только HTTPS в production
-          sameSite: 'lax'
-        });
-      } else {
-        // Гость уже был засчитан - просто получаем текущее значение (уже получено выше)
-      }
-    } catch (visitorErr) {
-      console.warn("⚠️ Ошибка подсчета посетителей:", visitorErr.message);
-    }
-
-    // page/totalPages оставлены для совместимости с твоим рендером
     res.render("index", {
       products,
       services,
-      banners: approvedBanners,
+      banners,
       visitorCount,
       userCount,
       page: 1,
@@ -207,56 +112,13 @@ app.get("/", async (req, res) => {
       selectedCategory: selected || "all"
     });
   } catch (err) {
-    console.error("❌ Ошибка получения товаров:", err);
-    console.error("❌ Детали ошибки:", err.message);
-    console.error("❌ Стек ошибки:", err.stack);
-
-    // Пытаемся показать страницу с пустым каталогом вместо ошибки 500
-    try {
-      const isAuth = Boolean(req.session?.user);
-      const userRole = req.session?.user?.role || null;
-      const isAdmin = userRole === "admin";
-      const isUser = userRole === "user";
-      const selected = req.query.category || "all";
-      const categories = typeof CATEGORY_LABELS !== 'undefined' ? CATEGORY_LABELS : {};
-
-      // Убеждаемся, что все переменные определены
-      res.render("index", {
-        products: [],
-        services: [],
-        banners: [],
-        visitorCount: 0,
-        userCount: 0,
-        page: 1,
-        totalPages: 1,
-        isAuth: isAuth || false,
-        isAdmin: isAdmin || false,
-        isUser: isUser || false,
-        userRole: userRole || null,
-        votedMap: {},
-        categories: categories || {},
-        selectedCategory: selected
-      });
-    } catch (renderErr) {
-      console.error("❌ Критическая ошибка рендеринга:", renderErr);
-      console.error("❌ Детали ошибки рендеринга:", renderErr.message);
-      // В крайнем случае отправляем простой HTML
-      res.status(500).send(`
-        <!DOCTYPE html>
-        <html>
-        <head><title>Ошибка</title></head>
-        <body>
-          <h1>Временная ошибка сервера</h1>
-          <p>Попробуйте обновить страницу через несколько секунд.</p>
-        </body>
-        </html>
-      `);
-    }
+    console.error("❌ Ошибка:", err);
+    res.status(500).send("Временная ошибка сервера");
   }
 });
 
 // Health-check Cloudinary
-app.get("/__health/cloudinary", async (req, res) => {
+router.get("/__health/cloudinary", async (req, res) => {
   try {
     const dataUri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAukB9yx7CmoAAAAASUVORK5CYII=";
     const result = await cloudinary.uploader.upload(dataUri, {
@@ -265,9 +127,8 @@ app.get("/__health/cloudinary", async (req, res) => {
     });
     res.json({ ok: true, public_id: result.public_id, secure_url: result.secure_url });
   } catch (err) {
-    console.error("❌ Cloudinary health error:", err);
-    res.status(500).json({ ok: false, name: err.name, http_code: err.http_code, message: err.message });
+    res.status(500).json({ ok: false, message: err.message });
   }
 });
 
-module.exports = app;
+module.exports = router;
