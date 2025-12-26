@@ -43,23 +43,11 @@ if (hasCloudinary) {
 }
 
 if (!hasCloudinary) {
-  // Используем локальное хранилище
-  const uploadsDir = path.join(__dirname, "..", "uploads");
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-
-  storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, uploadsDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1E9);
-      const ext = path.extname(file.originalname);
-      cb(null, file.fieldname + "-" + uniqueSuffix + ext);
-    }
-  });
-  console.log("✅ Используется локальное хранилище файлов (uploads/)");
+  // В Vercel локальное хранилище недоступно
+  console.warn("⚠️  Cloudinary не настроен, но локальное хранилище недоступно в Vercel");
+  // Вместо локального хранилища используем memory storage для временного хранения
+  storage = multer.memoryStorage();
+  console.log("✅ Используется временный storage в памяти (для Vercel)");
 }
 
 // FIX: Фильтр файлов - только изображения
