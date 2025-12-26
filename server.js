@@ -5,33 +5,36 @@ const { connectMongoDB } = require("./config/database");
 const { app } = require("./config/app"); // берём готовый app из config/app.js
 const routes = require("./routes/index");
 
-(async () => {
-  try {
-    // Подключение к MongoDB при старте
-    const { isConnected } = await connectMongoDB();
-    if (!isConnected) {
-      console.error("❌ Нет подключения к MongoDB");
-    } else {
-      console.log("✅ MongoDB подключена");
-    }
+// Подключаем маршруты
+app.use("/", routes);
 
-    // Подключаем маршруты только после подключения
-    app.use("/", routes);
+// Экспорт приложения для Vercel
+module.exports = app;
 
-    // Экспорт приложения для Vercel
-    module.exports = app;
+// Локальный запуск
+if (require.main === module) {
+  (async () => {
+    try {
+      // Подключение к MongoDB при старте
+      const { isConnected } = await connectMongoDB();
+      if (!isConnected) {
+        console.error("❌ Нет подключения к MongoDB");
+      } else {
+        console.log("✅ MongoDB подключена");
+      }
 
-    // Локальный запуск
-    if (require.main === module) {
       const PORT = process.env.PORT || 3000;
       app.listen(PORT, () => {
         console.log(`Сервер запущен на http://localhost:${PORT}`);
       });
+    } catch (err) {
+      console.error("❌ Ошибка подключения к MongoDB:", err);
+      
+      // Запускаем сервер даже при ошибке подключения
+      const PORT = process.env.PORT || 3000;
+      app.listen(PORT, () => {
+        console.log(`Сервер запущен на http://localhost:${PORT} (без MongoDB)`);
+      });
     }
-  } catch (err) {
-    console.error("❌ Ошибка подключения к MongoDB:", err);
-
-    // Экспортируем app даже при ошибке, чтобы Vercel не падал
-    module.exports = app;
-  }
-})();
+  })();
+}
