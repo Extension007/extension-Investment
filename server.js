@@ -1,18 +1,33 @@
 // Главный файл приложения
 require("dotenv").config();
 const express = require("express"); // важно для Vercel
+const mongoose = require("mongoose");
 const { connectMongoDB } = require("./config/database");
 const { app } = require("./config/app"); // берём готовый app из config/app.js
+
+// Middleware: блокируем запросы, если база ещё не подключена
+app.use((req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    return res.status(503).json({ error: "⏳ MongoDB не подключена" });
+  }
+  next();
+});
 
 // Подключаем маршруты
 const routes = require("./routes/index");
 app.use("/", routes);
 
-// Подключение к MongoDB при старте (важно для Vercel)
+// Подключение к MongoDB при старте (важно для Vercel и локально)
 (async () => {
-  const { isConnected } = await connectMongoDB();
-  if (!isConnected) {
-    console.error("❌ Нет подключения к MongoDB");
+  try {
+    const { isConnected } = await connectMongoDB();
+    if (!isConnected) {
+      console.error("❌ Нет подключения к MongoDB");
+    } else {
+      console.log("✅ MongoDB подключена");
+    }
+  } catch (err) {
+    console.error("❌ Ошибка подключения к MongoDB:", err);
   }
 })();
 
