@@ -14,6 +14,12 @@ const { deleteImages, deleteImage } = require("../utils/imageUtils");
 const { CATEGORY_LABELS } = require("../config/constants");
 const mongoose = require("mongoose");
 
+const isVercel = Boolean(process.env.VERCEL);
+
+// Условный CSRF middleware для Vercel
+const conditionalCsrfToken = isVercel ? (req, res, next) => next() : csrfToken;
+const conditionalCsrfProtection = isVercel ? (req, res, next) => next() : csrfProtection;
+
 // Middleware для обработки ошибок multer
 function handleMulterError(err, req, res, next) {
   if (err) {
@@ -30,7 +36,7 @@ function handleMulterError(err, req, res, next) {
 }
 
 // Админка (главная страница)
-router.get("/", requireAdmin, csrfToken, async (req, res) => {
+router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
     
@@ -200,7 +206,7 @@ router.post("/products/:id/delete", requireAdmin, csrfProtection, validateProduc
 });
 
 // Редактирование товара (форма)
-router.get("/products/:id/edit", requireAdmin, validateProductId, csrfToken, async (req, res) => {
+router.get("/products/:id/edit", requireAdmin, validateProductId, conditionalCsrfToken, async (req, res) => {
   try {
     if (!HAS_MONGO) {
       const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
