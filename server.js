@@ -1,6 +1,6 @@
 // Главный файл приложения
 require("dotenv").config();
-const express = require("express"); // <-- важно для Vercel
+const express = require("express"); // важно для Vercel
 const { connectMongoDB } = require("./config/database");
 const { app } = require("./config/app"); // берём готовый app из config/app.js
 
@@ -8,21 +8,21 @@ const { app } = require("./config/app"); // берём готовый app из c
 const routes = require("./routes/index");
 app.use("/", routes);
 
+// Подключение к MongoDB при старте (важно для Vercel)
+(async () => {
+  const { isConnected } = await connectMongoDB();
+  if (!isConnected) {
+    console.error("❌ Нет подключения к MongoDB");
+  }
+})();
+
 // Экспорт приложения для Vercel
 module.exports = app;
 
-// Локальный запуск (ждём подключения к MongoDB перед стартом)
+// Локальный запуск
 if (require.main === module) {
-  (async () => {
-    const { isConnected } = await connectMongoDB();
-    if (!isConnected) {
-      console.error("❌ Нет подключения к MongoDB, сервер не запущен");
-      return;
-    }
-    
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-      console.log(`Сервер запущен на http://localhost:${PORT}`);
-    });
-  })();
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Сервер запущен на http://localhost:${PORT}`);
+  });
 }
