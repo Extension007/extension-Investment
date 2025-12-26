@@ -21,7 +21,7 @@ function hasMongo() {
 // Глобальный кеш подключения
 global.mongoose = global.mongoose || { conn: null, promise: null };
 
-async function connectDatabase() {
+async function connectDatabase(retries = 5, delay = 5000) {
   console.log('MONGODB_URI set:', Boolean(process.env.MONGODB_URI));
   
   if (!HAS_MONGO_URI) {
@@ -49,85 +49,73 @@ async function connectDatabase() {
     return { connection: global.mongoose.conn, isConnected: true };
   }
 
-  // Настройка таймаутов в зависимости от среды
-  const timeoutConfig = isVercel 
-    ? {
-        serverSelectionTimeoutMS: 30000,  // Увеличим таймаут для Vercel
-        socketTimeoutMS: 60000,          // Увеличим таймаут сокета
-        connectTimeoutMS: 30000,         // Увеличим таймаут подключения
-        maxPoolSize: 1,                  // Один соединение для Vercel
-        minPoolSize: 0,                  // Минимальное количество соединений
-        maxIdleTimeMS: 60000,            // Максимальное время простоя
-        waitQueueTimeoutMS: 10000,       // Таймаут ожидания в очереди
+  // Повторные попытки подключения
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const start = Date.now();
+      const clientPromise = mongoose.connect(mongoUri, {
+        dbName: "extoecosystem",
+        bufferCommands: false,
+        serverSelectionTimeoutMS: 30000,
+        socketTimeoutMS: 60000,
+        connectTimeoutMS: 30000,
+        maxIdleTimeMS: 60000,
+        waitQueueTimeoutMS: 10000,
+        maxPoolSize: 1,
+        minPoolSize: 0,
         retryWrites: true,
         retryReads: true,
-        w: 'majority'
+        w: "majority"
+      });
+
+      global.mongoose.promise = clientPromise;
+      global.mongoose.conn = await clientPromise;
+      
+      console.log(`✅ MongoDB подключена за ${Date.now() - start} мс`);
+      console.log("📊 Состояние подключения:", mongoose.connection.readyState, "(1=connected)");
+      console.log("📊 Имя базы данных:", mongoose.connection.name);
+      return { connection: global.mongoose.conn, isConnected: true };
+    } catch (err) {
+      console.error(`❌ Попытка ${attempt} не удалась:`, err.message);
+      
+      // Детальная диагностика ошибок
+      if (err.message.includes('authentication')) {
+        console.error("⚠️  Проблема с аутентификацией. Проверьте username и password в MONGODB_URI");
+        console.error("💡 Решение: Убедитесь, что пользователь существует в MongoDB Atlas и имеет права на чтение/запись");
+      } else if (err.message.includes('timeout')) {
+        console.error("⚠️  Таймаут подключения. Возможные причины:");
+        console.error("   - Неправильный IP в Network Access MongoDB Atlas");
+        console.error("   - Проблемы с сетью в Vercel");
+        console.error("   - Блокировка брандмауэром");
+        console.error("💡 Решение: Добавьте IP 0.0.0.0/0 в Network Access для тестирования");
+      } else if (err.message.includes('ENOTFOUND') || err.message.includes('DNS')) {
+        console.error("⚠️  Проблема с DNS. Проверьте правильность hostname в MONGODB_URI");
+        console.error("💡 Решение: Скопируйте URI напрямую из MongoDB Atlas");
+      } else if (err.message.includes('ECONNREFUSED')) {
+        console.error("⚠️  Соединение отклонено. Проверьте:");
+        console.error("   - Доступность MongoDB сервера");
+        console.error("   - Правильность порта");
+        console.error("💡 Решение: Проверьте URI и настройки сети");
+      } else if (err.message.includes('not master')) {
+        console.error("⚠️  Ошибка репликации. MongoDB Atlas не может выбрать primary");
+        console.error("💡 Решение: Проверьте статус кластера в MongoDB Atlas");
+      } else if (err.message.includes('TLS')) {
+        console.error("⚠️  Проблема с TLS/SSL соединением");
+        console.error("💡 Решение: Убедитесь, что URI содержит ssl=true или использует mongodb+srv://");
       }
-    : {
-        serverSelectionTimeoutMS: isProduction ? 30000 : 10000,
-        socketTimeoutMS: 45000,
-        connectTimeoutMS: isProduction ? 30000 : 10000,
-        maxPoolSize: 10
-      };
-
-  // Создаем новое подключение
-  const clientPromise = mongoose.connect(mongoUri, {
-    dbName: "extoecosystem",
-    bufferCommands: false,
-    serverSelectionTimeoutMS: 30000,
-    socketTimeoutMS: 45000,
-    connectTimeoutMS: 30000,
-    maxPoolSize: 1,
-    minPoolSize: 0,
-    retryWrites: true,
-    retryReads: true,
-    w: "majority"
-  });
-
-  global.mongoose.promise = clientPromise;
-
-  try {
-    global.mongoose.conn = await clientPromise;
-    console.log("✅ MongoDB подключена");
-    console.log("📊 Состояние подключения:", mongoose.connection.readyState, "(1=connected)");
-    console.log("📊 Имя базы данных:", mongoose.connection.name);
-    return { connection: global.mongoose.conn, isConnected: true };
-  } catch (err) {
-    console.error("❌ Ошибка подключения MongoDB:", err.message);
-    console.error("❌ Тип ошибки:", err.name);
-    console.error("❌ Stack trace:", err.stack);
-    
-    // Детальная диагностика ошибок
-    if (err.message.includes('authentication')) {
-      console.error("⚠️  Проблема с аутентификацией. Проверьте username и password в MONGODB_URI");
-      console.error("💡 Решение: Убедитесь, что пользователь существует в MongoDB Atlas и имеет права на чтение/запись");
-    } else if (err.message.includes('timeout')) {
-      console.error("⚠️  Таймаут подключения. Возможные причины:");
-      console.error("   - Неправильный IP в Network Access MongoDB Atlas");
-      console.error("   - Проблемы с сетью в Vercel");
-      console.error("   - Блокировка брандмауэром");
-      console.error("💡 Решение: Добавьте IP 0.0.0.0/0 в Network Access для тестирования");
-    } else if (err.message.includes('ENOTFOUND') || err.message.includes('DNS')) {
-      console.error("⚠️  Проблема с DNS. Проверьте правильность hostname в MONGODB_URI");
-      console.error("💡 Решение: Скопируйте URI напрямую из MongoDB Atlas");
-    } else if (err.message.includes('ECONNREFUSED')) {
-      console.error("⚠️  Соединение отклонено. Проверьте:");
-      console.error("   - Доступность MongoDB сервера");
-      console.error("   - Правильность порта");
-      console.error("💡 Решение: Проверьте URI и настройки сети");
-    } else if (err.message.includes('not master')) {
-      console.error("⚠️  Ошибка репликации. MongoDB Atlas не может выбрать primary");
-      console.error("💡 Решение: Проверьте статус кластера в MongoDB Atlas");
-    } else if (err.message.includes('TLS')) {
-      console.error("⚠️  Проблема с TLS/SSL соединением");
-      console.error("💡 Решение: Убедитесь, что URI содержит ssl=true или использует mongodb+srv://");
+      
+      if (attempt < retries) {
+        console.log(`⏳ Повтор через ${delay} мс...`);
+        await new Promise(res => setTimeout(res, delay));
+      }
     }
-    
-    console.warn("⚠️  Приложение будет работать без БД (каталог пуст, админ/рейтинг отключены).");
-    global.mongoose.conn = null;
-    global.mongoose.promise = null;
-    return { connection: null, isConnected: false };
   }
+
+  console.error("❌ Все попытки подключения исчерпаны");
+  console.warn("⚠️  Приложение будет работать без БД (каталог пуст, админ/рейтинг отключены).");
+  global.mongoose.conn = null;
+  global.mongoose.promise = null;
+  return { connection: null, isConnected: false };
 }
 
 // Обработчики событий подключения
