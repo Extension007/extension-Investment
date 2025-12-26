@@ -15,12 +15,11 @@ module.exports = app;
 if (require.main === module) {
   (async () => {
     const { isConnected } = await connectMongoDB();
-    if (isConnected) {
-      console.log("✅ База данных готова к работе");
-    } else {
-      console.warn("⚠️ Приложение запущено без подключения к БД");
+    if (!isConnected) {
+      console.error("❌ Нет подключения к MongoDB, сервер не запущен");
+      return;
     }
-
+    
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
       console.log(`Сервер запущен на http://localhost:${PORT}`);
