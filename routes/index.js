@@ -25,8 +25,8 @@ router.use("/admin", require("./admin"));
 // Главная страница — каталог
 router.get("/", async (req, res) => {
   try {
-    const isAuth = Boolean(req.session?.user);
-    const userRole = req.session?.user?.role || null;
+    const isAuth = Boolean(req.user);
+    const userRole = req.user?.role || null;
     const isAdmin = userRole === "admin";
     const isUser = userRole === "user";
     const selected = req.query.category;
@@ -87,7 +87,7 @@ router.get("/", async (req, res) => {
     const visitorCount = visitors ? visitors.value : 0;
     const userCount = users || 0;
 
-    const userId = req.session?.user?._id?.toString();
+    const userId = req.user?._id?.toString();
     const votedMap = {};
     [...products, ...services].forEach(p => {
       if (Array.isArray(p.voters) && p.voters.map(v => v.toString()).includes(userId)) {

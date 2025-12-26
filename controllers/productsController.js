@@ -11,8 +11,8 @@ exports.getAllProducts = async (req, res, next) => {
     
     res.render('index', {
       products,
-      isAuth: !!req.session.user,
-      isAdmin: req.session.user?.role === 'admin',
+      isAuth: !!req.user,
+      isAdmin: req.user?.role === 'admin',
       categories: {
         home: "Для дома",
         beauty: "Красота и здоровье",
@@ -32,8 +32,8 @@ exports.getAllProducts = async (req, res, next) => {
 // FIX: Получение формы добавления товара
 exports.getAddForm = (req, res) => {
   res.render('products/add', {
-    isAuth: !!req.session.user,
-    isAdmin: req.session.user?.role === 'admin'
+    isAuth: !!req.user,
+    isAdmin: req.user?.role === 'admin'
   });
 };
 
@@ -94,8 +94,8 @@ exports.createProduct = async (req, res, next) => {
       images: images,
       contacts: contacts,
       category: category || "home",
-      owner: req.session.user?._id || null,
-      status: req.session.user?.role === 'admin' ? "approved" : "pending"
+      owner: req.user?._id || null,
+      status: req.user?.role === 'admin' ? "approved" : "pending"
     };
 
     const product = await Product.create(productData);
@@ -119,8 +119,8 @@ exports.getEditForm = async (req, res, next) => {
 
     res.render('products/edit', {
       product,
-      isAuth: !!req.session.user,
-      isAdmin: req.session.user?.role === 'admin'
+      isAuth: !!req.user,
+      isAdmin: req.user?.role === 'admin'
     });
   } catch (err) {
     next(err);

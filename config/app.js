@@ -3,6 +3,7 @@ const path = require("path");
 const session = require("express-session");
 const cookieParser = require("cookie-parser");
 const MongoStore = require("connect-mongo");
+const mongoose = require("mongoose");
 const morgan = require("morgan");
 const { createSecurityMiddleware } = require("./security");
 const { HAS_MONGO } = require("./database");
@@ -20,6 +21,31 @@ app.set("views", path.join(__dirname, "../views"));
 // Парсинг форм/JSON
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// Подключение к БД для Vercel serverless
+if (isVercel && HAS_MONGO) {
+  app.use(async (req, res, next) => {
+    try {
+      if (mongoose.connection.readyState !== 1) {
+        await mongoose.connect(process.env.MONGODB_URI, {
+          dbName: "extoecosystem",
+          serverSelectionTimeoutMS: 5000,
+          socketTimeoutMS: 10000,
+          connectTimeoutMS: 5000,
+          bufferCommands: false,
+          maxPoolSize: 1,
+          minPoolSize: 0,
+        });
+      }
+      req.dbConnected = true;
+      next();
+    } catch (err) {
+      console.error("❌ Ошибка подключения к MongoDB в Vercel:", err.message);
+      req.dbConnected = false;
+      next();
+    }
+  });
+}
 
 // Безопасность и логирование
 app.use(createSecurityMiddleware());
@@ -80,6 +106,7 @@ app.use((req, res, next) => {
         }
       })()
     : req.session?.user || null;
+  req.user = res.locals.user; // Для удобства в контроллерах и middleware
   next();
 });
 

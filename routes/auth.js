@@ -14,7 +14,7 @@ const isVercel = Boolean(process.env.VERCEL);
 router.get("/admin/login", (req, res) => {
   const isVercel = Boolean(process.env.VERCEL);
   const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
-  if (req.session.user && req.session.user.role === "admin") {
+  if (req.user && req.user.role === "admin") {
     return res.redirect("/admin");
   }
   const error = hasDbAccess ? null : "Админка недоступна: отсутствует подключение к БД";
@@ -25,7 +25,7 @@ router.get("/admin/login", (req, res) => {
 router.get("/user/login", (req, res) => {
   const isVercel = Boolean(process.env.VERCEL);
   const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
-  if (req.session.user) {
+  if (req.user) {
     return res.redirect("/cabinet");
   }
   const error = hasDbAccess ? null : "База данных недоступна, вход невозможен";
