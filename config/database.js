@@ -71,7 +71,8 @@ async function connectDatabase(retries = 5, delay = 5000) {
       global.mongoose.promise = clientPromise;
       global.mongoose.conn = await clientPromise;
       
-      console.log(`✅ MongoDB подключена за ${Date.now() - start} мс`);
+      console.log("⏱️ Время подключения:", Date.now() - start, "мс");
+      console.log("✅ MongoDB подключена");
       console.log("📊 Состояние подключения:", mongoose.connection.readyState, "(1=connected)");
       console.log("📊 Имя базы данных:", mongoose.connection.name);
       return { connection: global.mongoose.conn, isConnected: true };

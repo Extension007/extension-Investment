@@ -7,7 +7,7 @@ const Banner = require("../models/Banner");
 const User = require("../models/User");
 const Statistics = require("../models/Statistics");
 const cloudinary = require("cloudinary").v2;
-const { HAS_MONGO } = require("../config/database");
+const { HAS_MONGO, hasMongo } = require("../config/database");
 const { CATEGORY_LABELS, CATEGORY_KEYS } = require("../config/app");
 
 // Авторизация
@@ -129,6 +129,11 @@ router.get("/__health/cloudinary", async (req, res) => {
   } catch (err) {
     res.status(500).json({ ok: false, message: err.message });
   }
+});
+
+// Health-check MongoDB
+router.get("/health", (req, res) => {
+  res.json({ mongo: hasMongo() ? "connected" : "disconnected" });
 });
 
 module.exports = router;
