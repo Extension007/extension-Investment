@@ -1,5 +1,6 @@
 // Главный файл приложения
 require("dotenv").config();
+const express = require("express"); // <-- важно для Vercel
 const { connectMongoDB } = require("./config/database");
 const { app } = require("./config/app"); // берём готовый app из config/app.js
 
