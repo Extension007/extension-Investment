@@ -6,6 +6,9 @@ const isVercel = Boolean(process.env.VERCEL);
 const isProduction = process.env.NODE_ENV === 'production' || isVercel;
 
 // Логирование отсутствующих переменных окружения
+console.log("🔍 process.env.MONGODB_URI:", process.env.MONGODB_URI);
+console.log("🔍 process.env.SESSION_SECRET:", process.env.SESSION_SECRET);
+
 if (!process.env.MONGODB_URI) {
   console.warn("⚠️  MONGODB_URI не задан. Приложение запущено без БД (каталог пуст, админ/рейтинг отключены).");
 }
