@@ -1,8 +1,14 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const { hasMongo } = require("../config/database");
 
 exports.register = async (req, res) => {
   try {
+    // Проверяем доступность MongoDB
+    if (!hasMongo()) {
+      return res.status(503).json({ error: "MongoDB недоступна" });
+    }
+
     const { username, email, password } = req.body;
     if (!email || !password) {
       return res.status(400).json({ success: false, message: "Email and password required" });
