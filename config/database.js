@@ -52,13 +52,13 @@ async function connectDatabase() {
   // Настройка таймаутов в зависимости от среды
   const timeoutConfig = isVercel 
     ? {
-        serverSelectionTimeoutMS: 10000,  // Увеличим таймаут для Vercel
-        socketTimeoutMS: 20000,          // Увеличим таймаут сокета
-        connectTimeoutMS: 10000,         // Увеличим таймаут подключения
+        serverSelectionTimeoutMS: 30000,  // Увеличим таймаут для Vercel
+        socketTimeoutMS: 60000,          // Увеличим таймаут сокета
+        connectTimeoutMS: 30000,         // Увеличим таймаут подключения
         maxPoolSize: 1,                  // Один соединение для Vercel
         minPoolSize: 0,                  // Минимальное количество соединений
-        maxIdleTimeMS: 30000,            // Максимальное время простоя
-        waitQueueTimeoutMS: 5000,        // Таймаут ожидания в очереди
+        maxIdleTimeMS: 60000,            // Максимальное время простоя
+        waitQueueTimeoutMS: 10000,       // Таймаут ожидания в очереди
         retryWrites: true,
         retryReads: true,
         w: 'majority'
