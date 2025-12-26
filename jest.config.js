@@ -1,4 +1,6 @@
 module.exports = {
+  verbose: true,
+  testTimeout: 30000,
   projects: [
     {
       displayName: 'unit',
@@ -14,9 +16,7 @@ module.exports = {
         '!**/coverage/**',
         '!jest.config.js'
       ],
-      coverageDirectory: 'coverage',
-      verbose: true,
-      testTimeout: 30000
+      coverageDirectory: 'coverage'
     },
     {
       displayName: 'integration',
@@ -32,9 +32,7 @@ module.exports = {
         '!**/coverage/**',
         '!jest.config.js'
       ],
-      coverageDirectory: 'coverage',
-      verbose: true,
-      testTimeout: 30000
+      coverageDirectory: 'coverage'
     },
     {
       displayName: 'e2e',
@@ -50,9 +48,7 @@ module.exports = {
         '!**/coverage/**',
         '!jest.config.js'
       ],
-      coverageDirectory: 'coverage',
-      verbose: true,
-      testTimeout: 30000
+      coverageDirectory: 'coverage'
     }
   ]
 };

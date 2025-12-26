@@ -1,8 +1,7 @@
 // Роуты для авторизации и регистрации
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcryptjs");
-const User = require("../models/User");
+const authController = require("../controllers/authController");
 const { hasMongo } = require("../config/database");
 const mongoose = require("mongoose");
 const { loginLimiter } = require("../middleware/rateLimiter");
@@ -33,190 +32,14 @@ router.get("/user/login", (req, res) => {
   res.render("user-login", { error, csrfToken: res.locals.csrfToken });
 });
 
-// Вход для админов (POST)
-const adminLoginMiddleware = isVercel
-  ? [loginLimiter, validateLogin] // Без CSRF в Vercel
-  : [loginLimiter, csrfProtection, validateLogin]; // С CSRF в обычной среде
-
-router.post("/admin/login", ...adminLoginMiddleware, async (req, res) => {
-  const isVercel = Boolean(process.env.VERCEL);
-  const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
-  if (!hasDbAccess) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
-  const { username, password } = req.body;
-  try {
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.render("login", { error: "Неверный логин или пароль", debug: null, csrfToken: res.locals.csrfToken });
-    }
-    // Проверяем роль админа
-    if (user.role !== "admin") {
-      return res.render("login", { error: "Доступ разрешен только администраторам", debug: null, csrfToken: res.locals.csrfToken });
-    }
-    const ok = await bcrypt.compare(password, user.password_hash);
-    if (!ok) {
-      return res.render("login", { error: "Неверный логин или пароль", debug: null, csrfToken: res.locals.csrfToken });
-    }
-    
-    // Сохраняем _id как строку для совместимости
-    const userData = {
-      _id: user._id.toString(),
-      username: user.username,
-      role: user.role
-    };
-    
-    if (isVercel) {
-      // В Vercel serverless используем cookie для хранения данных пользователя
-      res.cookie('exto_user', JSON.stringify(userData), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 // 1 час
-      });
-    } else {
-      // В обычной среде используем сессии
-      req.session.user = userData;
-    }
-    
-    console.log("✅ Админ залогинен:", {
-      username: user.username,
-      role: user.role,
-      id: user._id.toString()
-    });
-    res.redirect("/admin");
-  } catch (err) {
-    console.error("❌ Ошибка входа:", err);
-    res.status(500).send("Ошибка базы данных");
-  }
-});
-
-// Вход для пользователей (POST)
-const userLoginMiddleware = isVercel
-  ? [loginLimiter, validateLogin] // Без CSRF в Vercel
-  : [loginLimiter, csrfProtection, validateLogin]; // С CSRF в обычной среде
-
-router.post("/user/login", ...userLoginMiddleware, async (req, res) => {
-  const isVercel = Boolean(process.env.VERCEL);
-  const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
-  if (!hasDbAccess) return res.status(503).send("Вход недоступен: отсутствует подключение к БД");
-  const { username, password } = req.body;
-  try {
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.render("user-login", { error: "Неверный логин или пароль", csrfToken: res.locals.csrfToken });
-    }
-    // Пользователи не могут входить через админку
-    if (user.role === "admin") {
-      return res.render("user-login", { error: "Для входа администратора используйте /admin/login", csrfToken: res.locals.csrfToken });
-    }
-    const ok = await bcrypt.compare(password, user.password_hash);
-    if (!ok) {
-      return res.render("user-login", { error: "Неверный логин или пароль", csrfToken: res.locals.csrfToken });
-    }
-    
-    // Сохраняем _id как строку для совместимости
-    const userData = {
-      _id: user._id.toString(),
-      username: user.username,
-      role: user.role
-    };
-    
-    if (isVercel) {
-      // В Vercel serverless используем cookie для хранения данных пользователя
-      res.cookie('exto_user', JSON.stringify(userData), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 // 1 час
-      });
-    } else {
-      // В обычной среде используем сессии
-      req.session.user = userData;
-    }
-    
-    console.log("✅ Пользователь залогинен:", {
-      username: user.username,
-      role: user.role,
-      id: user._id.toString()
-    });
-    res.redirect("/cabinet");
-  } catch (err) {
-    console.error("❌ Ошибка входа:", err);
-    res.status(500).send("Ошибка базы данных");
-  }
-});
+router.post("/admin/login", loginLimiter, validateLogin, authController.adminLogin);
+router.post("/user/login", loginLimiter, validateLogin, authController.userLogin);
+router.post("/auth/register", loginLimiter, validateRegister, authController.register);
+router.post("/logout", authController.logout);
 
 // Получение CSRF токена для AJAX запросов
 router.get("/csrf-token", (req, res) => {
   res.json({ csrfToken: res.locals.csrfToken });
-});
-
-// Регистрация пользователя - без CSRF для API эндпоинта
-const registerMiddleware = [loginLimiter, validateRegister];
-
-router.post("/auth/register", ...registerMiddleware, async (req, res) => {
-  const isVercel = Boolean(process.env.VERCEL);
-  const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
-  if (!hasDbAccess) return res.status(503).json({ success: false, message: "Регистрация недоступна: нет БД" });
-  try {
-    const { username, email, password } = req.body;
-    
-    const exists = await User.findOne({ $or: [{ email }, { username }] });
-    if (exists) {
-      return res.status(409).json({ success: false, message: "Пользователь с таким email или никнеймом уже существует" });
-    }
-    const password_hash = await bcrypt.hash(password, 10);
-    const user = await User.create({ username, email, password_hash, role: "user" });
-    
-    // Сохраняем _id как строку для совместимости
-    const userData = {
-      _id: user._id.toString(),
-      username: user.username,
-      role: user.role
-    };
-    
-    if (isVercel) {
-      // В Vercel serverless используем cookie для хранения данных пользователя
-      res.cookie('exto_user', JSON.stringify(userData), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 // 1 час
-      });
-    } else {
-      // В обычной среде используем сессии
-      req.session.user = userData;
-    }
-    
-    console.log("✅ Пользователь зарегистрирован и залогинен:", {
-      username: user.username,
-      role: user.role,
-      id: user._id.toString()
-    });
-    res.json({ success: true });
-  } catch (err) {
-    console.error("❌ Ошибка регистрации:", err);
-    res.status(500).json({ success: false, message: "Ошибка регистрации" });
-  }
-});
-
-// Выход (logout) - POST
-router.post("/logout", (req, res) => {
-  const isVercel = Boolean(process.env.VERCEL);
-  
-  if (isVercel) {
-    // В Vercel serverless удаляем cookie
-    res.clearCookie('exto_user');
-  } else {
-    // В обычной среде уничтожаем сессию
-    req.session.destroy((err) => {
-      if (err) {
-        console.error("❌ Ошибка выхода:", err);
-        return res.status(500).json({ success: false, message: "Ошибка выхода" });
-      }
-    });
-  }
-  
-  res.json({ success: true, message: "Вы успешно вышли" });
 });
 
 // Выход (logout) - GET

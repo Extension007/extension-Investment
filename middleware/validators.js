@@ -198,7 +198,7 @@ const validateRegister = [
     .withMessage("Логин должен быть от 3 до 50 символов")
     .matches(/^[a-zA-Z0-9_]+$/)
     .withMessage("Логин может содержать только буквы, цифры и подчеркивание"),
-  
+
   body("email")
     .trim()
     .notEmpty()
@@ -206,13 +206,15 @@ const validateRegister = [
     .isEmail()
     .withMessage("Некорректный формат email")
     .normalizeEmail(),
-  
+
   body("password")
     .notEmpty()
     .withMessage("Пароль обязателен")
-    .isLength({ min: 6 })
-    .withMessage("Пароль должен быть не менее 6 символов"),
-  
+    .isLength({ min: 8 })
+    .withMessage("Пароль должен быть не менее 8 символов")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .withMessage("Пароль должен содержать хотя бы одну заглавную букву, одну строчную букву и одну цифру"),
+
   handleValidationErrors
 ];
 

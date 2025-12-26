@@ -1,12 +1,18 @@
 // Mocks must be at the top before any imports
-// csurf removed from dependencies, but keeping mock for backward compatibility
-jest.mock('csurf', () => {
-  return jest.fn(() => (req, res, next) => {
-    // Mock CSRF token generation
-    req.csrfToken = () => 'test-csrf-token';
-    res.locals.csrfToken = 'test-csrf-token';
-    next();
-  });
+// csrf replaced csurf, but keeping mock for backward compatibility
+jest.mock('csrf', () => {
+  class MockCsrf {
+    constructor() {
+      // Mock constructor
+    }
+    create() {
+      return 'test-csrf-token';
+    }
+    verify() {
+      return true; // Always return true for tests
+    }
+  }
+  return MockCsrf;
 });
 
 jest.mock('express-session', () => {
@@ -45,6 +51,16 @@ jest.mock('connect-mongo', () => {
     create: jest.fn(() => ({}))
   };
 });
+
+jest.mock('cloudinary', () => ({
+  v2: {
+    config: jest.fn(),
+    uploader: {
+      destroy: jest.fn(() => Promise.resolve({ result: 'ok' })),
+      upload: jest.fn(() => Promise.resolve({ public_id: 'test', secure_url: 'https://test.com/image.jpg' }))
+    }
+  }
+}));
 
 // Polyfills for Node.js environment
 if (typeof TextEncoder === 'undefined') {

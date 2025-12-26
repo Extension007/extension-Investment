@@ -116,14 +116,39 @@ app.get("/", async (req, res) => {
       servicesFilter.$and.push({ category: selected });
     }
 
-    // Выполняем запросы с обработкой таймаутов
+    // Выполняем запросы параллельно для оптимизации производительности
     let products = [];
     let services = [];
+    let approvedBanners = [];
+    let visitorCount = 0;
+    let userCount = 0;
+
     try {
-      products = await Product.find(productsFilter).sort({ _id: -1 }).maxTimeMS(5000);
-      services = await Product.find(servicesFilter).sort({ _id: -1 }).maxTimeMS(5000);
+      // Параллельные запросы к БД
+      const [productsResult, servicesResult, bannersResult, visitorResult, userResult] = await Promise.allSettled([
+        Product.find(productsFilter).sort({ _id: -1 }).maxTimeMS(5000),
+        Product.find(servicesFilter).sort({ _id: -1 }).maxTimeMS(5000),
+        Banner.find({ status: "approved" }).sort({ _id: -1 }).maxTimeMS(5000),
+        // Подсчет посетителей (упрощенная версия без обновления)
+        Statistics.findOne({ key: "visitors" }),
+        User.countDocuments()
+      ]);
+
+      products = productsResult.status === 'fulfilled' ? productsResult.value : [];
+      services = servicesResult.status === 'fulfilled' ? servicesResult.value : [];
+      approvedBanners = bannersResult.status === 'fulfilled' ? bannersResult.value : [];
+      visitorCount = visitorResult.status === 'fulfilled' && visitorResult.value ? visitorResult.value.value : 0;
+      userCount = userResult.status === 'fulfilled' ? userResult.value : 0;
+
+      // Обработка ошибок для каждого запроса
+      if (productsResult.status === 'rejected') console.warn("⚠️ Ошибка запроса товаров:", productsResult.reason.message);
+      if (servicesResult.status === 'rejected') console.warn("⚠️ Ошибка запроса услуг:", servicesResult.reason.message);
+      if (bannersResult.status === 'rejected') console.warn("⚠️ Ошибка запроса баннеров:", bannersResult.reason.message);
+      if (visitorResult.status === 'rejected') console.warn("⚠️ Ошибка подсчета посетителей:", visitorResult.reason.message);
+      if (userResult.status === 'rejected') console.warn("⚠️ Ошибка подсчета пользователей:", userResult.reason.message);
+
     } catch (queryErr) {
-      console.warn("⚠️ Ошибка запроса к БД:", queryErr.message);
+      console.warn("⚠️ Критическая ошибка запросов к БД:", queryErr.message);
       return res.render("index", { products: [], services: [], banners: [], visitorCount: 0, userCount: 0, page: 1, totalPages: 1, isAuth, isAdmin, isUser, userRole, votedMap: {}, categories, selectedCategory: selected || "all" });
     }
 
@@ -136,16 +161,7 @@ app.get("/", async (req, res) => {
       }
     });
 
-    // Получаем одобренные баннеры для секции рекламы
-    let approvedBanners = [];
-    try {
-      approvedBanners = await Banner.find({ status: "approved" }).sort({ _id: -1 }).maxTimeMS(5000);
-    } catch (bannerErr) {
-      console.warn("⚠️ Ошибка получения баннеров:", bannerErr.message);
-    }
-
     // Подсчет посетителей (только один раз для каждого уникального гостя)
-    let visitorCount = 0;
     try {
       // Проверяем наличие cookie, которая хранится 1 год
       const visitorCookie = req.cookies.exto_visitor;
@@ -167,20 +183,10 @@ app.get("/", async (req, res) => {
           sameSite: 'lax'
         });
       } else {
-        // Гость уже был засчитан - просто получаем текущее значение
-        const stats = await Statistics.findOne({ key: "visitors" });
-        visitorCount = stats ? stats.value : 0;
+        // Гость уже был засчитан - просто получаем текущее значение (уже получено выше)
       }
     } catch (visitorErr) {
       console.warn("⚠️ Ошибка подсчета посетителей:", visitorErr.message);
-    }
-
-    // Количество зарегистрированных пользователей
-    let userCount = 0;
-    try {
-      userCount = await User.countDocuments({});
-    } catch (userErr) {
-      console.warn("⚠️ Ошибка подсчета пользователей:", userErr.message);
     }
 
     // page/totalPages оставлены для совместимости с твоим рендером

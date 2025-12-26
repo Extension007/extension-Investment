@@ -30,7 +30,7 @@ function handleMulterError(err, req, res, next) {
 }
 
 // Админка (главная страница)
-router.get("/", requireAdmin, async (req, res) => {
+router.get("/", requireAdmin, csrfToken, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
     
@@ -121,14 +121,18 @@ router.get("/", requireAdmin, async (req, res) => {
     console.log(`📋 Всего баннеров: ${allBanners.length}`);
     console.log(`⏳ Баннеров на модерации: ${pendingBanners.length}`);
     
-    res.render("admin", { 
-      products: allProducts, 
+    // Генерируем CSRF токен для формы и API запросов
+    const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : null);
+
+    res.render("admin", {
+      products: allProducts,
       services: allServices || [],
       pendingProducts,
       pendingServices: pendingServices || [],
       banners: allBanners || [],
       pendingBanners: pendingBanners || [],
-      categories: CATEGORY_LABELS
+      categories: CATEGORY_LABELS,
+      csrfToken: csrfTokenValue
     });
   } catch (err) {
     console.error("❌ Ошибка получения товаров (админ):", err);
@@ -752,4 +756,3 @@ router.delete("/banners/:id", requireAdmin, csrfProtection, async (req, res) => 
 });
 
 module.exports = router;
-

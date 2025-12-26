@@ -119,10 +119,13 @@ productSchema.index({ owner: 1 });
 productSchema.index({ category: 1 });
 productSchema.index({ createdAt: -1 });
 productSchema.index({ deleted: 1 });
+productSchema.index({ type: 1 });
 // Составной индекс для частых запросов
 productSchema.index({ status: 1, type: 1 });
 productSchema.index({ status: 1, category: 1 });
 productSchema.index({ status: 1, deleted: 1 });
+productSchema.index({ category: 1, status: 1, createdAt: -1 }); // Для фильтрации по категориям
+productSchema.index({ result: -1 }); // Для сортировки по рейтингу
 
 // Hook для удаления изображений при удалении карточки (soft delete или полное удаление)
 productSchema.pre(['findOneAndDelete', 'findOneAndUpdate'], async function() {
@@ -151,5 +154,59 @@ productSchema.pre(['findOneAndDelete', 'findOneAndUpdate'], async function() {
     // Не прерываем удаление, даже если не удалось удалить изображения
   }
 });
+
+// Статические методы для оптимизации запросов
+productSchema.statics.getApprovedProducts = function(category = null, limit = 50) {
+  const filter = {
+    status: "approved",
+    deleted: { $ne: true },
+    $or: [
+      { type: "product" },
+      { type: { $exists: false } },
+      { type: null }
+    ]
+  };
+
+  if (category) {
+    filter.category = category;
+  }
+
+  return this.find(filter)
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
+};
+
+productSchema.statics.getApprovedServices = function(category = null, limit = 50) {
+  const filter = {
+    status: "approved",
+    deleted: { $ne: true },
+    type: "service"
+  };
+
+  if (category) {
+    filter.category = category;
+  }
+
+  return this.find(filter)
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
+};
+
+productSchema.statics.getPopularProducts = function(limit = 10) {
+  return this.find({
+    status: "approved",
+    deleted: { $ne: true },
+    $or: [
+      { type: "product" },
+      { type: { $exists: false } },
+      { type: null }
+    ]
+  })
+    .sort({ result: -1, createdAt: -1 })
+    .limit(limit)
+    .lean();
+};
 
 module.exports = mongoose.model("Product", productSchema);

@@ -1302,7 +1302,19 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify(formData),
           credentials: 'same-origin'
         });
-        const data = await res.json();
+
+        // Проверяем тип контента ответа
+        const contentType = res.headers.get("content-type");
+        let data;
+
+        if (contentType && contentType.includes("application/json")) {
+          // Если ответ в формате JSON, парсим как JSON
+          data = await res.json();
+        } else {
+          // Если ответ не JSON (например, HTML ошибка), парсим как текст
+          const text = await res.text();
+          data = { success: false, message: text || "Ошибка сервера" };
+        }
 
         if (data.success) {
           if (registerError) registerError.style.display = "none";
