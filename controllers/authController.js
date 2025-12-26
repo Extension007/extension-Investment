@@ -12,9 +12,30 @@ exports.register = async (req, res) => {
     const user = new User({ username, email, password_hash: hashedPassword, role: "user" });
     await user.save();
 
-    req.session.userId = user._id;
+    // Сохраняем _id как строку для совместимости
+    const userData = {
+      _id: user._id.toString(),
+      username: user.username,
+      role: user.role
+    };
+
+    const isVercel = Boolean(process.env.VERCEL);
+    if (isVercel) {
+      // В Vercel serverless используем cookie для хранения данных пользователя
+      res.cookie('exto_user', JSON.stringify(userData), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 // 1 час
+      });
+    } else {
+      // В обычной среде используем сессии
+      req.session.user = userData;
+    }
+
     res.status(200).json({ success: true, user: { id: user._id, email: user.email } });
   } catch (err) {
+    console.error("Ошибка регистрации:", err);
     res.status(500).json({ success: false, message: "Registration failed", error: err.message });
   }
 };
