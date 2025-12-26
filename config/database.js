@@ -29,6 +29,9 @@ async function connectDatabase(retries = 5, delay = 5000) {
     return { connection: null, isConnected: false };
   }
 
+  // 🔍 Логируем реальное значение переменной окружения
+  console.log("🔍 MONGODB_URI:", process.env.MONGODB_URI);
+
   const mongoUri = process.env.MONGODB_URI;
   if (!mongoUri || !mongoUri.startsWith('mongodb')) {
     console.error("❌ Неверный формат MONGODB_URI. Ожидается строка, начинающаяся с 'mongodb://' или 'mongodb+srv://'");
@@ -42,7 +45,6 @@ async function connectDatabase(retries = 5, delay = 5000) {
     return { connection: global.mongoose.conn, isConnected: true };
   }
 
-  // Если есть обещание подключения, ждем его
   if (global.mongoose.promise) {
     console.log("⏳ Ожидаем завершения подключения к MongoDB...");
     global.mongoose.conn = await global.mongoose.promise;
@@ -53,14 +55,14 @@ async function connectDatabase(retries = 5, delay = 5000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const start = Date.now();
-      const clientPromise = mongoose.connect(mongoUri, {
+      const clientPromise = mongoose.connect(process.env.MONGODB_URI, {
         dbName: "extoecosystem",
-        bufferCommands: false,
+        keepAlive: true,
+        keepAliveInitialDelay: 300000,
         serverSelectionTimeoutMS: 30000,
         socketTimeoutMS: 60000,
         connectTimeoutMS: 30000,
-        maxIdleTimeMS: 60000,
-        waitQueueTimeoutMS: 10000,
+        bufferCommands: false,
         maxPoolSize: 1,
         minPoolSize: 0,
         retryWrites: true,
@@ -135,7 +137,6 @@ if (HAS_MONGO_URI) {
 
   mongoose.connection.on('disconnected', () => {
     console.warn("⚠️  MongoDB отключена");
-    // Сбрасываем глобальный кеш при отключении
     global.mongoose.conn = null;
     global.mongoose.promise = null;
   });
