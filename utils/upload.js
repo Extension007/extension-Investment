@@ -44,10 +44,10 @@ if (hasCloudinary) {
 
 if (!hasCloudinary) {
   // В Vercel локальное хранилище недоступно
-  console.warn("⚠️  Cloudinary не настроен, но локальное хранилище недоступно в Vercel");
+  console.warn("⚠️  Cloudinary не настроен, используется memory storage");
   // Вместо локального хранилища используем memory storage для временного хранения
   storage = multer.memoryStorage();
-  console.log("✅ Используется временный storage в памяти (для Vercel)");
+  console.log("✅ Используется memory storage (для Vercel)");
 }
 
 // FIX: Фильтр файлов - только изображения
