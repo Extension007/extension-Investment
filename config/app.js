@@ -48,7 +48,11 @@ if (!isVercel) {
   if (HAS_MONGO) {
     sessionOptions.store = MongoStore.create({
       mongoUrl: process.env.MONGODB_URI,
-      collectionName: "sessions"
+      collectionName: "sessions",
+      // Увеличим таймауты для Vercel
+      touchAfter: 24 * 3600, // 24 часа
+      autoRemove: 'native',
+      ttl: 14 * 24 * 3600 // 14 дней
     });
   }
 
