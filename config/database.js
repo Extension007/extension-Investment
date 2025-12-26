@@ -72,11 +72,16 @@ async function connectDatabase() {
 
   // Создаем новое подключение
   const clientPromise = mongoose.connect(mongoUri, {
-    ...timeoutConfig,
+    dbName: "extoecosystem",
     bufferCommands: false,
-    // Убраны устаревшие опции: useNewUrlParser, useUnifiedTopology
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 45000,
+    connectTimeoutMS: 30000,
+    maxPoolSize: 1,
+    minPoolSize: 0,
     retryWrites: true,
-    w: 'majority'
+    retryReads: true,
+    w: "majority"
   });
 
   global.mongoose.promise = clientPromise;
