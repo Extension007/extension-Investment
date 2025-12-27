@@ -60,7 +60,6 @@ async function connectDatabase(retries = 5, delay = 5000) {
       const start = Date.now();
       const clientPromise = mongoose.connect(process.env.MONGODB_URI, {
         dbName: "extoecosystem",
-        keepAlive: true,
         serverSelectionTimeoutMS: 30000,
         socketTimeoutMS: 60000,
         connectTimeoutMS: 30000,

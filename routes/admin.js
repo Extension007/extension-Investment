@@ -186,7 +186,7 @@ router.post("/products", requireAdmin, productLimiter, upload.array("images", 5)
 });
 
 // Удаление товара (soft delete)
-router.post("/products/:id/delete", requireAdmin, csrfProtection, validateProductId, async (req, res) => {
+router.post("/products/:id/delete", requireAdmin, conditionalCsrfProtection, validateProductId, async (req, res) => {
   try {
     if (!HAS_MONGO) {
       const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
@@ -275,7 +275,7 @@ router.post("/products/:id/edit", requireAdmin, productLimiter, upload.array("im
 });
 
 // Модерация: одобрить карточку
-router.post("/products/:id/approve", requireAdmin, csrfProtection, validateProductId, async (req, res) => {
+router.post("/products/:id/approve", requireAdmin, conditionalCsrfProtection, validateProductId, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
     const product = await Product.findByIdAndUpdate(
@@ -292,7 +292,7 @@ router.post("/products/:id/approve", requireAdmin, csrfProtection, validateProdu
 });
 
 // Модерация: отклонить карточку
-router.post("/products/:id/reject", requireAdmin, csrfProtection, validateProductId, validateModeration, async (req, res) => {
+router.post("/products/:id/reject", requireAdmin, conditionalCsrfProtection, validateProductId, validateModeration, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
     const { reason } = req.body;
@@ -310,7 +310,7 @@ router.post("/products/:id/reject", requireAdmin, csrfProtection, validateProduc
 });
 
 // Блокировка карточки (скрытие с главной страницы)
-router.post("/products/:id/toggle-visibility", requireAdmin, csrfProtection, validateProductId, async (req, res) => {
+router.post("/products/:id/toggle-visibility", requireAdmin, conditionalCsrfProtection, validateProductId, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
     const product = await Product.findById(req.params.id);
@@ -331,7 +331,7 @@ router.post("/products/:id/toggle-visibility", requireAdmin, csrfProtection, val
 });
 
 // Блокировка/Разблокировка баннера
-router.post("/banners/:id/toggle-visibility", requireAdmin, csrfProtection, validateBannerId, async (req, res) => {
+router.post("/banners/:id/toggle-visibility", requireAdmin, conditionalCsrfProtection, validateBannerId, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
     const banner = await Banner.findById(req.params.id);
@@ -353,7 +353,7 @@ router.post("/banners/:id/toggle-visibility", requireAdmin, csrfProtection, vali
 });
 
 // Модерация баннеров: одобрить баннер
-router.post("/banners/:id/approve", requireAdmin, csrfProtection, validateBannerId, async (req, res) => {
+router.post("/banners/:id/approve", requireAdmin, conditionalCsrfProtection, validateBannerId, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
     const banner = await Banner.findByIdAndUpdate(
@@ -370,7 +370,7 @@ router.post("/banners/:id/approve", requireAdmin, csrfProtection, validateBanner
 });
 
 // Модерация баннеров: отклонить баннер
-router.post("/banners/:id/reject", requireAdmin, csrfProtection, validateBannerId, validateModeration, async (req, res) => {
+router.post("/banners/:id/reject", requireAdmin, conditionalCsrfProtection, validateBannerId, validateModeration, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
     const { reason } = req.body;
@@ -653,7 +653,7 @@ router.post("/banners/:id/edit", requireAdmin, productLimiter, upload.array("ima
 });
 
 // Удаление баннера (POST для форм)
-router.post("/banners/:id/delete", requireAdmin, csrfProtection, validateBannerId, async (req, res) => {
+router.post("/banners/:id/delete", requireAdmin, conditionalCsrfProtection, validateBannerId, async (req, res) => {
   try {
     if (!HAS_MONGO) {
       const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
@@ -711,7 +711,7 @@ router.post("/banners/:id/delete", requireAdmin, csrfProtection, validateBannerI
 });
 
 // Удаление баннера (DELETE для API)
-router.delete("/banners/:id", requireAdmin, csrfProtection, async (req, res) => {
+router.delete("/banners/:id", requireAdmin, conditionalCsrfProtection, async (req, res) => {
   try {
     if (!HAS_MONGO) {
       return res.status(503).json({ success: false, message: 'Недоступно: нет БД' });
