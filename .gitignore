@@ -123,3 +123,6 @@ cypress/screenshots/
 
 # Vercel
 .vercel
+
+# Cline agent config
+cline.json

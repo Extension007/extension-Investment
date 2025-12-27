@@ -24,20 +24,11 @@ app.use(express.json());
 
 // Подключение к БД для Vercel serverless
 if (isVercel && HAS_MONGO) {
+  const { connectMongoDB } = require("./database");
   app.use(async (req, res, next) => {
     try {
-      if (mongoose.connection.readyState !== 1) {
-        await mongoose.connect(process.env.MONGODB_URI, {
-          dbName: "extoecosystem",
-          serverSelectionTimeoutMS: 5000,
-          socketTimeoutMS: 10000,
-          connectTimeoutMS: 5000,
-          bufferCommands: false,
-          maxPoolSize: 1,
-          minPoolSize: 0,
-        });
-      }
-      req.dbConnected = true;
+      const { isConnected } = await connectMongoDB();
+      req.dbConnected = isConnected;
       next();
     } catch (err) {
       console.error("❌ Ошибка подключения к MongoDB в Vercel:", err.message);
