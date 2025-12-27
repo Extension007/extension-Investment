@@ -1,4 +1,3 @@
-// Роуты для личного кабинета пользователя
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
@@ -11,6 +10,12 @@ const { validateProduct, validateProductId } = require("../middleware/validators
 const { csrfProtection, csrfToken } = require("../middleware/csrf");
 const upload = require("../utils/upload");
 const { createProduct, updateProduct } = require("../services/productService");
+
+const isVercel = Boolean(process.env.VERCEL);
+
+// Условный CSRF middleware для Vercel
+const conditionalCsrfToken = isVercel ? (req, res, next) => next() : csrfToken;
+const conditionalCsrfProtection = isVercel ? (req, res, next) => next() : csrfProtection;
 
 // Middleware для обработки ошибок multer
 function handleMulterError(err, req, res, next) {
@@ -34,7 +39,7 @@ function handleMulterError(err, req, res, next) {
 }
 
 // Личный кабинет
-router.get("/", requireUser, csrfToken, async (req, res) => {
+router.get("/", requireUser, conditionalCsrfToken, async (req, res) => {
   if (!HAS_MONGO) {
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.status(503).json({ success: false, message: "Личный кабинет недоступен: нет БД" });
@@ -42,8 +47,8 @@ router.get("/", requireUser, csrfToken, async (req, res) => {
   }
   try {
     // Разделяем товары и услуги (исключаем удаленные)
-    const myProducts = await Product.find({ 
-      owner: req.session.user._id,
+    const myProducts = await Product.find({
+      owner: req.user._id,
       deleted: { $ne: true },
       $or: [
         { type: "product" },
@@ -51,23 +56,23 @@ router.get("/", requireUser, csrfToken, async (req, res) => {
         { type: null }
       ]
     }).sort({ _id: -1 });
-    
-    const myServices = await Product.find({ 
-      owner: req.session.user._id,
+
+    const myServices = await Product.find({
+      owner: req.user._id,
       deleted: { $ne: true },
       type: "service"
     }).sort({ _id: -1 });
-    
+
     // Получаем баннеры пользователя
-    const myBanners = await Banner.find({ 
-      owner: req.session.user._id
+    const myBanners = await Banner.find({
+      owner: req.user._id
     }).sort({ _id: -1 });
-    
+
     // Генерируем CSRF токен
     const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : '');
-    
-    res.render("cabinet", { 
-      user: req.session.user, 
+
+    res.render("cabinet", {
+      user: req.user,
       products: myProducts, 
       services: myServices || [], 
       banners: myBanners || [],
@@ -83,10 +88,10 @@ router.get("/", requireUser, csrfToken, async (req, res) => {
 
 // Пользователь создаёт карточку
 // ВАЖНО: multer должен быть ПЕРЕД csrfProtection, чтобы _csrf был доступен в req.body
-router.post("/product", requireUser, productLimiter, upload.array("images", 5), handleMulterError, csrfProtection, validateProduct, async (req, res) => {
+router.post("/product", requireUser, productLimiter, upload.array("images", 5), handleMulterError, conditionalCsrfProtection, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
-    if (!req.session.user || !req.session.user._id) {
+    if (!req.user || !req.user._id) {
       return res.status(401).json({ success: false, message: "Необходима авторизация" });
     }
 
@@ -103,7 +108,7 @@ router.post("/product", requireUser, productLimiter, upload.array("images", 5), 
       telegram: req.body.telegram,
       whatsapp: req.body.whatsapp,
       contact_method: req.body.contact_method,
-      ownerId: req.session.user._id,
+      ownerId: req.user._id,
       status: "pending"
     };
 
@@ -123,7 +128,7 @@ router.post("/product", requireUser, productLimiter, upload.array("images", 5), 
 });
 
 // Пользователь меняет цену своей карточки
-router.post("/product/:id/price", requireUser, csrfProtection, validateProductId, async (req, res) => {
+router.post("/product/:id/price", requireUser, conditionalCsrfProtection, validateProductId, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     const price = Number(req.body.price);
@@ -131,7 +136,7 @@ router.post("/product/:id/price", requireUser, csrfProtection, validateProductId
       return res.status(400).json({ success: false, message: "Некорректная цена" });
     }
     const updated = await Product.findOneAndUpdate(
-      { _id: req.params.id, owner: req.session.user._id, deleted: { $ne: true } },
+      { _id: req.params.id, owner: req.user._id, deleted: { $ne: true } },
       { price },
       { new: true }
     );
@@ -144,16 +149,16 @@ router.post("/product/:id/price", requireUser, csrfProtection, validateProductId
 });
 
 // Получение формы редактирования товара
-router.get("/product/:id/edit", requireUser, validateProductId, csrfToken, async (req, res) => {
+router.get("/product/:id/edit", requireUser, validateProductId, conditionalCsrfToken, async (req, res) => {
   if (!HAS_MONGO) {
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
     return res.status(503).send("Недоступно: отсутствует подключение к БД");
   }
   try {
-    const product = await Product.findOne({ 
-      _id: req.params.id, 
-      owner: req.session.user._id,
+    const product = await Product.findOne({
+      _id: req.params.id,
+      owner: req.user._id,
       deleted: { $ne: true }
     });
     if (!product) {
@@ -161,11 +166,11 @@ router.get("/product/:id/edit", requireUser, validateProductId, csrfToken, async
       if (wantsJson) return res.status(404).json({ success: false, message: "Карточка не найдена или у вас нет прав для редактирования" });
       return res.status(404).send("Карточка не найдена или у вас нет прав для редактирования");
     }
-    
+
     // Генерируем CSRF токен для формы и API запросов
     const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : null);
-    
-    res.render("products/edit", { product, user: req.session.user, mode: "user", csrfToken: csrfTokenValue });
+
+    res.render("products/edit", { product, user: req.user, mode: "user", csrfToken: csrfTokenValue });
   } catch (err) {
     console.error("❌ Ошибка получения товара для редактирования:", err);
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
@@ -176,7 +181,7 @@ router.get("/product/:id/edit", requireUser, validateProductId, csrfToken, async
 
 // Редактирование товара пользователем
 // ВАЖНО: multer должен быть ПЕРЕД csrfProtection
-router.post("/product/:id/edit", requireUser, productLimiter, upload.array("images", 5), handleMulterError, csrfProtection, validateProductId, validateProduct, async (req, res) => {
+router.post("/product/:id/edit", requireUser, productLimiter, upload.array("images", 5), handleMulterError, conditionalCsrfProtection, validateProductId, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     const updateData = {
@@ -199,7 +204,7 @@ router.post("/product/:id/edit", requireUser, productLimiter, upload.array("imag
       req.params.id,
       updateData,
       req.files || [],
-      { ownerId: req.session.user._id }
+      { ownerId: req.user._id }
     );
     
     console.log("✅ Карточка обновлена пользователем:", {
@@ -226,7 +231,7 @@ router.post("/product/:id/edit", requireUser, productLimiter, upload.array("imag
 
 // Загрузка баннера пользователем
 // ВАЖНО: multer должен быть ПЕРЕД csrfProtection
-router.post("/banner", requireUser, productLimiter, upload.single("image"), handleMulterError, csrfProtection, async (req, res) => {
+router.post("/banner", requireUser, productLimiter, upload.single("image"), handleMulterError, conditionalCsrfProtection, async (req, res) => {
   if (!HAS_MONGO) {
     return res.status(503).json({ success: false, message: "Нет БД" });
   }
@@ -253,8 +258,8 @@ router.post("/banner", requireUser, productLimiter, upload.single("image"), hand
     // Обработка ownerId
     let ownerId = null;
     try {
-      if (req.session && req.session.user && req.session.user._id) {
-        const userId = req.session.user._id;
+      if (req.user && req.user._id) {
+        const userId = req.user._id;
         if (mongoose.Types.ObjectId.isValid(userId)) {
           ownerId = new mongoose.Types.ObjectId(userId);
         } else {
@@ -304,7 +309,7 @@ router.post("/banner", requireUser, productLimiter, upload.single("image"), hand
 });
 
 // Получение формы редактирования баннера
-router.get("/banner/:id/edit", requireUser, csrfToken, async (req, res) => {
+router.get("/banner/:id/edit", requireUser, conditionalCsrfToken, async (req, res) => {
   if (!HAS_MONGO) {
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
@@ -313,7 +318,7 @@ router.get("/banner/:id/edit", requireUser, csrfToken, async (req, res) => {
   try {
     const banner = await Banner.findOne({ 
       _id: req.params.id, 
-      owner: req.session.user._id
+      owner: req.user._id
     });
     if (!banner) {
       const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
@@ -339,7 +344,7 @@ router.get("/banner/:id/edit", requireUser, csrfToken, async (req, res) => {
         owner: banner.owner,
         type: "banner"
       }, 
-      user: req.session.user, 
+      user: req.user, 
       mode: "user", 
       csrfToken: csrfTokenValue 
     });
@@ -361,12 +366,12 @@ router.get("/banner/:id/edit", requireUser, csrfToken, async (req, res) => {
 
 // Редактирование баннера пользователем
 // ВАЖНО: multer должен быть ПЕРЕД csrfProtection
-router.post("/banner/:id/edit", requireUser, productLimiter, upload.array("images", 5), handleMulterError, csrfProtection, async (req, res) => {
+router.post("/banner/:id/edit", requireUser, productLimiter, upload.array("images", 5), handleMulterError, conditionalCsrfProtection, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     const banner = await Banner.findOne({ 
       _id: req.params.id, 
-      owner: req.session.user._id
+      owner: req.user._id
     });
     if (!banner) {
       return res.status(404).json({ success: false, message: "Баннер не найден или у вас нет прав для редактирования" });
@@ -416,12 +421,12 @@ router.post("/banner/:id/edit", requireUser, productLimiter, upload.array("image
 });
 
 // Удаление товара/услуги пользователем
-router.delete("/product/:id", requireUser, csrfProtection, async (req, res) => {
+router.delete("/product/:id", requireUser, conditionalCsrfProtection, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     const product = await Product.findOne({ 
       _id: req.params.id, 
-      owner: req.session.user._id,
+      owner: req.user._id,
       deleted: { $ne: true }
     });
     if (!product) {
@@ -440,7 +445,7 @@ router.delete("/product/:id", requireUser, csrfProtection, async (req, res) => {
 });
 
 // Удаление баннера пользователем
-router.delete("/banner/:id", requireUser, csrfProtection, async (req, res) => {
+router.delete("/banner/:id", requireUser, conditionalCsrfProtection, async (req, res) => {
   if (!HAS_MONGO) {
     return res.status(503).json({ success: false, message: "Нет БД" });
   }
@@ -452,13 +457,13 @@ router.delete("/banner/:id", requireUser, csrfProtection, async (req, res) => {
     }
     
     // Проверка авторизации
-    if (!req.session || !req.session.user || !req.session.user._id) {
+    if (!req.user || !req.user._id) {
       return res.status(401).json({ success: false, message: "Требуется авторизация" });
     }
     
     const banner = await Banner.findOne({ 
       _id: req.params.id, 
-      owner: req.session.user._id
+      owner: req.user._id
     });
     
     if (!banner) {
@@ -495,4 +500,3 @@ router.delete("/banner/:id", requireUser, csrfProtection, async (req, res) => {
 });
 
 module.exports = router;
-
