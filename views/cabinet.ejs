@@ -479,9 +479,12 @@
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
   </script>
 
-  <!-- Подключаем единую логику -->
+  <!-- Подключаем единую логику (только базовые функции для кабинета) -->
+  <script>
+    // Устанавливаем флаг, что это страница кабинета (не публичная)
+    window.IS_CABINET_PAGE = true;
+    window.IS_AUTH = true; // Пользователь авторизован в кабинете
+  </script>
   <script src="/script.js"></script>
-  <!-- Подключаем логику для каталога (удаление, редактирование) -->
-  <script src="/js/admin-catalog.js"></script>
 </body>
 </html>

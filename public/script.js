@@ -142,6 +142,15 @@ async function getInstagramEmbed(url) {
 // =======================
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Проверяем, находимся ли мы на странице кабинета пользователя
+  const isCabinetPage = window.IS_CABINET_PAGE === true;
+
+  // Если это страница кабинета, пропускаем инициализацию публичных функций
+  if (isCabinetPage) {
+    console.log('ℹ️ Инициализация кабинета пользователя - пропускаем публичные функции');
+    return;
+  }
+
   // FIX: Объявляем productId один раз на уровне DOMContentLoaded для избежания повторных объявлений
   let productId;
   
