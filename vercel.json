@@ -2,5 +2,16 @@
   "version": 2,
   "routes": [
     { "src": "/(.*)", "dest": "server.js" }
+  ],
+  "headers": [
+    {
+      "source": "/(.+\\.(png|jpg|jpeg|gif|webp|ico))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
   ]
 }
