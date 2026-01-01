@@ -3,16 +3,5 @@
   "routes": [
     { "handle": "filesystem" },
     { "src": "/.*", "dest": "server.js" }
-  ],
-  "headers": [
-    {
-      "source": "/(.*\\.(png|jpg|jpeg|gif|webp|ico|css|js))",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3153600, immutable"
-        }
-      ]
-    }
   ]
 }

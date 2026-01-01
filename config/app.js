@@ -105,9 +105,6 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, "../public")));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-// favicon
-app.get("/favicon.ico", (req, res) => res.status(204).end());
-app.get("/favicon.png", (req, res) => res.status(204).end());
 
 module.exports = {
   app,
