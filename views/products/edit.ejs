@@ -114,22 +114,31 @@
     <p>© 2025 EXTO Ecosystem</p>
   </footer>
 
+  <!-- Данные от сервера для JavaScript -->
+  <div id="serverData" data-product-id="<%= product._id %>" data-mode="<%= mode || 'user' %>" data-current-images="<%= JSON.stringify(currentImages) %>" style="display:none;"></div>
+
   <script src="/js/edit-form.js"></script>
   <script>
+    // Получение данных от сервера
+    const serverDataEl = document.getElementById('serverData');
+    const productId = serverDataEl.dataset.productId;
+    const mode = serverDataEl.dataset.mode;
+    const currentImagesData = JSON.parse(serverDataEl.dataset.currentImages || '[]');
+
     // Инициализация формы редактирования после загрузки DOM
     (function() {
       function initializeForm() {
         if (typeof initEditForm === 'function') {
           console.log('🚀 Инициализация формы редактирования', {
-            productId: '<%= product._id %>',
-            mode: '<%= mode || "user" %>',
-            imagesCount: <%= currentImages.length %>
+            productId: productId,
+            mode: mode,
+            imagesCount: currentImagesData.length
           });
-          
+
           initEditForm({
-            mode: '<%= mode || "user" %>',
-            productId: '<%= product._id %>',
-            currentImages: <%= JSON.stringify(currentImages) %>
+            mode: mode,
+            productId: productId,
+            currentImages: currentImagesData
           });
         } else {
           console.error('❌ Функция initEditForm не найдена');

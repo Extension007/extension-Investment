@@ -324,7 +324,7 @@ cardStyle = 'border:2px solid #4caf50;';
 cardStyle = 'border:2px solid #ff9800;';
 }
 %>
-<div class="product-card" <%- cardStyle ? `style="${cardStyle}"` : '' %>>
+<div class="product-card" <%- cardStyle ? 'style="' + cardStyle + '"' : '' %>>
 <h3 class="product-title"><%= p.name %></h3>
 <% if (p.image_url) { %>
 <img src="<%= p.image_url %>" alt="<%= p.name %>">
@@ -446,7 +446,7 @@ cardStyle = 'border:2px solid #4caf50;';
 cardStyle = 'border:2px solid #ff9800;';
 }
 %>
-<div class="product-card" <%- cardStyle ? `style="${cardStyle}"` : '' %>>
+<div class="product-card" <%- cardStyle ? 'style="' + cardStyle + '"' : '' %>>
 <h3 class="product-title"><%= s.name %></h3>
 <% if (s.image_url) { %>
 <img src="<%= s.image_url %>" alt="<%= s.name %>">
@@ -568,7 +568,7 @@ cardStyle = 'border:2px solid #4caf50;';
 cardStyle = 'border:2px solid #ff9800;';
 }
 %>
-<div class="product-card" <%- cardStyle ? `style="${cardStyle}"` : '' %>>
+<div class="product-card" <%- cardStyle ? 'style="' + cardStyle + '"' : '' %>>
 <h3 class="product-title"><%= b.title || 'Баннер' %></h3>
 <% if (b.image_url || (b.images && b.images.length > 0)) { %>
 <img src="<%= b.image_url || b.images[0] %>" alt="<%= b.title || 'Баннер' %>" style="max-height: 200px; object-fit: cover;">
