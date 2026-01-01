@@ -313,18 +313,7 @@
 <% if (products && products.length) { %>
 <div class="product-grid">
 <% products.forEach(p => { %>
-<%
-// TODO: В будущем перейти на CSS-классы (is-approved, is-rejected, is-pending)
-let cardStyle = '';
-if (p.status === 'rejected') {
-cardStyle = 'opacity:0.7;border:2px solid #f44336;';
-} else if (p.status === 'approved') {
-cardStyle = 'border:2px solid #4caf50;';
-} else {
-cardStyle = 'border:2px solid #ff9800;';
-}
-%>
-<div class="product-card" <%- cardStyle ? 'style="' + cardStyle + '"' : '' %>>
+<div class="product-card status-<%= p.status || 'pending' %>">
 <h3 class="product-title"><%= p.name %></h3>
 <% if (p.image_url) { %>
 <img src="<%= p.image_url %>" alt="<%= p.name %>">
@@ -386,10 +375,9 @@ cardStyle = 'border:2px solid #ff9800;';
 
 <div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
 <!-- Блокировка/Разблокировка -->
-<button class="btn small toggle-visibility-btn"
+<button class="btn small toggle-visibility-btn status-<%= p.status %>"
 data-id="<%= p._id %>"
-data-status="<%= p.status %>"
-style="<%- p.status === 'approved' ? 'background:#f44336;color:#fff;' : (p.status === 'rejected' ? 'background:#4caf50;color:#fff;' : 'background:#4caf50;color:#fff;') %>">
+data-status="<%= p.status %>">
 <%= p.status === 'approved' ? '🚫 Заблокировать' : '✅ Разблокировать' %>
 </button>
 
@@ -436,17 +424,7 @@ style="<%- p.status === 'approved' ? 'background:#f44336;color:#fff;' : (p.statu
 <% if (services && services.length) { %>
 <div class="product-grid">
 <% services.forEach(s => { %>
-<%
-let cardStyle = '';
-if (s.status === 'rejected') {
-cardStyle = 'opacity:0.7;border:2px solid #f44336;';
-} else if (s.status === 'approved') {
-cardStyle = 'border:2px solid #4caf50;';
-} else {
-cardStyle = 'border:2px solid #ff9800;';
-}
-%>
-<div class="product-card" <%- cardStyle ? 'style="' + cardStyle + '"' : '' %>>
+<div class="product-card status-<%= s.status || 'pending' %>">
 <h3 class="product-title"><%= s.name %></h3>
 <% if (s.image_url) { %>
 <img src="<%= s.image_url %>" alt="<%= s.name %>">
@@ -508,10 +486,9 @@ cardStyle = 'border:2px solid #ff9800;';
 
 <div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
 <!-- Блокировка/Разблокировка -->
-<button class="btn small toggle-visibility-btn"
+<button class="btn small toggle-visibility-btn status-<%= s.status %>"
 data-id="<%= s._id %>"
-data-status="<%= s.status %>"
-style="<%- s.status === 'approved' ? 'background:#f44336;color:#fff;' : (s.status === 'rejected' ? 'background:#4caf50;color:#fff;' : 'background:#4caf50;color:#fff;') %>">
+data-status="<%= s.status %>">
 <%= s.status === 'approved' ? '🚫 Заблокировать' : '✅ Разблокировать' %>
 </button>
 
@@ -558,17 +535,7 @@ style="<%- s.status === 'approved' ? 'background:#f44336;color:#fff;' : (s.statu
 <% if (banners && banners.length) { %>
 <div class="product-grid">
 <% banners.forEach(b => { %>
-<%
-let cardStyle = '';
-if (b.status === 'rejected' || b.status === 'blocked') {
-cardStyle = 'opacity:0.7;border:2px solid #f44336;';
-} else if (b.status === 'approved' || b.status === 'published') {
-cardStyle = 'border:2px solid #4caf50;';
-} else {
-cardStyle = 'border:2px solid #ff9800;';
-}
-%>
-<div class="product-card" <%- cardStyle ? 'style="' + cardStyle + '"' : '' %>>
+<div class="product-card status-<%= b.status || 'pending' %>">
 <h3 class="product-title"><%= b.title || 'Баннер' %></h3>
 <% if (b.image_url || (b.images && b.images.length > 0)) { %>
 <img src="<%= b.image_url || b.images[0] %>" alt="<%= b.title || 'Баннер' %>" style="max-height: 200px; object-fit: cover;">
@@ -632,11 +599,10 @@ cardStyle = 'border:2px solid #ff9800;';
 
 <div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
 <!-- Блокировка/Разблокировка -->
-<button class="btn small toggle-visibility-btn"
+<button class="btn small toggle-visibility-btn status-<%= b.status %>"
 data-id="<%= b._id %>"
 data-status="<%= b.status %>"
-data-type="banner"
-style="<%- (b.status === 'approved' || b.status === 'published') ? 'background:#f44336;color:#fff;' : ((b.status === 'rejected' || b.status === 'blocked') ? 'background:#4caf50;color:#fff;' : 'background:#4caf50;color:#fff;') %>">
+data-type="banner">
 <%= (b.status === 'approved' || b.status === 'published') ? '🚫 Заблокировать' : '✅ Разблокировать' %>
 </button>
 
@@ -1151,6 +1117,32 @@ firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 <script src="/script.js"></script>
 
 <style>
+/* Status styles for product cards */
+.status-approved {
+border: 2px solid #4caf50;
+}
+.status-rejected {
+opacity: 0.7;
+border: 2px solid #f44336;
+}
+.status-pending {
+border: 2px solid #ff9800;
+}
+
+/* Status styles for toggle buttons */
+.toggle-visibility-btn.status-approved {
+background:#f44336;
+color:#fff;
+}
+.toggle-visibility-btn.status-rejected {
+background:#4caf50;
+color:#fff;
+}
+.toggle-visibility-btn.status-pending {
+background:#4caf50;
+color:#fff;
+}
+
 .modal {
 display: none;
 position: fixed;
