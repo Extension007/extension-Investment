@@ -387,6 +387,195 @@ router.post("/banners/:id/reject", requireAdmin, conditionalCsrfProtection, vali
   }
 });
 
+// Модерация: одобрить услугу
+router.post("/services/:id/approve", requireAdmin, conditionalCsrfProtection, validateServiceId, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const service = await Product.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved", rejection_reason: "" },
+      { new: true }
+    );
+    if (!service) return res.status(404).json({ success: false, message: "Услуга не найдена" });
+    // Проверяем, что это действительно услуга
+    if (service.type !== "service") {
+      return res.status(400).json({ success: false, message: "Это не услуга" });
+    }
+    res.json({ success: true, status: service.status });
+  } catch (err) {
+    console.error("❌ Ошибка одобрения услуги:", err);
+    res.status(500).json({ success: false, message: "Ошибка одобрения услуги" });
+  }
+});
+
+// Модерация: отклонить услугу
+router.post("/services/:id/reject", requireAdmin, conditionalCsrfProtection, validateServiceId, validateModeration, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const { reason } = req.body;
+    const service = await Product.findByIdAndUpdate(
+      req.params.id,
+      { status: "rejected", rejection_reason: reason || "Несоответствие правилам публикации" },
+      { new: true }
+    );
+    if (!service) return res.status(404).json({ success: false, message: "Услуга не найдена" });
+    // Проверяем, что это действительно услуга
+    if (service.type !== "service") {
+      return res.status(400).json({ success: false, message: "Это не услуга" });
+    }
+    res.json({ success: true, status: service.status, rejection_reason: service.rejection_reason });
+  } catch (err) {
+    console.error("❌ Ошибка отклонения услуги:", err);
+    res.status(500).json({ success: false, message: "Ошибка отклонения услуги" });
+  }
+});
+
+// Блокировка услуги (скрытие с главной страницы)
+router.post("/services/:id/toggle-visibility", requireAdmin, conditionalCsrfProtection, validateServiceId, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const service = await Product.findById(req.params.id);
+    if (!service) return res.status(404).json({ success: false, message: "Услуга не найдена" });
+    
+    // Проверяем, что это действительно услуга
+    if (service.type !== "service") {
+      return res.status(400).json({ success: false, message: "Это не услуга" });
+    }
+    
+    const newStatus = service.status === "approved" ? "rejected" : "approved";
+    const updated = await Product.findByIdAndUpdate(
+      req.params.id,
+      { status: newStatus, rejection_reason: newStatus === "rejected" ? "Заблокировано администратором" : "" },
+      { new: true }
+    );
+    
+    res.json({ success: true, status: updated.status, message: newStatus === "rejected" ? "Услуга заблокирована" : "Услуга разблокирована" });
+  } catch (err) {
+    console.error("❌ Ошибка блокировки услуги:", err);
+    res.status(500).json({ success: false, message: "Ошибка блокировки услуги" });
+  }
+});
+
+// Редактирование услуги (форма)
+router.get("/services/:id/edit", requireAdmin, validateServiceId, conditionalCsrfToken, async (req, res) => {
+  try {
+    if (!HAS_MONGO) {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
+      return res.status(503).send("Недоступно: отсутствует подключение к БД");
+    }
+    const service = await Product.findById(req.params.id);
+    if (!service || service.deleted) {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) return res.status(404).json({ success: false, message: "Услуга не найдена" });
+      return res.redirect("/admin");
+    }
+    
+    // Проверяем, что это действительно услуга
+    if (service.type !== "service") {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) return res.status(40).json({ success: false, message: "Это не услуга" });
+      return res.redirect("/admin");
+    }
+    
+    // Генерируем CSRF токен для формы и API запросов
+    const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : null);
+    
+    res.render("products/edit", { service, mode: "admin", csrfToken: csrfTokenValue });
+  } catch (err) {
+    console.error("❌ Ошибка получения услуги для редактирования:", err);
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) return res.status(500).json({ success: false, message: "Ошибка базы данных: " + err.message });
+    res.status(500).send("Ошибка базы данных");
+  }
+});
+
+// Редактирование услуги (сохранение)
+// ВАЖНО: multer должен быть ПЕРЕД csrfProtection
+router.post("/services/:id/edit", requireAdmin, productLimiter, upload.array("images", 5), handleMulterError, csrfProtection, validateServiceId, validateService, async (req, res) => {
+  if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
+  try {
+    const service = await Product.findById(req.params.id);
+    if (!service) {
+      return res.status(404).json({ success: false, message: "Услуга не найдена" });
+    }
+
+    // Проверяем, что это действительно услуга
+    if (service.type !== "service") {
+      return res.status(400).json({ success: false, message: "Это не услуга" });
+    }
+
+    const updateData = {
+      name: req.body.name,
+      description: req.body.description,
+      price: req.body.price,
+      link: req.body.link,
+      video_url: req.body.video_url,
+      category: req.body.category,
+      type: req.body.type,
+      phone: req.body.phone,
+      email: req.body.email,
+      telegram: req.body.telegram,
+      whatsapp: req.body.whatsapp,
+      contact_method: req.body.contact_method,
+      current_images: req.body.current_images
+    };
+
+    await updateProduct(req.params.id, updateData, req.files || [], {});
+
+    // Получаем обновленную услугу для редиректа
+    const updated = await Product.findById(req.params.id);
+
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) {
+      return res.json({ success: true, message: "Услуга успешно обновлена" });
+    }
+    // Перенаправляем на страницу редактирования
+    res.redirect(`/admin/services/${updated._id}/edit`);
+  } catch (err) {
+    console.error("❌ Ошибка редактирования услуги:", err);
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) {
+      return res.status(500).json({ success: false, message: "Ошибка редактирования услуги: " + err.message });
+    }
+    res.status(500).send("Ошибка загрузки изображения или базы данных");
+  }
+});
+
+// Удаление услуги (soft delete)
+router.post("/services/:id/delete", requireAdmin, conditionalCsrfProtection, validateServiceId, async (req, res) => {
+  try {
+    if (!HAS_MONGO) {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
+      return res.status(503).send("Недоступно: отсутствует подключение к БД");
+    }
+    const service = await Product.findById(req.params.id);
+    if (!service) {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) return res.status(404).json({ success: false, message: "Услуга не найдена" });
+      return res.redirect("/admin");
+    }
+
+    // Проверяем, что это действительно услуга
+    if (service.type !== "service") {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) return res.status(400).json({ success: false, message: "Это не услуга" });
+      return res.redirect("/admin");
+    }
+
+    await deleteProduct(req.params.id);
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) return res.json({ success: true, message: "Услуга удалена" });
+    res.redirect("/admin/services");
+  } catch (err) {
+    console.error("❌ Ошибка удаления услуги:", err);
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) return res.status(500).json({ success: false, message: "Ошибка удаления услуги: " + err.message });
+    res.status(500).send("Ошибка базы данных");
+  }
+});
+
 // Каталог товаров
 router.get("/products", requireAdmin, csrfToken, async (req, res) => {
   try {

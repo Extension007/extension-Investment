@@ -24,7 +24,8 @@ body {
   align-items: center;
   gap: 20px;
 }
-.logo { font-size: 1.2rem; color: #ff3333; font-weight: 800; text-decoration: none; letter-spacing: 1px; }
+.logo { font-size: 1.2rem; color: #ff3333; font-weight: 800; text-decoration: none; letter-spacing: 1px; display: flex; align-items: center; }
+.logo-img { height: 40px; width: auto; max-width: 120px; }
 .nav { flex: 1; display: flex; justify-content: center; }
 .nav-list { display: flex; align-items: center; gap: 20px; list-style: none; }
 .nav-link { color: #eee; text-decoration: none; font-size: 0.98rem; padding: 0 12px; height: 36px; display: inline-flex; align-items: center; border-radius: 8px; }

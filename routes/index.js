@@ -80,7 +80,11 @@ router.get("/", async (req, res) => {
       Product.find(productsFilter).sort({ _id: -1 }).maxTimeMS(5000),
       Product.find(servicesFilter).sort({ _id: -1 }).maxTimeMS(5000),
       Banner.find({ status: "approved" }).sort({ _id: -1 }).maxTimeMS(5000),
-      Statistics.findOne({ key: "visitors" }),
+      Statistics.findOneAndUpdate(
+        { key: "visitors" },
+        { $inc: { value: 1 } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      ),
       User.countDocuments()
     ]);
 

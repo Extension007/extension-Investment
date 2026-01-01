@@ -1,1199 +1,1191 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Админка — Управление товарами</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css">
+<meta charset="UTF-8">
+<title>Админка — Управление товарами</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <header class="main-header">
-    <div class="container header-inner">
-      <a class="logo" href="/">EXTO</a>
-      <nav class="nav" style="display:none;">
-        <!-- Навигация скрыта -->
-      </nav>
-      <div class="header-actions">
-        <span class="user-chip">Админ-панель</span>
-        <form id="logoutForm" method="POST" action="/logout" style="display:inline;margin-left:10px;">
-          <button type="submit" class="btn outline small">Выход</button>
-        </form>
-      </div>
-    </div>
-  </header>
+<header class="main-header">
+<div class="container header-inner">
+  <a class="logo" href="/"><img src="/albamount.png" alt="EXTO" class="logo-img"></a>
+  <nav class="nav" style="display:none;">
+<!-- Навигация скрыта -->
+</nav>
+<div class="header-actions">
+<span class="user-chip">Админ-панель</span>
+<form id="logoutForm" method="POST" action="/logout" style="display:inline;margin-left:10px;">
+<button type="submit" class="btn outline small">Выход</button>
+</form>
+</div>
+</div>
+</header>
 
-  <main class="container">
-    <!-- Навигация -->
-    <div style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border-radius: 8px;">
-      <a href="/admin/products" class="btn outline" style="margin-right: 10px;">📦 Каталог товаров</a>
-      <a href="/admin/services" class="btn outline" style="margin-right: 10px;">🎯 Каталог услуг</a>
-      <a href="/admin/banners" class="btn outline" style="margin-right: 10px;">📋 Каталог баннеров</a>
-    </div>
-    
-    <!-- Модерация товаров -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Модерация товаров</h2>
-        <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-          <% if (pendingProducts && pendingProducts.length) { %>
-            <%= pendingProducts.length %> на проверке
-          <% } else { %>
-            Нет товаров на модерации
-          <% } %>
-        </span>
-      </div>
+<!-- Модерация товаров -->
+<section class="section">
+<div class="section-header">
+<h2>Модерация товаров</h2>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+<% if (pendingProducts && pendingProducts.length) { %>
+<%= pendingProducts.length %> на проверке
+<% } else { %>
+Нет товаров на модерации
+<% } %>
+</span>
+</div>
 
-      <% if (pendingProducts && pendingProducts.length) { %>
-        <div class="product-grid">
-          <% pendingProducts.forEach(p => { %>
-            <div class="product-card" style="border:2px solid #ff9800;">
-              <h3 class="product-title"><%= p.name %></h3>
-              <% if (p.image_url) { %>
-                <img src="<%= p.image_url %>" alt="<%= p.name %>">
-              <% } else { %>
-                <div class="no-image">Нет изображения</div>
-              <% } %>
+<% if (pendingProducts && pendingProducts.length) { %>
+<div class="product-grid">
+<% pendingProducts.forEach(p => { %>
+<div class="product-card" style="border:2px solid #ff9800;">
+<h3 class="product-title"><%= p.name %></h3>
+<% if (p.image_url) { %>
+<img src="<%= p.image_url %>" alt="<%= p.name %>">
+<% } else { %>
+<div class="no-image">Нет изображения</div>
+<% } %>
 
-              <div class="product-bottom">
-                <p class="product-desc"><%= p.description || "—" %></p>
-                <div class="row" style="justify-content:center; gap:8px;">
-                  <span class="muted">Цена:</span>
-                  <strong class="price"><%= p.price %></strong>
-                </div>
+<div class="product-bottom">
+<p class="product-desc"><%= p.description || "—" %></p>
+<div class="row" style="justify-content:center; gap:8px;">
+<span class="muted">Цена:</span>
+<strong class="price"><%= p.price %></strong>
+</div>
 
-                <% if (p.owner) { %>
-                  <% if (typeof p.owner === 'object' && p.owner.username) { %>
-                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= p.owner.username %></p>
-                  <% } else { %>
-                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= p.owner %></p>
-                  <% } %>
-                <% } else { %>
-                  <p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
-                <% } %>
+<% if (p.owner) { %>
+<% if (typeof p.owner === 'object' && p.owner.username) { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= p.owner.username %></p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= p.owner %></p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
+<% } %>
 
-                <div class="product-actions" style="flex-direction:column;gap:8px;">
-                  <button class="btn small approve-btn" data-id="<%= p._id %>" data-type="product" style="background:#4caf50;color:#fff;">
-                    ✅ Одобрить
-                  </button>
-                  <button class="btn small reject-btn" data-id="<%= p._id %>" data-type="product" style="background:#f44336;color:#fff;">
-                    ❌ Отклонить
-                  </button>
-                  <% if (p.link) { %>
-                    <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
-                  <% } %>
-                  <% if (p.video_url) { %>
-                    <button class="btn small outline" data-video="<%= p.video_url %>">Видео</button>
-                  <% } %>
-                </div>
-              </div>
-            </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <p class="empty-state">Нет товаров на модерации</p>
-      <% } %>
-    </section>
+<div class="product-actions" style="flex-direction:column;gap:8px;">
+<button class="btn small approve-btn" data-id="<%= p._id %>" data-type="product" style="background:#4caf50;color:#fff;">
+✅ Одобрить
+</button>
+<button class="btn small reject-btn" data-id="<%= p._id %>" data-type="product" style="background:#f44336;color:#fff;">
+❌ Отклонить
+</button>
+<% if (p.link) { %>
+<a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
+<% } %>
+<% if (p.video_url) { %>
+<button class="btn small outline" data-video="<%= p.video_url %>">Видео</button>
+<% } %>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Нет товаров на модерации</p>
+<% } %>
+</section>
 
-    <!-- Модерация услуг -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Модерация услуг</h2>
-        <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-          <% if (pendingServices && pendingServices.length) { %>
-            <%= pendingServices.length %> на проверке
-          <% } else { %>
-            Нет услуг на модерации
-          <% } %>
-        </span>
-      </div>
+<!-- Модерация услуг -->
+<section class="section">
+<div class="section-header">
+<h2>Модерация услуг</h2>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+<% if (pendingServices && pendingServices.length) { %>
+<%= pendingServices.length %> на проверке
+<% } else { %>
+Нет услуг на модерации
+<% } %>
+</span>
+</div>
 
-      <% if (pendingServices && pendingServices.length) { %>
-        <div class="product-grid">
-          <% pendingServices.forEach(s => { %>
-            <div class="product-card" style="border:2px solid #ff9800;">
-              <h3 class="product-title"><%= s.name %></h3>
-              <% if (s.image_url) { %>
-                <img src="<%= s.image_url %>" alt="<%= s.name %>">
-              <% } else { %>
-                <div class="no-image">Нет изображения</div>
-              <% } %>
+<% if (pendingServices && pendingServices.length) { %>
+<div class="product-grid">
+<% pendingServices.forEach(s => { %>
+<div class="product-card" style="border:2px solid #ff9800;">
+<h3 class="product-title"><%= s.name %></h3>
+<% if (s.image_url) { %>
+<img src="<%= s.image_url %>" alt="<%= s.name %>">
+<% } else { %>
+<div class="no-image">Нет изображения</div>
+<% } %>
 
-              <div class="product-bottom">
-                <p class="product-desc"><%= s.description || "—" %></p>
-                <div class="row" style="justify-content:center; gap:8px;">
-                  <span class="muted">Цена:</span>
-                  <strong class="price"><%= s.price %></strong>
-                </div>
+<div class="product-bottom">
+<p class="product-desc"><%= s.description || "—" %></p>
+<div class="row" style="justify-content:center; gap:8px;">
+<span class="muted">Цена:</span>
+<strong class="price"><%= s.price %></strong>
+</div>
 
-                <% if (s.owner) { %>
-                  <% if (typeof s.owner === 'object' && s.owner.username) { %>
-                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= s.owner.username %></p>
-                  <% } else { %>
-                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= s.owner %></p>
-                  <% } %>
-                <% } else { %>
-                  <p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
-                <% } %>
+<% if (s.owner) { %>
+<% if (typeof s.owner === 'object' && s.owner.username) { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= s.owner.username %></p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= s.owner %></p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
+<% } %>
 
-                <div class="product-actions" style="flex-direction:column;gap:8px;">
-                  <button class="btn small approve-btn" data-id="<%= s._id %>" data-type="service" style="background:#4caf50;color:#fff;">
-                    ✅ Одобрить
-                  </button>
-                  <button class="btn small reject-btn" data-id="<%= s._id %>" data-type="service" style="background:#f44336;color:#fff;">
-                    ❌ Отклонить
-                  </button>
-                  <% if (s.link) { %>
-                    <a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">Ссылка</a>
-                  <% } %>
-                  <% if (s.video_url) { %>
-                    <button class="btn small outline" data-video="<%= s.video_url %>">Видео</button>
-                  <% } %>
-                </div>
-              </div>
-            </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <p class="empty-state">Нет услуг на модерации</p>
-      <% } %>
-    </section>
+<div class="product-actions" style="flex-direction:column;gap:8px;">
+<button class="btn small approve-btn" data-id="<%= s._id %>" data-type="service" style="background:#4caf50;color:#fff;">
+✅ Одобрить
+</button>
+<button class="btn small reject-btn" data-id="<%= s._id %>" data-type="service" style="background:#f44336;color:#fff;">
+❌ Отклонить
+</button>
+<% if (s.link) { %>
+<a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">Ссылка</a>
+<% } %>
+<% if (s.video_url) { %>
+<button class="btn small outline" data-video="<%= s.video_url %>">Видео</button>
+<% } %>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Нет услуг на модерации</p>
+<% } %>
+</section>
 
-    <!-- Модерация баннеров -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Модерация баннеров</h2>
-        <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-          <% if (pendingBanners && pendingBanners.length) { %>
-            <%= pendingBanners.length %> на проверке
-          <% } else { %>
-            Нет баннеров на модерации
-          <% } %>
-        </span>
-      </div>
+<!-- Модерация баннеров -->
+<section class="section">
+<div class="section-header">
+<h2>Модерация баннеров</h2>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+<% if (pendingBanners && pendingBanners.length) { %>
+<%= pendingBanners.length %> на проверке
+<% } else { %>
+Нет баннеров на модерации
+<% } %>
+</span>
+</div>
 
-      <% if (pendingBanners && pendingBanners.length) { %>
-        <div class="product-grid">
-          <% pendingBanners.forEach(b => { %>
-            <div class="product-card" style="border:2px solid #ff9800;">
-              <h3 class="product-title">Баннер</h3>
-              <% if (b.image_url) { %>
-                <img src="<%= b.image_url %>" alt="Баннер" style="max-height: 200px; object-fit: cover;">
-              <% } else { %>
-                <div class="no-image">Нет изображения</div>
-              <% } %>
+<% if (pendingBanners && pendingBanners.length) { %>
+<div class="product-grid">
+<% pendingBanners.forEach(b => { %>
+<div class="product-card" style="border:2px solid #ff9800;">
+<h3 class="product-title">Баннер</h3>
+<% if (b.image_url) { %>
+<img src="<%= b.image_url %>" alt="Баннер" style="max-height: 200px; object-fit: cover;">
+<% } else { %>
+<div class="no-image">Нет изображения</div>
+<% } %>
 
-              <div class="product-bottom">
-                <% if (b.owner) { %>
-                  <% if (typeof b.owner === 'object' && b.owner.username) { %>
-                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= b.owner.username %></p>
-                  <% } else { %>
-                    <p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= b.owner %></p>
-                  <% } %>
-                <% } else { %>
-                  <p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
-                <% } %>
+<div class="product-bottom">
+<% if (b.owner) { %>
+<% if (typeof b.owner === 'object' && b.owner.username) { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= b.owner.username %></p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= b.owner %></p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
+<% } %>
 
-                <% if (b.link) { %>
-                  <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-                    🔗 <a href="<%= b.link %>" target="_blank" rel="noopener" style="color:#666;"><%= b.link %></a>
-                  </p>
-                <% } %>
+<% if (b.link) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+🔗 <a href="<%= b.link %>" target="_blank" rel="noopener" style="color:#666;"><%= b.link %></a>
+</p>
+<% } %>
 
-                <div class="product-actions" style="flex-direction:column;gap:8px;">
-                  <button class="btn small approve-banner-btn" data-id="<%= b._id %>" style="background:#4caf50;color:#fff;">
-                    ✅ Одобрить
-                  </button>
-                  <button class="btn small reject-banner-btn" data-id="<%= b._id %>" style="background:#f44336;color:#fff;">
-                    ❌ Отклонить
-                  </button>
-                  <% if (b.link) { %>
-                    <a class="btn small outline" href="<%= b.link %>" target="_blank" rel="noopener">Ссылка</a>
-                  <% } %>
-                </div>
-              </div>
-            </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <p class="empty-state">Нет баннеров на модерации</p>
-      <% } %>
-    </section>
+<div class="product-actions" style="flex-direction:column;gap:8px;">
+<button class="btn small approve-banner-btn" data-id="<%= b._id %>" style="background:#4caf50;color:#fff;">
+✅ Одобрить
+</button>
+<button class="btn small reject-banner-btn" data-id="<%= b._id %>" style="background:#f44336;color:#fff;">
+❌ Отклонить
+</button>
+<% if (b.link) { %>
+<a class="btn small outline" href="<%= b.link %>" target="_blank" rel="noopener">Ссылка</a>
+<% } %>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Нет баннеров на модерации</p>
+<% } %>
+</section>
 
-    <!-- Добавить товар/услугу -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Добавить товар/услугу</h2>
-      </div>
-      <form id="adminCreateProductForm" method="POST" action="/admin/products" enctype="multipart/form-data" class="form-grid">
-        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-        <!-- Селектор типа публикации -->
-        <div class="form-section">
-          <label for="adminType">Тип публикации:</label>
-          <select id="adminType" name="type" required>
-            <option value="product">Товар</option>
-            <option value="service">Услуга</option>
-          </select>
-        </div>
-        
-        <input type="text" name="name" placeholder="Название" required>
-        <textarea name="description" placeholder="Описание" rows="4"></textarea>
-        <input type="number" name="price" placeholder="Цена" min="0" step="1" required>
-        <input type="url" name="link" placeholder="Ссылка">
-        <input type="url" name="video_url" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)">
-        
-        <!-- Поля контактов продавца -->
-        <div class="form-section">
-          <h3>Контакты продавца</h3>
-          <input type="tel" name="phone" placeholder="Телефон">
-          <input type="email" name="email" placeholder="Email">
-          <input type="text" name="telegram" placeholder="Telegram (например: @username)">
-          <input type="text" name="whatsapp" placeholder="WhatsApp (номер телефона)">
-          <textarea name="contact_method" placeholder="Способ связи (например: Звоните с 9:00 до 18:00)" rows="2"></textarea>
-        </div>
-        
-        <!-- Загрузка до 5 изображений -->
-        <div class="form-section">
-          <label for="adminImages">Изображения (до 5 шт.):</label>
-          <input type="file" id="adminImages" name="images" accept="image/*" multiple data-max-files="5">
-          <div id="adminImagePreview" class="image-preview-container" style="display:none;margin-top:10px;"></div>
-          <small class="form-hint">Можно выбрать до 5 изображений</small>
-        </div>
-        
-        <select name="category" required>
-          <option value="home">Для дома</option>
-          <option value="beauty">Красота и здоровье</option>
-          <option value="auto">Авто мото</option>
-          <option value="electric">Электрика</option>
-          <option value="electronics">Электроника</option>
-          <option value="plumbing">Сантехника</option>
-        </select>
-        
-        <button type="submit" class="btn primary">Добавить</button>
-      </form>
-      <div id="adminCreateMsg" class="note" style="margin-top:10px;"></div>
-    </section>
+<!-- Добавить товар/услугу -->
+<section class="section">
+<div class="section-header">
+<h2>Добавить товар/услугу</h2>
+</div>
+<form id="adminCreateProductForm" method="POST" action="/admin/products" enctype="multipart/form-data" class="form-grid">
+<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<!-- Селектор типа публикации -->
+<div class="form-section">
+<label for="adminType">Тип публикации:</label>
+<select id="adminType" name="type" required>
+<option value="product">Товар</option>
+<option value="service">Услуга</option>
+</select>
+</div>
 
-    <!-- Добавить баннер -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Добавить баннер</h2>
-      </div>
-      <form id="adminCreateBannerForm" method="POST" action="/admin/banners" enctype="multipart/form-data" class="form-grid">
-        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-        <input type="text" name="title" placeholder="Название баннера" required>
-        <textarea name="description" placeholder="Описание" rows="4"></textarea>
-        <input type="number" name="price" placeholder="Цена" min="0" step="1">
-        <input type="url" name="link" placeholder="Ссылка">
-        <input type="url" name="video_url" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)">
-        <input type="text" name="category" placeholder="Категория (реклама, промо и т.д.)">
-        
-        <!-- Загрузка до 5 изображений -->
-        <div class="form-section">
-          <label for="adminBannerImages">Изображения (до 5 шт.):</label>
-          <input type="file" id="adminBannerImages" name="images" accept="image/*" multiple data-max-files="5">
-          <div id="adminBannerImagePreview" class="image-preview-container" style="display:none;margin-top:10px;"></div>
-          <small class="form-hint">Можно выбрать до 5 изображений</small>
-        </div>
-        
-        <select name="status">
-          <option value="published">Опубликовано</option>
-          <option value="draft">Черновик</option>
-          <option value="pending">На модерации</option>
-        </select>
-        
-        <button type="submit" class="btn primary">Добавить баннер</button>
-      </form>
-      <div id="adminCreateBannerMsg" class="note" style="margin-top:10px;"></div>
-    </section>
+<input type="text" name="name" placeholder="Название" required>
+<textarea name="description" placeholder="Описание" rows="4"></textarea>
+<input type="number" name="price" placeholder="Цена" min="0" step="1" required>
+<input type="url" name="link" placeholder="Ссылка">
+<input type="url" name="video_url" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)">
 
-    <!-- Каталог товаров -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Каталог товаров</h2>
-        <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-          Всего: <%= products ? products.length : 0 %>
-        </span>
-      </div>
+<!-- Поля контактов продавца -->
+<div class="form-section">
+<h3>Контакты продавца</h3>
+<input type="tel" name="phone" placeholder="Телефон">
+<input type="email" name="email" placeholder="Email">
+<input type="text" name="telegram" placeholder="Telegram (например: @username)">
+<input type="text" name="whatsapp" placeholder="WhatsApp (номер телефона)">
+<textarea name="contact_method" placeholder="Способ связи (например: Звоните с 9:00 до 18:00)" rows="2"></textarea>
+</div>
 
-      <% if (products && products.length) { %>
-        <div class="product-grid">
-          <% products.forEach(p => { %>
-            <%
-              // TODO: В будущем перейти на CSS-классы (is-approved, is-rejected, is-pending)
-              let cardStyle = '';
-              if (p.status === 'rejected') {
-                cardStyle = 'opacity:0.7;border:2px solid #f44336;';
-              } else if (p.status === 'approved') {
-                cardStyle = 'border:2px solid #4caf50;';
-              } else {
-                cardStyle = 'border:2px solid #ff9800;';
-              }
-            %>
-            <div class="product-card" <%- cardStyle ? `style="${cardStyle}"` : '' %>>
-              <h3 class="product-title"><%= p.name %></h3>
-              <% if (p.image_url) { %>
-                <img src="<%= p.image_url %>" alt="<%= p.name %>">
-              <% } else { %>
-                <div class="no-image">Нет изображения</div>
-              <% } %>
+<!-- Загрузка до 5 изображений -->
+<div class="form-section">
+<label for="adminImages">Изображения (до 5 шт.):</label>
+<input type="file" id="adminImages" name="images" accept="image/*" multiple data-max-files="5">
+<div id="adminImagePreview" class="image-preview-container" style="display:none;margin-top:10px;"></div>
+<small class="form-hint">Можно выбрать до 5 изображений</small>
+</div>
 
-              <div class="product-bottom">
-                <!-- Статус карточки -->
-                <div style="text-align:center;margin-bottom:10px;">
-                  <% if (p.status === "pending") { %>
-                    <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ⏳ На модерации
-                    </span>
-                  <% } else if (p.status === "approved") { %>
-                    <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ✅ Опубликовано
-                    </span>
-                  <% } else if (p.status === "rejected") { %>
-                    <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ❌ Заблокировано
-                    </span>
-                  <% } else { %>
-                    <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ⚠️ Без статуса
-                    </span>
-                  <% } %>
-                </div>
+<select name="category" required>
+<option value="home">Для дома</option>
+<option value="beauty">Красота и здоровье</option>
+<option value="auto">Авто мото</option>
+<option value="electric">Электрика</option>
+<option value="electronics">Электроника</option>
+<option value="plumbing">Сантехника</option>
+</select>
 
-                <p class="product-desc"><%= p.description || "—" %></p>
-                <div class="row" style="justify-content:center; gap:8px;">
-                  <span class="muted">Цена:</span>
-                  <strong class="price"><%= p.price %></strong>
-                </div>
+<button type="submit" class="btn primary">Добавить</button>
+</form>
+<div id="adminCreateMsg" class="note" style="margin-top:10px;"></div>
+</section>
 
-                <!-- Владелец -->
-                <% if (p.owner) { %>
-                  <% if (typeof p.owner === 'object' && p.owner.username) { %>
-                    <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-                      👤 Владелец: <%= p.owner.username %>
-                    </p>
-                  <% } else { %>
-                    <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-                      👤 Владелец: ID <%= p.owner %>
-                    </p>
-                  <% } %>
-                <% } else { %>
-                  <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
-                    ⚠️ Владелец не указан (создано админом)
-                  </p>
-                <% } %>
+<!-- Добавить баннер -->
+<section class="section">
+<div class="section-header">
+<h2>Добавить баннер</h2>
+</div>
+<form id="adminCreateBannerForm" method="POST" action="/admin/banners" enctype="multipart/form-data" class="form-grid">
+<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<input type="text" name="title" placeholder="Название баннера" required>
+<textarea name="description" placeholder="Описание" rows="4"></textarea>
+<input type="number" name="price" placeholder="Цена" min="0" step="1">
+<input type="url" name="link" placeholder="Ссылка">
+<input type="url" name="video_url" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)">
+<input type="text" name="category" placeholder="Категория (реклама, промо и т.д.)">
 
-                <!-- Категория -->
-                <% if (categories && p.category) { %>
-                  <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-                    📁 <%= categories[p.category] || p.category %>
-                  </p>
-                <% } %>
+<!-- Загрузка до 5 изображений -->
+<div class="form-section">
+<label for="adminBannerImages">Изображения (до 5 шт.):</label>
+<input type="file" id="adminBannerImages" name="images" accept="image/*" multiple data-max-files="5">
+<div id="adminBannerImagePreview" class="image-preview-container" style="display:none;margin-top:10px;"></div>
+<small class="form-hint">Можно выбрать до 5 изображений</small>
+</div>
 
-                <div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
-                  <!-- Блокировка/Разблокировка -->
-                  <button class="btn small toggle-visibility-btn"
-                          data-id="<%= p._id %>"
-                          data-status="<%= p.status %>"
-                          style="<%- p.status === 'approved' ? 'background:#f44336;color:#fff;' : (p.status === 'rejected' ? 'background:#4caf50;color:#fff;' : 'background:#4caf50;color:#fff;') %>">
-                    <%= p.status === 'approved' ? '🚫 Заблокировать' : '✅ Разблокировать' %>
-                  </button>
-                  
-                  <a class="btn small outline" href="/admin/products/<%= p._id %>/edit">✏️ Редактировать</a>
-                  
-                  <form method="POST" action="/admin/products/<%= p._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
-                    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-                    <button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
-                  </form>
-                  
-                  <% if (p.link) { %>
-                    <a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">🔗 Ссылка</a>
-                  <% } %>
-                  <% if (p.video_url) { %>
-                    <button class="btn small outline" data-video="<%= p.video_url %>">▶️ Видео</button>
-                  <% } %>
-                </div>
+<select name="status">
+<option value="published">Опубликовано</option>
+<option value="draft">Черновик</option>
+<option value="pending">На модерации</option>
+</select>
 
-                <!-- Рейтинг (только отображение) -->
-                <div class="product-rating" data-id="<%= p._id %>" style="margin-top:10px;">
-                  <button class="btn icon" type="button" disabled aria-label="Лайк">▲</button>
-                  <span class="result"><%= (p.likes || 0) - (p.dislikes || 0) %></span>
-                  <button class="btn icon" type="button" disabled aria-label="Дизлайк">▼</button>
-                  <span class="votes">(<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)</span>
-                </div>
-              </div>
-            </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <p class="empty-state">Пока нет товаров</p>
-      <% } %>
-    </section>
+<button type="submit" class="btn primary">Добавить баннер</button>
+</form>
+<div id="adminCreateBannerMsg" class="note" style="margin-top:10px;"></div>
+</section>
 
-    <!-- Каталог услуг -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Каталог услуг</h2>
-        <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-          Всего: <%= services ? services.length : 0 %>
-        </span>
-      </div>
+<!-- Каталог товаров -->
+<section class="section">
+<div class="section-header">
+<h2>Каталог товаров</h2>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+Всего: <%= products ? products.length : 0 %>
+</span>
+</div>
 
-      <% if (services && services.length) { %>
-        <div class="product-grid">
-          <% services.forEach(s => { %>
-            <% 
-              let cardStyle = '';
-              if (s.status === 'rejected') {
-                cardStyle = 'opacity:0.7;border:2px solid #f44336;';
-              } else if (s.status === 'approved') {
-                cardStyle = 'border:2px solid #4caf50;';
-              } else {
-                cardStyle = 'border:2px solid #ff9800;';
-              }
-            %>
-            <div class="product-card" <%- cardStyle ? `style="${cardStyle}"` : '' %>>
-              <h3 class="product-title"><%= s.name %></h3>
-              <% if (s.image_url) { %>
-                <img src="<%= s.image_url %>" alt="<%= s.name %>">
-              <% } else { %>
-                <div class="no-image">Нет изображения</div>
-              <% } %>
+<% if (products && products.length) { %>
+<div class="product-grid">
+<% products.forEach(p => { %>
+<%
+// TODO: В будущем перейти на CSS-классы (is-approved, is-rejected, is-pending)
+let cardStyle = '';
+if (p.status === 'rejected') {
+cardStyle = 'opacity:0.7;border:2px solid #f44336;';
+} else if (p.status === 'approved') {
+cardStyle = 'border:2px solid #4caf50;';
+} else {
+cardStyle = 'border:2px solid #ff9800;';
+}
+%>
+<div class="product-card" <%- cardStyle ? `style="${cardStyle}"` : '' %>>
+<h3 class="product-title"><%= p.name %></h3>
+<% if (p.image_url) { %>
+<img src="<%= p.image_url %>" alt="<%= p.name %>">
+<% } else { %>
+<div class="no-image">Нет изображения</div>
+<% } %>
 
-              <div class="product-bottom">
-                <!-- Статус карточки -->
-                <div style="text-align:center;margin-bottom:10px;">
-                  <% if (s.status === "pending") { %>
-                    <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ⏳ На модерации
-                    </span>
-                  <% } else if (s.status === "approved") { %>
-                    <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ✅ Опубликовано
-                    </span>
-                  <% } else if (s.status === "rejected") { %>
-                    <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ❌ Заблокировано
-                    </span>
-                  <% } else { %>
-                    <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ⚠️ Без статуса
-                    </span>
-                  <% } %>
-                </div>
+<div class="product-bottom">
+<!-- Статус карточки -->
+<div style="text-align:center;margin-bottom:10px;">
+<% if (p.status === "pending") { %>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⏳ На модерации
+</span>
+<% } else if (p.status === "approved") { %>
+<span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+✅ Опубликовано
+</span>
+<% } else if (p.status === "rejected") { %>
+<span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+❌ Заблокировано
+</span>
+<% } else { %>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⚠️ Без статуса
+</span>
+<% } %>
+</div>
 
-                <p class="product-desc"><%= s.description || "—" %></p>
-                <div class="row" style="justify-content:center; gap:8px;">
-                  <span class="muted">Цена:</span>
-                  <strong class="price"><%= s.price %></strong>
-                </div>
+<p class="product-desc"><%= p.description || "—" %></p>
+<div class="row" style="justify-content:center; gap:8px;">
+<span class="muted">Цена:</span>
+<strong class="price"><%= p.price %></strong>
+</div>
 
-                <!-- Владелец -->
-                <% if (s.owner) { %>
-                  <% if (typeof s.owner === 'object' && s.owner.username) { %>
-                    <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-                      👤 Владелец: <%= s.owner.username %>
-                    </p>
-                  <% } else { %>
-                    <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-                      👤 Владелец: ID <%= s.owner %>
-                    </p>
-                  <% } %>
-                <% } else { %>
-                  <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
-                    ⚠️ Владелец не указан (создано админом)
-                  </p>
-                <% } %>
+<!-- Владелец -->
+<% if (p.owner) { %>
+<% if (typeof p.owner === 'object' && p.owner.username) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Владелец: <%= p.owner.username %>
+</p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Владелец: ID <%= p.owner %>
+</p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
+⚠️ Владелец не указан (создано админом)
+</p>
+<% } %>
 
-                <!-- Категория -->
-                <% if (categories && s.category) { %>
-                  <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-                    📁 <%= categories[s.category] || s.category %>
-                  </p>
-                <% } %>
+<!-- Категория -->
+<% if (categories && p.category) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+📁 <%= categories[p.category] || p.category %>
+</p>
+<% } %>
 
-                <div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
-                  <!-- Блокировка/Разблокировка -->
-                  <button class="btn small toggle-visibility-btn"
-                          data-id="<%= s._id %>"
-                          data-status="<%= s.status %>"
-                          style="<%- s.status === 'approved' ? 'background:#f44336;color:#fff;' : (s.status === 'rejected' ? 'background:#4caf50;color:#fff;' : 'background:#4caf50;color:#fff;') %>">
-                    <%= s.status === 'approved' ? '🚫 Заблокировать' : '✅ Разблокировать' %>
-                  </button>
-                  
-                  <a class="btn small outline" href="/admin/services/<%= s._id %>/edit">✏️ Редактировать</a>
-                  
-                  <form method="POST" action="/admin/services/<%= s._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
-                    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-                    <button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
-                  </form>
-                  
-                  <% if (s.link) { %>
-                    <a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">🔗 Ссылка</a>
-                  <% } %>
-                  <% if (s.video_url) { %>
-                    <button class="btn small outline" data-video="<%= s.video_url %>">▶️ Видео</button>
-                  <% } %>
-                </div>
+<div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
+<!-- Блокировка/Разблокировка -->
+<button class="btn small toggle-visibility-btn"
+data-id="<%= p._id %>"
+data-status="<%= p.status %>"
+style="<%- p.status === 'approved' ? 'background:#f44336;color:#fff;' : (p.status === 'rejected' ? 'background:#4caf50;color:#fff;' : 'background:#4caf50;color:#fff;') %>">
+<%= p.status === 'approved' ? '🚫 Заблокировать' : '✅ Разблокировать' %>
+</button>
 
-                <!-- Рейтинг (только отображение) -->
-                <div class="product-rating" data-id="<%= s._id %>" style="margin-top:10px;">
-                  <button class="btn icon" type="button" disabled aria-label="Лайк">▲</button>
-                  <span class="result"><%= (s.likes || 0) - (s.dislikes || 0) %></span>
-                  <button class="btn icon" type="button" disabled aria-label="Дизлайк">▼</button>
-                  <span class="votes">(<%= (s.likes || 0) + (s.dislikes || 0) %> голосов)</span>
-                </div>
-              </div>
-            </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <p class="empty-state">Пока нет услуг</p>
-      <% } %>
-    </section>
+<a class="btn small outline" href="/admin/products/<%= p._id %>/edit">✏️ Редактировать</a>
 
-    <!-- Каталог баннеров -->
-    <section class="section">
-      <div class="section-header">
-        <h2>Каталог баннеров</h2>
-        <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-          Всего: <%= banners ? banners.length : 0 %>
-        </span>
-      </div>
+<form method="POST" action="/admin/products/<%= p._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
+<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
+</form>
 
-      <% if (banners && banners.length) { %>
-        <div class="product-grid">
-          <% banners.forEach(b => { %>
-            <% 
-              let cardStyle = '';
-              if (b.status === 'rejected' || b.status === 'blocked') {
-                cardStyle = 'opacity:0.7;border:2px solid #f44336;';
-              } else if (b.status === 'approved' || b.status === 'published') {
-                cardStyle = 'border:2px solid #4caf50;';
-              } else {
-                cardStyle = 'border:2px solid #ff9800;';
-              }
-            %>
-            <div class="product-card" <%- cardStyle ? `style="${cardStyle}"` : '' %>>
-              <h3 class="product-title"><%= b.title || 'Баннер' %></h3>
-              <% if (b.image_url || (b.images && b.images.length > 0)) { %>
-                <img src="<%= b.image_url || b.images[0] %>" alt="<%= b.title || 'Баннер' %>" style="max-height: 200px; object-fit: cover;">
-              <% } else { %>
-                <div class="no-image">Нет изображения</div>
-              <% } %>
+<% if (p.link) { %>
+<a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">🔗 Ссылка</a>
+<% } %>
+<% if (p.video_url) { %>
+<button class="btn small outline" data-video="<%= p.video_url %>">▶️ Видео</button>
+<% } %>
+</div>
 
-              <div class="product-bottom">
-                <!-- Статус карточки -->
-                <div style="text-align:center;margin-bottom:10px;">
-                  <% if (b.status === "pending") { %>
-                    <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ⏳ На модерации
-                    </span>
-                  <% } else if (b.status === "approved" || b.status === "published") { %>
-                    <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ✅ Опубликовано
-                    </span>
-                  <% } else if (b.status === "rejected" || b.status === "blocked") { %>
-                    <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ❌ Заблокировано
-                    </span>
-                  <% } else { %>
-                    <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-                      ⚠️ Без статуса
-                    </span>
-                  <% } %>
-                </div>
+<!-- Рейтинг (только отображение) -->
+<div class="product-rating" data-id="<%= p._id %>" style="margin-top:10px;">
+<button class="btn icon" type="button" disabled aria-label="Лайк">▲</button>
+<span class="result"><%= (p.likes || 0) - (p.dislikes || 0) %></span>
+<button class="btn icon" type="button" disabled aria-label="Дизлайк">▼</button>
+<span class="votes">(<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)</span>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Пока нет товаров</p>
+<% } %>
+</section>
 
-                <p class="product-desc"><%= b.description || "—" %></p>
-                <% if (b.price && b.price > 0) { %>
-                  <div class="row" style="justify-content:center; gap:8px;">
-                    <span class="muted">Цена:</span>
-                    <strong class="price"><%= b.price %></strong>
-                  </div>
-                <% } %>
+<!-- Каталог услуг -->
+<section class="section">
+<div class="section-header">
+<h2>Каталог услуг</h2>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+Всего: <%= services ? services.length : 0 %>
+</span>
+</div>
 
-                <!-- Владелец -->
-                <% if (b.owner) { %>
-                  <% if (typeof b.owner === 'object' && b.owner.username) { %>
-                    <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-                      👤 Владелец: <%= b.owner.username %>
-                    </p>
-                  <% } else { %>
-                    <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-                      👤 Владелец: ID <%= b.owner %>
-                    </p>
-                  <% } %>
-                <% } else { %>
-                  <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
-                    ⚠️ Владелец не указан (создано админом)
-                  </p>
-                <% } %>
+<% if (services && services.length) { %>
+<div class="product-grid">
+<% services.forEach(s => { %>
+<%
+let cardStyle = '';
+if (s.status === 'rejected') {
+cardStyle = 'opacity:0.7;border:2px solid #f44336;';
+} else if (s.status === 'approved') {
+cardStyle = 'border:2px solid #4caf50;';
+} else {
+cardStyle = 'border:2px solid #ff9800;';
+}
+%>
+<div class="product-card" <%- cardStyle ? `style="${cardStyle}"` : '' %>>
+<h3 class="product-title"><%= s.name %></h3>
+<% if (s.image_url) { %>
+<img src="<%= s.image_url %>" alt="<%= s.name %>">
+<% } else { %>
+<div class="no-image">Нет изображения</div>
+<% } %>
 
-                <!-- Категория -->
-                <% if (b.category) { %>
-                  <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-                    📁 <%= b.category %>
-                  </p>
-                <% } %>
+<div class="product-bottom">
+<!-- Статус карточки -->
+<div style="text-align:center;margin-bottom:10px;">
+<% if (s.status === "pending") { %>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⏳ На модерации
+</span>
+<% } else if (s.status === "approved") { %>
+<span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+✅ Опубликовано
+</span>
+<% } else if (s.status === "rejected") { %>
+<span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+❌ Заблокировано
+</span>
+<% } else { %>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⚠️ Без статуса
+</span>
+<% } %>
+</div>
 
-                <div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
-                  <!-- Блокировка/Разблокировка -->
-                  <button class="btn small toggle-visibility-btn"
-                          data-id="<%= b._id %>"
-                          data-status="<%= b.status %>"
-                          data-type="banner"
-                          style="<%- (b.status === 'approved' || b.status === 'published') ? 'background:#f44336;color:#fff;' : ((b.status === 'rejected' || b.status === 'blocked') ? 'background:#4caf50;color:#fff;' : 'background:#4caf50;color:#fff;') %>">
-                    <%= (b.status === 'approved' || b.status === 'published') ? '🚫 Заблокировать' : '✅ Разблокировать' %>
-                  </button>
-                  
-                  <a class="btn small outline" href="/admin/banners/<%= b._id %>/edit">✏️ Редактировать</a>
-                  
-                  <form method="POST" action="/admin/banners/<%= b._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить баннер?');">
-                    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-                    <button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
-                  </form>
-                  
-                  <% if (b.link) { %>
-                    <a class="btn small outline" href="<%= b.link %>" target="_blank" rel="noopener">🔗 Ссылка</a>
-                  <% } %>
-                  <% if (b.video_url) { %>
-                    <button class="btn small outline" data-video="<%= b.video_url %>">▶️ Видео</button>
-                  <% } %>
-                </div>
+<p class="product-desc"><%= s.description || "—" %></p>
+<div class="row" style="justify-content:center; gap:8px;">
+<span class="muted">Цена:</span>
+<strong class="price"><%= s.price %></strong>
+</div>
 
-                <!-- Рейтинг (только отображение) -->
-                <div class="product-rating" data-id="<%= b._id %>" style="margin-top:10px;">
-                  <button class="btn icon" type="button" disabled aria-label="Лайк">▲</button>
-                  <span class="result"><%= (b.rating_up || 0) - (b.rating_down || 0) %></span>
-                  <button class="btn icon" type="button" disabled aria-label="Дизлайк">▼</button>
-                  <span class="votes">(<%= (b.rating_up || 0) + (b.rating_down || 0) %> голосов)</span>
-                </div>
-              </div>
-            </div>
-          <% }) %>
-        </div>
-      <% } else { %>
-        <p class="empty-state">Пока нет баннеров</p>
-      <% } %>
-    </section>
-  </main>
+<!-- Владелец -->
+<% if (s.owner) { %>
+<% if (typeof s.owner === 'object' && s.owner.username) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Владелец: <%= s.owner.username %>
+</p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Владелец: ID <%= s.owner %>
+</p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
+⚠️ Владелец не указан (создано админом)
+</p>
+<% } %>
 
- <footer class="footer">
-  <p>© 2025 EXTO Ecosystem</p>
+<!-- Категория -->
+<% if (categories && s.category) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+📁 <%= categories[s.category] || s.category %>
+</p>
+<% } %>
+
+<div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
+<!-- Блокировка/Разблокировка -->
+<button class="btn small toggle-visibility-btn"
+data-id="<%= s._id %>"
+data-status="<%= s.status %>"
+style="<%- s.status === 'approved' ? 'background:#f44336;color:#fff;' : (s.status === 'rejected' ? 'background:#4caf50;color:#fff;' : 'background:#4caf50;color:#fff;') %>">
+<%= s.status === 'approved' ? '🚫 Заблокировать' : '✅ Разблокировать' %>
+</button>
+
+<a class="btn small outline" href="/admin/services/<%= s._id %>/edit">✏️ Редактировать</a>
+
+<form method="POST" action="/admin/services/<%= s._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
+<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
+</form>
+
+<% if (s.link) { %>
+<a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">🔗 Ссылка</a>
+<% } %>
+<% if (s.video_url) { %>
+<button class="btn small outline" data-video="<%= s.video_url %>">▶️ Видео</button>
+<% } %>
+</div>
+
+<!-- Рейтинг (только отображение) -->
+<div class="product-rating" data-id="<%= s._id %>" style="margin-top:10px;">
+<button class="btn icon" type="button" disabled aria-label="Лайк">▲</button>
+<span class="result"><%= (s.likes || 0) - (s.dislikes || 0) %></span>
+<button class="btn icon" type="button" disabled aria-label="Дизлайк">▼</button>
+<span class="votes">(<%= (s.likes || 0) + (s.dislikes || 0) %> голосов)</span>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Пока нет услуг</p>
+<% } %>
+</section>
+
+<!-- Каталог баннеров -->
+<section class="section">
+<div class="section-header">
+<h2>Каталог баннеров</h2>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+Всего: <%= banners ? banners.length : 0 %>
+</span>
+</div>
+
+<% if (banners && banners.length) { %>
+<div class="product-grid">
+<% banners.forEach(b => { %>
+<%
+let cardStyle = '';
+if (b.status === 'rejected' || b.status === 'blocked') {
+cardStyle = 'opacity:0.7;border:2px solid #f44336;';
+} else if (b.status === 'approved' || b.status === 'published') {
+cardStyle = 'border:2px solid #4caf50;';
+} else {
+cardStyle = 'border:2px solid #ff9800;';
+}
+%>
+<div class="product-card" <%- cardStyle ? `style="${cardStyle}"` : '' %>>
+<h3 class="product-title"><%= b.title || 'Баннер' %></h3>
+<% if (b.image_url || (b.images && b.images.length > 0)) { %>
+<img src="<%= b.image_url || b.images[0] %>" alt="<%= b.title || 'Баннер' %>" style="max-height: 200px; object-fit: cover;">
+<% } else { %>
+<div class="no-image">Нет изображения</div>
+<% } %>
+
+<div class="product-bottom">
+<!-- Статус карточки -->
+<div style="text-align:center;margin-bottom:10px;">
+<% if (b.status === "pending") { %>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⏳ На модерации
+</span>
+<% } else if (b.status === "approved" || b.status === "published") { %>
+<span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+✅ Опубликовано
+</span>
+<% } else if (b.status === "rejected" || b.status === "blocked") { %>
+<span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+❌ Заблокировано
+</span>
+<% } else { %>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⚠️ Без статуса
+</span>
+<% } %>
+</div>
+
+<p class="product-desc"><%= b.description || "—" %></p>
+<% if (b.price && b.price > 0) { %>
+<div class="row" style="justify-content:center; gap:8px;">
+<span class="muted">Цена:</span>
+<strong class="price"><%= b.price %></strong>
+</div>
+<% } %>
+
+<!-- Владелец -->
+<% if (b.owner) { %>
+<% if (typeof b.owner === 'object' && b.owner.username) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Владелец: <%= b.owner.username %>
+</p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Владелец: ID <%= b.owner %>
+</p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
+⚠️ Владелец не указан (создано админом)
+</p>
+<% } %>
+
+<!-- Категория -->
+<% if (b.category) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+📁 <%= b.category %>
+</p>
+<% } %>
+
+<div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
+<!-- Блокировка/Разблокировка -->
+<button class="btn small toggle-visibility-btn"
+data-id="<%= b._id %>"
+data-status="<%= b.status %>"
+data-type="banner"
+style="<%- (b.status === 'approved' || b.status === 'published') ? 'background:#f44336;color:#fff;' : ((b.status === 'rejected' || b.status === 'blocked') ? 'background:#4caf50;color:#fff;' : 'background:#4caf50;color:#fff;') %>">
+<%= (b.status === 'approved' || b.status === 'published') ? '🚫 Заблокировать' : '✅ Разблокировать' %>
+</button>
+
+<a class="btn small outline" href="/admin/banners/<%= b._id %>/edit">✏️ Редактировать</a>
+
+<form method="POST" action="/admin/banners/<%= b._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить баннер?');">
+<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
+</form>
+
+<% if (b.link) { %>
+<a class="btn small outline" href="<%= b.link %>" target="_blank" rel="noopener">🔗 Ссылка</a>
+<% } %>
+<% if (b.video_url) { %>
+<button class="btn small outline" data-video="<%= b.video_url %>">▶️ Видео</button>
+<% } %>
+</div>
+
+<!-- Рейтинг (только отображение) -->
+<div class="product-rating" data-id="<%= b._id %>" style="margin-top:10px;">
+<button class="btn icon" type="button" disabled aria-label="Лайк">▲</button>
+<span class="result"><%= (b.rating_up || 0) - (b.rating_down || 0) %></span>
+<button class="btn icon" type="button" disabled aria-label="Дизлайк">▼</button>
+<span class="votes">(<%= (b.rating_up || 0) + (b.rating_down || 0) %> голосов)</span>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Пока нет баннеров</p>
+<% } %>
+</section>
+</main>
+
+<footer class="footer">
+<p>© 2025 EXTO Ecosystem</p>
 </footer>
 
 <!-- Модальное окно для отклонения -->
 <div id="rejectModal" class="modal" aria-hidden="true" style="display:none;">
-  <div class="modal-content" role="dialog" aria-modal="true" aria-label="Отклонить карточку">
-    <button class="close" data-close-reject aria-label="Закрыть">&times;</button>
-    <h3>Отклонить карточку</h3>
-    <form id="rejectForm">
-      <textarea name="reason" placeholder="Причина отклонения (необязательно)" rows="4" style="width:100%;padding:8px;border-radius:6px;border:1px solid #444;background:#2b2b2b;color:#fff;resize:vertical;"></textarea>
-      <button type="submit" class="btn" style="background:#f44336;color:#fff;margin-top:10px;">Отклонить</button>
-    </form>
-  </div>
+<div class="modal-content" role="dialog" aria-modal="true" aria-label="Отклонить карточку">
+<button class="close" data-close-reject aria-label="Закрыть">&times;</button>
+<h3>Отклонить карточку</h3>
+<form id="rejectForm">
+<textarea name="reason" placeholder="Причина отклонения (необязательно)" rows="4" style="width:100%;padding:8px;border-radius:6px;border:1px solid #444;background:#2b2b2b;color:#fff;resize:vertical;"></textarea>
+<button type="submit" class="btn" style="background:#f44336;color:#fff;margin-top:10px;">Отклонить</button>
+</form>
+</div>
 </div>
 
 <!-- FIX: Полноэкранный overlay для YouTube видео -->
 <div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
-  <div class="video-overlay-container">
-    <button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
-    <div class="video-overlay-iframe-container" id="videoIframeContainer">
-      <!-- FIX: iframe создается динамически по клику -->
-    </div>
-  </div>
+<div class="video-overlay-container">
+<button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
+<div class="video-overlay-iframe-container" id="videoIframeContainer">
+<!-- FIX: iframe создается динамически по клику -->
+</div>
+</div>
 </div>
 
 <script>
-  // FIX: УДАЛЕН ДУБЛИРУЮЩИЙ КОД - теперь используется единая логика из public/script.js
-  // Все функции для работы с видео (getVideoType, extractVideoId, createYouTubeIframe и т.д.)
-  // теперь находятся в public/script.js и используются через единый API
+// FIX: УДАЛЕН ДУБЛИРУЮЩИЙ КОД - теперь используется единая логика из public/script.js
+// Все функции для работы с видео (getVideoType, extractVideoId, createYouTubeIframe и т.д.)
+// теперь находятся в public/script.js и используются через единый API
 
-  // Глобальный CSRF токен
-  const CSRF_TOKEN = "<%- typeof csrfToken !== 'undefined' ? csrfToken : '' %>";
+// Глобальный CSRF токен
+const CSRF_TOKEN = "<%- typeof csrfToken !== 'undefined' ? csrfToken : '' %>";
 
-  // Helper функция для POST запросов с CSRF
-  async function postJSON(url, data = {}) {
-    return fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-Token": CSRF_TOKEN
-      },
-      body: JSON.stringify(data)
-    });
-  }
+// Helper функция для POST запросов с CSRF
+async function postJSON(url, data = {}) {
+return fetch(url, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+"X-CSRF-Token": CSRF_TOKEN
+},
+body: JSON.stringify(data)
+});
+}
 
-  document.addEventListener("DOMContentLoaded", () => {
-    console.log("🔧 Инициализация админ-панели");
+document.addEventListener("DOMContentLoaded", () => {
+console.log("🔧 Инициализация админ-панели");
 
-    // Обработка выхода
-    const logoutForm = document.getElementById("logoutForm");
-    if (logoutForm) {
-      logoutForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        if (!confirm("Вы уверены, что хотите выйти?")) return;
-        try {
-          const res = await fetch("/logout", { method: "POST" });
-          if (res.ok) {
-            window.location.href = "/";
-          }
-        } catch (err) {
-          console.error("Ошибка выхода:", err);
-          window.location.href = "/";
-        }
-      });
-    }
+// Обработка выхода
+const logoutForm = document.getElementById("logoutForm");
+if (logoutForm) {
+logoutForm.addEventListener("submit", async (e) => {
+e.preventDefault();
+if (!confirm("Вы уверены, что хотите выйти?")) return;
+try {
+const res = await fetch("/logout", { method: "POST" });
+if (res.ok) {
+window.location.href = "/";
+}
+} catch (err) {
+console.error("Ошибка выхода:", err);
+window.location.href = "/";
+}
+});
+}
 
-    // Блокировка/Разблокировка карточек (товары, услуги, баннеры)
-    const toggleBtns = document.querySelectorAll(".toggle-visibility-btn");
-    toggleBtns.forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const id = btn.getAttribute("data-id");
-        const currentStatus = btn.getAttribute("data-status");
-        const itemType = btn.getAttribute("data-type") || "product"; // product, service, banner
-        const action = (currentStatus === "approved" || currentStatus === "published") ? "заблокировать" : "разблокировать";
-        if (!confirm(`Вы уверены, что хотите ${action} эту карточку?`)) return;
+// Блокировка/Разблокировка карточек (товары, услуги, баннеры)
+const toggleBtns = document.querySelectorAll(".toggle-visibility-btn");
+toggleBtns.forEach(btn => {
+btn.addEventListener("click", async (e) => {
+e.preventDefault();
+e.stopPropagation();
+const id = btn.getAttribute("data-id");
+const currentStatus = btn.getAttribute("data-status");
+const itemType = btn.getAttribute("data-type") || "product"; // product, service, banner
+const action = (currentStatus === "approved" || currentStatus === "published") ? "заблокировать" : "разблокировать";
+if (!confirm(`Вы уверены, что хотите ${action} эту карточку?`)) return;
 
-        try {
-          // Определяем эндпоинт в зависимости от типа
-          let endpoint;
-          if (itemType === "banner") {
-            endpoint = `/admin/banners/${id}/toggle-visibility`;
-          } else if (itemType === "service") {
-            endpoint = `/admin/services/${id}/toggle-visibility`;
-          } else {
-            endpoint = `/admin/products/${id}/toggle-visibility`;
-          }
+try {
+// Определяем эндпоинт в зависимости от типа
+let endpoint;
+if (itemType === "banner") {
+endpoint = `/admin/banners/${id}/toggle-visibility`;
+} else if (itemType === "service") {
+endpoint = `/admin/services/${id}/toggle-visibility`;
+} else {
+endpoint = `/admin/products/${id}/toggle-visibility`;
+}
 
-          const res = await postJSON(endpoint);
-          const data = await res.json();
-          if (data.success) {
-            alert(data.message || "Статус карточки изменен");
-            location.reload();
-          } else {
-            alert("Ошибка: " + (data.message || "Не удалось изменить статус"));
-          }
-        } catch (err) {
-          console.error("❌ Ошибка блокировки:", err);
-          alert("Ошибка сети: " + err.message);
-        }
-      });
-    });
+const res = await postJSON(endpoint);
+const data = await res.json();
+if (data.success) {
+alert(data.message || "Статус карточки изменен");
+location.reload();
+} else {
+alert("Ошибка: " + (data.message || "Не удалось изменить статус"));
+}
+} catch (err) {
+console.error("❌ Ошибка блокировки:", err);
+alert("Ошибка сети: " + err.message);
+}
+});
+});
 
-    // Модерация: одобрение
-    const approveBtns = document.querySelectorAll(".approve-btn");
-    approveBtns.forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const id = btn.getAttribute("data-id");
-        if (!confirm("Одобрить эту карточку?")) return;
-        try {
-          // Определяем эндпоинт в зависимости от типа карточки
-          const itemType = btn.getAttribute("data-type") || "product";
-          let endpoint;
-          if (itemType === "banner") {
-            endpoint = `/admin/banners/${id}/approve`;
-          } else if (itemType === "service") {
-            endpoint = `/admin/services/${id}/approve`;
-          } else {
-            endpoint = `/admin/products/${id}/approve`;
-          }
-          const res = await postJSON(endpoint);
-          const data = await res.json();
-          if (data.success) {
-            alert("Карточка одобрена!");
-            location.reload();
-          } else {
-            alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-          }
-        } catch (err) {
-          console.error("❌ Ошибка одобрения:", err);
-          alert("Ошибка сети: " + err.message);
-        }
-      });
-    });
+// Модерация: одобрение
+const approveBtns = document.querySelectorAll(".approve-btn");
+approveBtns.forEach(btn => {
+btn.addEventListener("click", async (e) => {
+e.preventDefault();
+e.stopPropagation();
+const id = btn.getAttribute("data-id");
+if (!confirm("Одобрить эту карточку?")) return;
+try {
+// Определяем эндпоинт в зависимости от типа карточки
+const itemType = btn.getAttribute("data-type") || "product";
+let endpoint;
+if (itemType === "banner") {
+endpoint = `/admin/banners/${id}/approve`;
+} else if (itemType === "service") {
+endpoint = `/admin/services/${id}/approve`;
+} else {
+endpoint = `/admin/products/${id}/approve`;
+}
+const res = await postJSON(endpoint);
+const data = await res.json();
+if (data.success) {
+alert("Карточка одобрена!");
+location.reload();
+} else {
+alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+}
+} catch (err) {
+console.error("❌ Ошибка одобрения:", err);
+alert("Ошибка сети: " + err.message);
+}
+});
+});
 
-    // Модерация: отклонение
-    const rejectModal = document.getElementById("rejectModal");
-    const rejectForm = document.getElementById("rejectForm");
-    let currentRejectId = null;
-    let currentRejectType = "product"; // Тип карточки для отклонения
+// Модерация: отклонение
+const rejectModal = document.getElementById("rejectModal");
+const rejectForm = document.getElementById("rejectForm");
+let currentRejectId = null;
+let currentRejectType = "product"; // Тип карточки для отклонения
 
-    document.querySelectorAll(".reject-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        currentRejectId = btn.getAttribute("data-id");
-        currentRejectType = btn.getAttribute("data-type") || "product"; // Сохраняем тип для использования в форме
-        rejectModal.style.display = "block";
-        rejectModal.setAttribute("aria-hidden", "false");
-      });
-    });
+document.querySelectorAll(".reject-btn").forEach(btn => {
+btn.addEventListener("click", () => {
+currentRejectId = btn.getAttribute("data-id");
+currentRejectType = btn.getAttribute("data-type") || "product"; // Сохраняем тип для использования в форме
+rejectModal.style.display = "block";
+rejectModal.setAttribute("aria-hidden", "false");
+});
+});
 
-    const closeRejectBtn = document.querySelector("[data-close-reject]");
-    if (closeRejectBtn) {
-      closeRejectBtn.addEventListener("click", () => {
-        rejectModal.style.display = "none";
-        rejectModal.setAttribute("aria-hidden", "true");
-        rejectForm && rejectForm.reset();
-        currentRejectId = null;
-        currentRejectType = "product";
-      });
-    }
+const closeRejectBtn = document.querySelector("[data-close-reject]");
+if (closeRejectBtn) {
+closeRejectBtn.addEventListener("click", () => {
+rejectModal.style.display = "none";
+rejectModal.setAttribute("aria-hidden", "true");
+rejectForm && rejectForm.reset();
+currentRejectId = null;
+currentRejectType = "product";
+});
+}
 
-    if (rejectForm) {
-      rejectForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        if (!currentRejectId) return;
-        const reason = new FormData(rejectForm).get("reason") || "Несоответствие правилам публикации";
-        try {
-          // Определяем эндпоинт в зависимости от типа карточки
-          let rejectEndpoint;
-          if (currentRejectType === "banner") {
-            rejectEndpoint = `/admin/banners/${currentRejectId}/reject`;
-          } else if (currentRejectType === "service") {
-            rejectEndpoint = `/admin/services/${currentRejectId}/reject`;
-          } else {
-            rejectEndpoint = `/admin/products/${currentRejectId}/reject`;
-          }
-          const res = await postJSON(rejectEndpoint, { reason });
-          const data = await res.json();
-          if (data.success) {
-            alert("Карточка отклонена");
-            location.reload();
-          } else {
-            alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-          }
-        } catch (err) {
-          console.error("Ошибка отклонения:", err);
-          alert("Ошибка сети: " + err.message);
-        }
-      });
-    }
+if (rejectForm) {
+rejectForm.addEventListener("submit", async (e) => {
+e.preventDefault();
+if (!currentRejectId) return;
+const reason = new FormData(rejectForm).get("reason") || "Несоответствие правилам публикации";
+try {
+// Определяем эндпоинт в зависимости от типа карточки
+let rejectEndpoint;
+if (currentRejectType === "banner") {
+rejectEndpoint = `/admin/banners/${currentRejectId}/reject`;
+} else if (currentRejectType === "service") {
+rejectEndpoint = `/admin/services/${currentRejectId}/reject`;
+} else {
+rejectEndpoint = `/admin/products/${currentRejectId}/reject`;
+}
+const res = await postJSON(rejectEndpoint, { reason });
+const data = await res.json();
+if (data.success) {
+alert("Карточка отклонена");
+location.reload();
+} else {
+alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+}
+} catch (err) {
+console.error("Ошибка отклонения:", err);
+alert("Ошибка сети: " + err.message);
+}
+});
+}
 
-    // Модерация баннеров: одобрение
-    const approveBannerBtns = document.querySelectorAll(".approve-banner-btn");
-    approveBannerBtns.forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const id = btn.getAttribute("data-id");
-        if (!confirm("Одобрить этот баннер?")) return;
-        try {
-          const res = await postJSON(`/admin/banners/${id}/approve`);
-          const data = await res.json();
-          if (data.success) {
-            alert("Баннер одобрен!");
-            location.reload();
-          } else {
-            alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-          }
-        } catch (err) {
-          console.error("❌ Ошибка одобрения баннера:", err);
-          alert("Ошибка сети: " + err.message);
-        }
-      });
-    });
+// Модерация баннеров: одобрение
+const approveBannerBtns = document.querySelectorAll(".approve-banner-btn");
+approveBannerBtns.forEach(btn => {
+btn.addEventListener("click", async (e) => {
+e.preventDefault();
+e.stopPropagation();
+const id = btn.getAttribute("data-id");
+if (!confirm("Одобрить этот баннер?")) return;
+try {
+const res = await postJSON(`/admin/banners/${id}/approve`);
+const data = await res.json();
+if (data.success) {
+alert("Баннер одобрен!");
+location.reload();
+} else {
+alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+}
+} catch (err) {
+console.error("❌ Ошибка одобрения баннера:", err);
+alert("Ошибка сети: " + err.message);
+}
+});
+});
 
-    // Модерация баннеров: отклонение
-    document.querySelectorAll(".reject-banner-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const id = btn.getAttribute("data-id");
-        const reason = prompt("Укажите причину отклонения (необязательно):") || "Несоответствие правилам публикации";
-        if (reason === null) return; // Пользователь отменил
+// Модерация баннеров: отклонение
+document.querySelectorAll(".reject-banner-btn").forEach(btn => {
+btn.addEventListener("click", () => {
+const id = btn.getAttribute("data-id");
+const reason = prompt("Укажите причину отклонения (необязательно):") || "Несоответствие правилам публикации";
+if (reason === null) return; // Пользователь отменил
 
-        (async () => {
-          try {
-            const res = await postJSON(`/admin/banners/${id}/reject`, { reason });
-            const data = await res.json();
-            if (data.success) {
-              alert("Баннер отклонен");
-              location.reload();
-            } else {
-              alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-            }
-          } catch (err) {
-            console.error("Ошибка отклонения баннера:", err);
-            alert("Ошибка сети: " + err.message);
-          }
-        })();
-      });
-    });
+(async () => {
+try {
+const res = await postJSON(`/admin/banners/${id}/reject`, { reason });
+const data = await res.json();
+if (data.success) {
+alert("Баннер отклонен");
+location.reload();
+} else {
+alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+}
+} catch (err) {
+console.error("Ошибка отклонения баннера:", err);
+alert("Ошибка сети: " + err.message);
+}
+})();
+});
+});
 
-    // FIX: УДАЛЕН ДУБЛИРУЮЩИЙ КОД ВИДЕО-ЛОГИКИ - теперь используется единая логика из public/script.js
-    // Функции openVideoOverlay, closeVideoOverlay и обработчики кликов находятся в public/script.js
+// FIX: УДАЛЕН ДУБЛИРУЮЩИЙ КОД ВИДЕО-ЛОГИКИ - теперь используется единая логика из public/script.js
+// Функции openVideoOverlay, closeVideoOverlay и обработчики кликов находятся в public/script.js
 
-    // Обработка формы создания товара админом
-    const adminCreateForm = document.getElementById('adminCreateProductForm');
-    const adminCreateMsg = document.getElementById('adminCreateMsg');
-    const adminImagesInput = document.getElementById('adminImages');
-    const adminImagePreview = document.getElementById('adminImagePreview');
+// Обработка формы создания товара админом
+const adminCreateForm = document.getElementById('adminCreateProductForm');
+const adminCreateMsg = document.getElementById('adminCreateMsg');
+const adminImagesInput = document.getElementById('adminImages');
+const adminImagePreview = document.getElementById('adminImagePreview');
 
-    if (adminCreateForm) {
-      adminCreateForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        // Проверка количества изображений
-        if (adminImagesInput && adminImagesInput.files.length > 5) {
-          adminCreateMsg.textContent = 'Максимальное количество изображений: 5';
-          adminCreateMsg.style.color = '#b00020';
-          return;
-        }
-        
-        adminCreateMsg.textContent = 'Отправка...';
-        adminCreateMsg.style.color = '#666';
-        
-        const formData = new FormData(adminCreateForm);
-        
-        try {
-          const res = await fetch('/admin/products', {
-            method: 'POST',
-            body: formData
-          });
-          
-          const contentType = res.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            const data = await res.json();
-            if (data.success) {
-              adminCreateMsg.textContent = 'Товар успешно добавлен!';
-              adminCreateMsg.style.color = 'green';
-              adminCreateForm.reset();
-              adminImagePreview.innerHTML = '';
-              adminImagePreview.style.display = 'none';
-              setTimeout(() => {
-                location.reload();
-              }, 1500);
-            } else {
-              adminCreateMsg.textContent = data.message || 'Ошибка при добавлении товара';
-              adminCreateMsg.style.color = '#b00020';
-            }
-          } else {
-            // Если ответ HTML (redirect), перезагружаем страницу
-            location.reload();
-          }
-        } catch (err) {
-          adminCreateMsg.textContent = 'Ошибка сети: ' + err.message;
-          adminCreateMsg.style.color = '#b00020';
-        }
-      });
-    }
+if (adminCreateForm) {
+adminCreateForm.addEventListener('submit', async function(e) {
+e.preventDefault();
 
-    // Обработка формы создания баннера админом
-    const adminCreateBannerForm = document.getElementById('adminCreateBannerForm');
-    const adminCreateBannerMsg = document.getElementById('adminCreateBannerMsg');
-    const adminBannerImagesInput = document.getElementById('adminBannerImages');
-    const adminBannerImagePreview = document.getElementById('adminBannerImagePreview');
+// Проверка количества изображений
+if (adminImagesInput && adminImagesInput.files.length > 5) {
+adminCreateMsg.textContent = 'Максимальное количество изображений: 5';
+adminCreateMsg.style.color = '#b00020';
+return;
+}
 
-    if (adminCreateBannerForm) {
-      adminCreateBannerForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        // Проверка количества изображений
-        if (adminBannerImagesInput && adminBannerImagesInput.files.length > 5) {
-          adminCreateBannerMsg.textContent = 'Максимальное количество изображений: 5';
-          adminCreateBannerMsg.style.color = '#b00020';
-          return;
-        }
-        
-        adminCreateBannerMsg.textContent = 'Отправка...';
-        adminCreateBannerMsg.style.color = '#666';
-        
-        const formData = new FormData(adminCreateBannerForm);
-        
-        try {
-          const res = await fetch('/admin/banners', {
-            method: 'POST',
-            body: formData
-          });
-          
-          const contentType = res.headers.get("content-type");
-          if (contentType && contentType.includes("application/json")) {
-            const data = await res.json();
-            if (data.success) {
-              adminCreateBannerMsg.textContent = '✅ Баннер успешно добавлен!';
-              adminCreateBannerMsg.style.color = 'green';
-              adminCreateBannerForm.reset();
-              adminBannerImagePreview.innerHTML = '';
-              adminBannerImagePreview.style.display = 'none';
-              setTimeout(() => {
-                location.reload();
-              }, 1500);
-            } else {
-              adminCreateBannerMsg.textContent = data.message || 'Ошибка при добавлении баннера';
-              adminCreateBannerMsg.style.color = '#b00020';
-            }
-          } else {
-            // Если ответ HTML (redirect), перезагружаем страницу
-            location.reload();
-          }
-        } catch (err) {
-          adminCreateBannerMsg.textContent = 'Ошибка сети: ' + err.message;
-          adminCreateBannerMsg.style.color = '#b00020';
-        }
-      });
-    }
+adminCreateMsg.textContent = 'Отправка...';
+adminCreateMsg.style.color = '#666';
 
-    // Превью изображений для админ-формы баннеров
-    if (adminBannerImagesInput && adminBannerImagePreview) {
-      adminBannerImagesInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        const maxFiles = 5;
-        
-        if (files.length > maxFiles) {
-          alert(`Можно выбрать не более ${maxFiles} изображений`);
-          e.target.value = '';
-          adminBannerImagePreview.innerHTML = '';
-          adminBannerImagePreview.style.display = 'none';
-          return;
-        }
-        
-        adminBannerImagePreview.innerHTML = '';
-        
-        if (files.length === 0) {
-          adminBannerImagePreview.style.display = 'none';
-          return;
-        }
-        
-        adminBannerImagePreview.style.display = 'grid';
-        adminBannerImagePreview.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
-        adminBannerImagePreview.style.gap = '10px';
-        adminBannerImagePreview.style.marginTop = '10px';
-        
-        files.forEach((file) => {
-          if (file.size > 5 * 1024 * 1024) {
-            alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
-            return;
-          }
-          
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const div = document.createElement('div');
-            div.style.position = 'relative';
-            div.style.aspectRatio = '1';
-            div.style.overflow = 'hidden';
-            div.style.borderRadius = '8px';
-            div.style.border = '2px solid #ddd';
-            
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            
-            div.appendChild(img);
-            adminBannerImagePreview.appendChild(div);
-          };
-          reader.readAsDataURL(file);
-        });
-      });
-    }
+const formData = new FormData(adminCreateForm);
 
-    // Превью изображений для админ-формы
-    if (adminImagesInput && adminImagePreview) {
-      adminImagesInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        const maxFiles = 5;
-        
-        if (files.length > maxFiles) {
-          alert(`Можно выбрать не более ${maxFiles} изображений`);
-          e.target.value = '';
-          adminImagePreview.innerHTML = '';
-          adminImagePreview.style.display = 'none';
-          return;
-        }
-        
-        adminImagePreview.innerHTML = '';
-        
-        if (files.length === 0) {
-          adminImagePreview.style.display = 'none';
-          return;
-        }
-        
-        adminImagePreview.style.display = 'grid';
-        
-        files.forEach((file) => {
-          if (file.size > 5 * 1024 * 1024) {
-            alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
-            return;
-          }
-          
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            const div = document.createElement('div');
-            div.style.position = 'relative';
-            div.style.aspectRatio = '1';
-            div.style.overflow = 'hidden';
-            div.style.borderRadius = '8px';
-            div.style.border = '2px solid #ddd';
-            
-            const img = document.createElement('img');
-            img.src = e.target.result;
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'cover';
-            
-            div.appendChild(img);
-            adminImagePreview.appendChild(div);
-          };
-          reader.readAsDataURL(file);
-        });
-      });
-    }
-  });
+try {
+const res = await fetch('/admin/products', {
+method: 'POST',
+body: formData
+});
+
+const contentType = res.headers.get("content-type");
+if (contentType && contentType.includes("application/json")) {
+const data = await res.json();
+if (data.success) {
+adminCreateMsg.textContent = 'Товар успешно добавлен!';
+adminCreateMsg.style.color = 'green';
+adminCreateForm.reset();
+adminImagePreview.innerHTML = '';
+adminImagePreview.style.display = 'none';
+setTimeout(() => {
+location.reload();
+}, 1500);
+} else {
+adminCreateMsg.textContent = data.message || 'Ошибка при добавлении товара';
+adminCreateMsg.style.color = '#b00020';
+}
+} else {
+// Если ответ HTML (redirect), перезагружаем страницу
+location.reload();
+}
+} catch (err) {
+adminCreateMsg.textContent = 'Ошибка сети: ' + err.message;
+adminCreateMsg.style.color = '#b00020';
+}
+});
+}
+
+// Обработка формы создания баннера админом
+const adminCreateBannerForm = document.getElementById('adminCreateBannerForm');
+const adminCreateBannerMsg = document.getElementById('adminCreateBannerMsg');
+const adminBannerImagesInput = document.getElementById('adminBannerImages');
+const adminBannerImagePreview = document.getElementById('adminBannerImagePreview');
+
+if (adminCreateBannerForm) {
+adminCreateBannerForm.addEventListener('submit', async function(e) {
+e.preventDefault();
+
+// Проверка количества изображений
+if (adminBannerImagesInput && adminBannerImagesInput.files.length > 5) {
+adminCreateBannerMsg.textContent = 'Максимальное количество изображений: 5';
+adminCreateBannerMsg.style.color = '#b00020';
+return;
+}
+
+adminCreateBannerMsg.textContent = 'Отправка...';
+adminCreateBannerMsg.style.color = '#666';
+
+const formData = new FormData(adminCreateBannerForm);
+
+try {
+const res = await fetch('/admin/banners', {
+method: 'POST',
+body: formData
+});
+
+const contentType = res.headers.get("content-type");
+if (contentType && contentType.includes("application/json")) {
+const data = await res.json();
+if (data.success) {
+adminCreateBannerMsg.textContent = '✅ Баннер успешно добавлен!';
+adminCreateBannerMsg.style.color = 'green';
+adminCreateBannerForm.reset();
+adminBannerImagePreview.innerHTML = '';
+adminBannerImagePreview.style.display = 'none';
+setTimeout(() => {
+location.reload();
+}, 1500);
+} else {
+adminCreateBannerMsg.textContent = data.message || 'Ошибка при добавлении баннера';
+adminCreateBannerMsg.style.color = '#b00020';
+}
+} else {
+// Если ответ HTML (redirect), перезагружаем страницу
+location.reload();
+}
+} catch (err) {
+adminCreateBannerMsg.textContent = 'Ошибка сети: ' + err.message;
+adminCreateBannerMsg.style.color = '#b00020';
+}
+});
+}
+
+// Превью изображений для админ-формы баннеров
+if (adminBannerImagesInput && adminBannerImagePreview) {
+adminBannerImagesInput.addEventListener('change', function(e) {
+const files = Array.from(e.target.files);
+const maxFiles = 5;
+
+if (files.length > maxFiles) {
+alert(`Можно выбрать не более ${maxFiles} изображений`);
+e.target.value = '';
+adminBannerImagePreview.innerHTML = '';
+adminBannerImagePreview.style.display = 'none';
+return;
+}
+
+adminBannerImagePreview.innerHTML = '';
+
+if (files.length === 0) {
+adminBannerImagePreview.style.display = 'none';
+return;
+}
+
+adminBannerImagePreview.style.display = 'grid';
+adminBannerImagePreview.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
+adminBannerImagePreview.style.gap = '10px';
+adminBannerImagePreview.style.marginTop = '10px';
+
+files.forEach((file) => {
+if (file.size > 5 * 1024 * 1024) {
+alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
+return;
+}
+
+const reader = new FileReader();
+reader.onload = function(e) {
+const div = document.createElement('div');
+div.style.position = 'relative';
+div.style.aspectRatio = '1';
+div.style.overflow = 'hidden';
+div.style.borderRadius = '8px';
+div.style.border = '2px solid #ddd';
+
+const img = document.createElement('img');
+img.src = e.target.result;
+img.style.width = '100%';
+img.style.height = '100%';
+img.style.objectFit = 'cover';
+
+div.appendChild(img);
+adminBannerImagePreview.appendChild(div);
+};
+reader.readAsDataURL(file);
+});
+});
+}
+
+// Превью изображений для админ-формы
+if (adminImagesInput && adminImagePreview) {
+adminImagesInput.addEventListener('change', function(e) {
+const files = Array.from(e.target.files);
+const maxFiles = 5;
+
+if (files.length > maxFiles) {
+alert(`Можно выбрать не более ${maxFiles} изображений`);
+e.target.value = '';
+adminImagePreview.innerHTML = '';
+adminImagePreview.style.display = 'none';
+return;
+}
+
+adminImagePreview.innerHTML = '';
+
+if (files.length === 0) {
+adminImagePreview.style.display = 'none';
+return;
+}
+
+adminImagePreview.style.display = 'grid';
+
+files.forEach((file) => {
+if (file.size > 5 * 1024 * 1024) {
+alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
+return;
+}
+
+const reader = new FileReader();
+reader.onload = function(e) {
+const div = document.createElement('div');
+div.style.position = 'relative';
+div.style.aspectRatio = '1';
+div.style.overflow = 'hidden';
+div.style.borderRadius = '8px';
+div.style.border = '2px solid #ddd';
+
+const img = document.createElement('img');
+img.src = e.target.result;
+img.style.width = '100%';
+img.style.height = '100%';
+img.style.objectFit = 'cover';
+
+div.appendChild(img);
+adminImagePreview.appendChild(div);
+};
+reader.readAsDataURL(file);
+});
+});
+}
+});
 </script>
 
 <!-- FIX: Загружаем YouTube IFrame API перед основным скриптом для единой логики видео -->
 <script>
-  // Загрузка YouTube IFrame API
-  var tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  var firstScriptTag = document.getElementsByTagName('script')[0];
-  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+// Загрузка YouTube IFrame API
+var tag = document.createElement('script');
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 </script>
 
 <!-- FIX: Подключаем единую логику видео-плееров из public/script.js -->
 <script src="/script.js"></script>
 
 <style>
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 2000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.8);
-  }
-  .modal-content {
-    background-color: #1a1a1a;
-    margin: 5% auto;
-    padding: 20px;
-    border: 1px solid #444;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 600px;
-    position: relative;
-  }
-  .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    background: none;
-    border: none;
-    position: absolute;
-    right: 15px;
-    top: 10px;
-  }
-  .close:hover {
-    color: #fff;
-  }
+.modal {
+display: none;
+position: fixed;
+z-index: 2000;
+left: 0;
+top: 0;
+width: 100%;
+height: 100%;
+background-color: rgba(0,0,0,0.8);
+}
+.modal-content {
+background-color: #1a1a1a;
+margin: 5% auto;
+padding: 20px;
+border: 1px solid #444;
+border-radius: 12px;
+width: 90%;
+max-width: 600px;
+position: relative;
+}
+.close {
+color: #aaa;
+float: right;
+font-size: 28px;
+font-weight: bold;
+cursor: pointer;
+background: none;
+border: none;
+position: absolute;
+right: 15px;
+top: 10px;
+}
+.close:hover {
+color: #fff;
+}
 </style>
 </body>
 </html>
