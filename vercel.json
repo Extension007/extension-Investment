@@ -1,6 +1,7 @@
 {
   "version": 2,
   "routes": [
+    { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "server.js" }
   ],
   "headers": [
@@ -9,7 +10,7 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=31536000, immutable"
+          "value": "public, max-age=3153600, immutable"
         }
       ]
     }

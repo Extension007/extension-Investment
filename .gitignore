@@ -73,7 +73,20 @@ dist
 
 # Gatsby files
 .cache/
-public
+public/
+!public/*.png
+!public/*.jpg
+!public/*.jpeg
+!public/*.gif
+!public/*.webp
+!public/*.ico
+!public/*.css
+!public/*.js
+!public/*.svg
+!public/*.woff
+!public/*.woff2
+!public/*.ttf
+!public/*.eot
 
 # Storybook build outputs
 .out
