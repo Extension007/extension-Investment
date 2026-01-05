@@ -1,6 +1,8 @@
 {
   "version": 2,
   "routes": [
+    { "src": "/public/(.*)", "dest": "/public/$1" },
+    { "src": "/uploads/(.*)", "dest": "/uploads/$1" },
     { "handle": "filesystem" },
     { "src": "/.*", "dest": "server.js" }
   ]
