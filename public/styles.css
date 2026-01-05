@@ -9,6 +9,11 @@ body {
   line-height: 1.45;
 }
 
+/* Максимально яркий белый цвет для всех текстов */
+* {
+  color: #fff !important;
+}
+
 /* Шапка */
 .main-header {
   position: fixed;
@@ -42,13 +47,11 @@ body {
    flex: 1;
    padding: 12px 8px;
    border: none;
-   background:
-     linear-gradient(#2e0b0b, #2e0b0b) padding-box,
-     linear-gradient(45deg, #ff0000, #ff4d4d) border-box;
+   background: transparent;
    color: #fff;
    cursor: pointer;
    font-size: 0.85rem;
-   font-weight: 500;
+   font-weight: 600;
    transition: all 0.2s ease;
    position: relative;
    text-align: center;
@@ -64,7 +67,7 @@ body {
 
 .mobile-tab-button.active {
   color: #ff3333;
-  background: #111;
+  background: rgba(255, 51, 51, 0.1);
 }
 
 .mobile-tab-button.active::after {
@@ -76,12 +79,6 @@ body {
    height: 2px;
    background: #ff3333;
    border-radius: 0 0 8px 8px;
-}
-
-.tab-icon {
-  display: block;
-  font-size: 1.2rem;
-  margin-bottom: 4px;
 }
 
 /* Адаптивность: desktop (≥1024px) */
@@ -101,6 +98,7 @@ body {
   main {
     margin-top: 64px;
     margin-bottom: 64px;
+    padding-bottom: 80px; /* Дополнительное пространство для предотвращения перекрытия футером */
   }
 }
 
@@ -112,21 +110,27 @@ body {
     left: 0;
     right: 0;
   }
-  
+
   .mobile-tabs-footer {
     display: block;
   }
-  
+
   /* Контент не должен перекрываться header и footer */
   main {
-    margin-top: 64px;
-    margin-bottom: 64px;
+    margin-top: 80px;
+    margin-bottom: 80px;
+    padding-bottom: 100px; /* Дополнительное пространство для предотвращения перекрытия футером на мобильных */
   }
-  
+
   /* Секции с отступами для мобильных */
   .section {
-    margin-top: 120px; /* Больше отступа сверху под header */
-    margin-bottom: 20px;
+    margin-top: 140px; /* Больше отступа сверху под header */
+    margin-bottom: 120px; /* Увеличенный отступ снизу */
+  }
+  
+  /* Дополнительный отступ для последней секции на мобильных */
+  .section:last-child {
+    margin-bottom: 180px; /* Еще больший отступ для последней секции */
   }
 }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
@@ -314,12 +318,17 @@ body {
 /* Секции */
 .section {
   background: #1e1e1e;
-  margin: 96px auto 50px auto;
+  margin: 120px auto 160px auto;
   padding: 40px 20px;
   border-radius: 15px;
-  max-width: 1400px;
+ max-width: 1400px;
   width: 96%;
   box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+}
+
+/* Дополнительный отступ внизу секции для предотвращения перекрытия футером */
+.section:last-child {
+  margin-bottom: 200px; /* Увеличенный отступ для последней секции */
 }
 .section h2 { text-align: center; margin-bottom: 20px; }
 .section-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
@@ -1107,9 +1116,23 @@ body {
 .footer {
   text-align: center;
   padding: 20px;
-  background: #111;
+  background: linear-gradient(to bottom, transparent, rgba(17, 17, 17, 0.8));
   color: #fff;
   box-shadow: 0 -2px 10px rgba(255,0,0,0.5); /* тень сверху, как у шапки */
+}
+
+/* Добавляем дополнительное пространство внизу страницы для предотвращения перекрытия контента футером */
+body::after {
+  content: '';
+  display: block;
+  height: 80px; /* Высота дополнительного пространства */
+}
+
+/* Адаптируем дополнительное пространство для мобильных устройств */
+@media (max-width: 768px) {
+  body::after {
+    height: 100px; /* Увеличиваем высоту на мобильных устройствах */
+  }
 }
 
 /* Доптекст */

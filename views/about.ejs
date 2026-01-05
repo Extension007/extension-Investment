@@ -109,30 +109,21 @@
   <footer class="mobile-tabs-footer">
     <div class="mobile-tabs-container">
       <a href="/products" class="mobile-tab-button <%= '' %>">
-        <span class="tab-icon">🛒</span>
-        <span>Товары</span>
+        Товары
       </a>
       <a href="/services" class="mobile-tab-button <%= '' %>">
-        <span class="tab-icon">🔧</span>
-        <span>Услуги</span>
+        Услуги
       </a>
       <a href="/ad" class="mobile-tab-button <%= '' %>">
-        <span class="tab-icon">📢</span>
-        <span>Реклама</span>
+        Реклама
       </a>
       <a href="/about" class="mobile-tab-button active">
-        <span class="tab-icon">📖</span>
-        <span>О Нас</span>
+        О Нас
       </a>
       <a href="/contacts" class="mobile-tab-button <%= '' %>">
-        <span class="tab-icon">📞</span>
-        <span>Контакты</span>
+        Контакты
       </a>
     </div>
-  </footer>
-
-  <footer class="footer">
-    <p>© 2025 Albamount Ecosystem</p>
   </footer>
 
 <!-- Модальное окно регистрации -->
@@ -169,6 +160,9 @@
 <script>window.USER_ROLE = '<%= userRoleValue %>';</script>
 
 <script src="/script.js"></script>
+
+<!-- Подключаем скрипт для предотвращения перекрытия контента футером -->
+<script src="/fix-footer-overlap.js"></script>
 
 <style>
 /* Дополнительные стили для страницы О нас */

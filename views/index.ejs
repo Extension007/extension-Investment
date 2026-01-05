@@ -290,30 +290,21 @@
   <footer class="mobile-tabs-footer">
     <div class="mobile-tabs-container">
       <a href="/products" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'products' ? 'active' : '' %>">
-        <span class="tab-icon">🛒</span>
-        <span>Товары</span>
+        Товары
       </a>
       <a href="/services" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'services' ? 'active' : '' %>">
-        <span class="tab-icon">🔧</span>
-        <span>Услуги</span>
+        Услуги
       </a>
       <a href="/ad" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'ad' ? 'active' : '' %>">
-        <span class="tab-icon">📢</span>
-        <span>Реклама</span>
+        Реклама
       </a>
       <a href="/about" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'about' ? 'active' : '' %>">
-        <span class="tab-icon">📖</span>
-        <span>О Нас</span>
+        О Нас
       </a>
       <a href="/contacts" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'contacts' ? 'active' : '' %>">
-        <span class="tab-icon">📞</span>
-        <span>Контакты</span>
+        Контакты
       </a>
     </div>
-  </footer>
-
-  <footer class="footer">
-    <p>© 2025 Albamount Ecosystem</p>
   </footer>
 
 <!-- FIX: Полноэкранный overlay для YouTube видео -->
@@ -424,5 +415,8 @@
 
 <!-- Подключаем основной скрипт (включает весь JS: youtube init, модалки, рейтинг, категории, регистрация) -->
 <script src="/script.js"></script>
+
+<!-- Подключаем скрипт для предотвращения перекрытия контента футером -->
+<script src="/fix-footer-overlap.js"></script>
 </body>
 </html>
