@@ -1,0 +1,149 @@
+/* Дополнительная панель вкладок для desktop */
+.desktop-tabs-panel {
+  background: #1e1e1e;
+  border-bottom: 1px solid rgba(25,0,0.25);
+  position: relative;
+  z-index: 999;
+  display: none;
+}
+
+/* Мобильные вкладки контента */
+.mobile-content-tabs-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #111;
+  border-top: 1px solid rgba(255,0,0.25);
+  z-index: 1000;
+  display: none;
+}
+
+.mobile-content-tabs-footer .mobile-tabs-container {
+  display: flex;
+  gap: 2px;
+ padding: 0 8px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mobile-content-tabs-footer .mobile-tab-button {
+  flex: 1;
+  padding: 12px 8px;
+  border: none;
+  background: transparent;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+ position: relative;
+  text-align: center;
+  border-radius: 8px 8px 0 0;
+}
+
+.mobile-content-tabs-footer .mobile-tab-button:hover {
+  color: #fff;
+ background: rgba(255, 51, 51, 0.1);
+}
+
+.mobile-content-tabs-footer .mobile-tab-button.active {
+  color: #ff3333;
+  background: #111;
+}
+
+.mobile-content-tabs-footer .mobile-tab-button.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ff3333;
+}
+
+.mobile-content-tabs-footer .tab-icon {
+  display: block;
+  font-size: 1.2rem;
+ margin-bottom: 4px;
+}
+
+/* Адаптивность: desktop (≥1024px) */
+@media (min-width: 1024px) {
+  .main-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+  
+  .mobile-tabs-footer {
+    display: block;
+  }
+  
+  .mobile-content-tabs-footer {
+    display: none;
+  }
+  
+  /* Контент не должен перекрываться header и footer */
+  main {
+    margin-top: 64px;
+    margin-bottom: 64px;
+  }
+  
+  /* Дополнительные стили для desktop вкладок */
+  .desktop-tabs-panel {
+    display: block;
+  }
+}
+
+/* Адаптивность: mobile (≤768px) */
+@media (max-width: 768px) {
+  .main-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+  
+  .mobile-tabs-footer {
+    display: block;
+  }
+  
+  /* Показываем мобильные вкладки контента */
+  .mobile-content-tabs-footer {
+    display: block;
+  }
+  
+  /* Контент не должен перекрываться header и footer */
+  main {
+    margin-top: 64px;
+    margin-bottom: 128px; /* Увеличенный отступ для учета обоих футеров */
+  }
+  
+  /* Скрываем desktop вкладки на мобильных устройствах */
+  .desktop-tabs-panel {
+    display: none;
+  }
+  
+  /* Секции с отступами для мобильных */
+  .section {
+    margin-top: 120px; /* Больше отступа сверху под header */
+    margin-bottom: 20px;
+  }
+}
+
+/* Планшеты (769px - 1023px) */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .desktop-tabs-panel {
+    display: block;
+  }
+  
+  .mobile-content-tabs-footer {
+    display: none;
+  }
+  
+  main {
+    margin-bottom: 64px;
+  }
+}
