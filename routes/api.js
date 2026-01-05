@@ -819,7 +819,7 @@ router.put("/services/:id", apiLimiter, requireUser, csrfProtection, async (req,
     const { title, description, link, video_url, owner, category, price, images } = req.body;
     
     // Ограничиваем количество изображений до 5
-    const serviceImages = Array.isArray(images) ? images.slice(0, 5) : (images ? [images] : service.images);
+    const serviceImages = Array.isArray(images) ? images.slice(0, 5) : (images ? [images] : service.images || []);
     
     const updateData = {
       name: title ? title.trim() : service.name,
@@ -967,6 +967,12 @@ router.post("/services/:id/vote", apiLimiter, csrfProtection, validateServiceId,
   }
 });
 
+// =======================
+// API для комментариев
+// =======================
+
+// Подключаем роуты комментариев
+const commentRoutes = require('./comments');
+router.use('/comments', commentRoutes);
+
 module.exports = router;
-
-

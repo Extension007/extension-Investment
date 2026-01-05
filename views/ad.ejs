@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Реклама — Albamount</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/header-tabs.css">
+</head>
+<body>
+  <!-- Одноэтажный header без вкладок -->
+  <header class="main-header">
+    <div class="container header-inner">
+      <!-- Основные элементы -->
+      <div class="header-top">
+        <div class="header-left">
+          <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+          <div class="header-stats">
+            <div class="stat-item">
+              <span style="opacity: 0.8;">👥</span>
+              <strong style="color: #4caf50;"><%= typeof visitorCount !== 'undefined' ? visitorCount : 0 %></strong>
+            </div>
+            <div class="stat-item">
+              <span style="opacity: 0.8;">👤</span>
+              <strong style="color: #2196f3;"><%= typeof userCount !== 'undefined' ? userCount : 0 %></strong>
+            </div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <% if (isAuth) { %>
+            <% if (isAdmin) { %>
+              <a class="btn outline" href="/admin">Админ-панель</a>
+            <% } else { %>
+              <a class="btn outline" href="/cabinet">Личный кабинет</a>
+            <% } %>
+          <% } else { %>
+            <a class="btn outline" href="/user/login">Вход</a>
+            <button id="openRegister" type="button" class="btn outline">Регистрация</button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ОСНОВНАЯ СЕКЦИЯ РЕКЛАМЫ -->
+    <section id="ad" class="section ad-section">
+      <div class="section-header">
+        <h2>Рекламные возможности</h2>
+        <p class="ad-description">
+          Разместите свою рекламу на нашей платформе и достигните широкой аудитории. 
+          Мы предлагаем эффективные рекламные решения для вашего бизнеса.
+        </p>
+      </div>
+
+      <!-- Рекламные баннеры -->
+      <div class="ad-content">
+        <% if (banners && banners.length > 0) { %>
+          <div class="banners-section">
+            <h3>📢 Активные рекламные баннеры</h3>
+            <div class="banners-container">
+              <% banners.forEach(banner => { %>
+                <div class="banner-item">
+                  <div class="banner-wrapper">
+                    <!-- Кнопка для перехода по ссылке -->
+                    <% if (banner.link) { %>
+                      <a href="<%= banner.link %>" target="_blank" rel="noopener" class="banner-link-icon" aria-label="Перейти по ссылке">
+                        <span>↗</span>
+                      </a>
+                    <% } %>
+                    <!-- Изображение баннера - кликабельно для открытия в overlay -->
+                    <img 
+                      src="<%= banner.image_url %>" 
+                      alt="Рекламный баннер" 
+                      class="banner-clickable"
+                      data-banner-image="<%= banner.image_url %>"
+                      style="width: 100%; height: auto; display: block; object-fit: cover; cursor: pointer; border-radius: 8px;"
+                    >
+                  </div>
+                  <% if (banner.description) { %>
+                    <div class="banner-description">
+                      <p><%= banner.description %></p>
+                    </div>
+                  <% } %>
+                </div>
+              <% }) %>
+            </div>
+          </div>
+        <% } else { %>
+          <div class="no-banners">
+            <div class="no-banners-content">
+              <span class="no-banners-icon">📢</span>
+              <h3>Пока нет активных рекламных баннеров</h3>
+              <p>Место для партнёрских предложений, баннеров и промо.</p>
+            </div>
+          </div>
+        <% } %>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer с вкладками для мобильных устройств -->
+  <footer class="mobile-tabs-footer">
+    <div class="mobile-tabs-container">
+      <a href="/products" class="mobile-tab-button <%= '' %>">
+        <span class="tab-icon">🛒</span>
+        <span>Товары</span>
+      </a>
+      <a href="/services" class="mobile-tab-button <%= '' %>">
+        <span class="tab-icon">🔧</span>
+        <span>Услуги</span>
+      </a>
+      <a href="/ad" class="mobile-tab-button active">
+        <span class="tab-icon">📢</span>
+        <span>Реклама</span>
+      </a>
+      <a href="/about" class="mobile-tab-button <%= '' %>">
+        <span class="tab-icon">📖</span>
+        <span>О Нас</span>
+      </a>
+      <a href="/contacts" class="mobile-tab-button <%= '' %>">
+        <span class="tab-icon">📞</span>
+        <span>Контакты</span>
+      </a>
+    </div>
+  </footer>
+
+  <footer class="footer">
+    <p>© 2025 Albamount Ecosystem</p>
+  </footer>
+
+<!-- Модальное окно регистрации -->
+<div id="registerModal" class="modal" aria-hidden="true" style="display:none;">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-label="Регистрация">
+    <button class="close" data-close-register aria-label="Закрыть">&times;</button>
+    <h3>Регистрация</h3>
+    <form id="registerForm">
+      <input type="text" name="username" placeholder="Никнейм" required>
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="password" name="password" placeholder="Пароль" minlength="6" required>
+      <button type="submit">Создать аккаунт</button>
+    </form>
+    <div id="registerError" class="error" style="color:#b00020;margin-top:10px;display:none;"></div>
+    <div id="registerSuccess" style="color:green;margin-top:10px;display:none;"></div>
+  </div>
+</div>
+
+<% let isAuthValue = typeof isAuth !== 'undefined' ? isAuth : false; %>
+<% if (isAuthValue) { %>
+<script>window.IS_AUTH = true;</script>
+<% } else { %>
+<script>window.IS_AUTH = false;</script>
+<% } %>
+
+<% let isAdminValue = typeof isAdmin !== 'undefined' ? isAdmin : false; %>
+<% if (isAdminValue) { %>
+<script>window.IS_ADMIN = true;</script>
+<% } else { %>
+<script>window.IS_ADMIN = false;</script>
+<% } %>
+
+<% let userRoleValue = typeof userRole !== 'undefined' ? userRole : null; %>
+<script>window.USER_ROLE = '<%= userRoleValue %>';</script>
+
+<script src="/script.js"></script>
+
+<style>
+/* Дополнительные стили для страницы рекламы */
+.ad-section {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+}
+
+.ad-description {
+  text-align: center;
+  color: #ccc;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ad-content {
+  margin-bottom: 40px;
+}
+
+.banners-section h3 {
+  color: #ff9999;
+  margin-bottom: 20px;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.banners-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.banner-item {
+  background: rgba(255, 51, 51, 0.05);
+  border: 1px solid rgba(255, 51, 51, 0.2);
+  border-radius: 12px;
+  padding: 15px;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.banner-item:hover {
+  background: rgba(255, 51, 51, 0.1);
+  transform: translateY(-2px);
+}
+
+.banner-wrapper {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.banner-link-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(255, 51, 51, 0.8);
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.banner-link-icon:hover {
+  background: #ff3333;
+  transform: scale(1.1);
+}
+
+.banner-description {
+  margin-top: 10px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.banner-description p {
+  color: #ddd;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.no-banners {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.no-banners-content {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.no-banners-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.no-banners h3 {
+  color: #ff9999;
+  margin-bottom: 15px;
+  font-size: 1.3rem;
+}
+
+.no-banners p {
+  color: #999;
+  font-size: 1rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .ad-description {
+    font-size: 1rem;
+    margin-bottom: 25px;
+  }
+  
+  .banners-container {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}
+</style>
+</body>
+</html>

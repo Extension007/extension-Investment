@@ -212,12 +212,38 @@
       <% if (itemLink) { %>
         <a class="btn-link btn-outline" href="<%= itemLink %>" target="_blank" rel="noopener">🔗 Ссылка</a>
       <% } %>
-    <% } else if (isPublic) { %>
-      <!-- Публичные действия (только ссылки) -->
-      <% if (itemLink) { %>
-        <a class="btn-link btn-outline" href="<%= itemLink %>" target="_blank" rel="noopener">Перейти</a>
-      <% } %>
+  <% } else if (isPublic) { %>
+    <!-- Публичные действия (ссылки и чат для авторизованных пользователей) -->
+    <% if (itemLink) { %>
+      <a class="btn-link btn-outline" href="<%= itemLink %>" target="_blank" rel="noopener">Перейти</a>
     <% } %>
+    <% if (typeof user !== 'undefined' && user) { %>
+      <button class="chat-btn btn-outline" data-card-id="<%= itemId %>" type="button">💬 Чат</button>
+    <% } %>
+  <% } %>
+  </div>
+
+  <!-- Модальное окно чата -->
+  <div class="chat-modal" id="chat-modal-<%= itemId %>" style="display: none;">
+    <div class="chat-modal-overlay" onclick="closeChatModal('<%= itemId %>')"></div>
+    <div class="chat-modal-content">
+      <div class="chat-modal-header">
+        <h3>Чат комментариев</h3>
+        <button class="chat-close-btn" onclick="closeChatModal('<%= itemId %>')" type="button">×</button>
+      </div>
+      <div class="chat-messages" id="chat-messages-<%= itemId %>">
+        <!-- Сообщения будут загружаться динамически -->
+      </div>
+      <div class="chat-input-container">
+        <textarea
+          class="chat-input"
+          id="chat-input-<%= itemId %>"
+          placeholder="Введите сообщение..."
+          maxlength="1000"
+          rows="2"
+        ></textarea>
+        <button class="chat-send-btn" onclick="sendChatMessage('<%= itemId %>')" type="button">Отправить</button>
+      </div>
+    </div>
   </div>
 </div>
-

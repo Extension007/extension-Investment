@@ -4,9 +4,27 @@ const express = require("express"); // важно для Vercel
 const { connectMongoDB } = require("./config/database");
 const { app } = require("./config/app"); // берём готовый app из config/app.js
 const routes = require("./routes/index");
+const http = require("http");
+const { Server } = require("socket.io");
+
+// Создаём HTTP сервер
+const server = http.createServer(app);
+
+// Инициализируем Socket.IO сервер
+const io = new Server(server, {
+  cors: {
+    origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL || '' : '*', // В продакшене нужно указать конкретные домены
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
 // Подключаем маршруты
+require("./routes/comments").setSocketIO(io); // Передаем io в комментарии до подключения маршрутов
 app.use("/", routes);
+
+// Подключаем обработчики WebSocket событий
+require("./socket/commentChat")(io);
 
 // Экспорт приложения для Vercel
 module.exports = app;
@@ -24,15 +42,15 @@ if (require.main === module) {
       }
 
       const PORT = process.env.PORT || 3000;
-      app.listen(PORT, () => {
+      server.listen(PORT, () => {
         console.log(`Сервер запущен на http://localhost:${PORT}`);
       });
     } catch (err) {
       console.error("❌ Ошибка подключения к MongoDB:", err);
-      
+
       // Запускаем сервер даже при ошибке подключения
       const PORT = process.env.PORT || 3000;
-      app.listen(PORT, () => {
+      server.listen(PORT, () => {
         console.log(`Сервер запущен на http://localhost:${PORT} (без MongoDB)`);
       });
     }

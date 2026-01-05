@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Albamount — Каталог услуг</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/header-tabs.css">
+</head>
+<body>
+  <!-- Одноэтажный header без вкладок -->
+  <header class="main-header">
+    <div class="container header-inner">
+      <!-- Основные элементы -->
+      <div class="header-top">
+        <div class="header-left">
+          <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+          <div class="header-stats">
+            <div class="stat-item">
+              <span style="opacity: 0.8;">👥</span>
+              <strong style="color: #4caf50;"><%= typeof visitorCount !== 'undefined' ? visitorCount : 0 %></strong>
+            </div>
+            <div class="stat-item">
+              <span style="opacity: 0.8;">👤</span>
+              <strong style="color: #2196f3;"><%= typeof userCount !== 'undefined' ? userCount : 0 %></strong>
+            </div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <% if (isAuth) { %>
+            <% if (isAdmin) { %>
+              <a class="btn outline" href="/admin">Админ-панель</a>
+            <% } else { %>
+              <a class="btn outline" href="/cabinet">Личный кабинет</a>
+            <% } %>
+          <% } else { %>
+            <a class="btn outline" href="/user/login">Вход</a>
+            <button id="openRegister" type="button" class="btn outline">Регистрация</button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="services" class="section">
+      <div class="section-header">
+        <h2>Каталог услуг</h2>
+        <% if (categories) { %>
+          <div class="category-dropdown">
+            <button id="openCategories" type="button" class="btn small outline">
+              Категории <span style="opacity:.8">(<%= selectedCategory === 'all' ? 'все' : categories[selectedCategory] %>)</span>
+            </button>
+            <div id="categoriesMenu" class="dropdown-menu" aria-hidden="true">
+              <button class="dropdown-item" data-category="all">Все</button>
+              <% Object.keys(categories).forEach(key => { %>
+                <button class="dropdown-item" data-category="<%= key %>"><%= categories[key] %></button>
+              <% }) %>
+            </div>
+          </div>
+        <% } %>
+      </div>
+
+      <div id="services-grid" class="product-grid">
+        <% if (services && services.length) { %>
+          <% services.forEach(s => { %>
+            <!-- FIX: Обертка для карточки и блока описания -->
+            <div class="product-card-wrapper">
+              <div class="product-card" data-product-id="<%= s._id %>">
+                <!-- Значок i для открытия модального окна описания -->
+                <% if (s.description) { %>
+                  <div class="product-info-icon"
+                       data-description-modal="<%= s._id %>"
+                       data-description="<%= s.description.replace(/"/g, '"').replace(/'/g, '&#39;') %>"
+                       data-product-name="<%= s.name.replace(/"/g, '"').replace(/'/g, '&#39;') %>"
+                       aria-label="Описание товара">
+                    <span>i</span>
+                  </div>
+                <% } %>
+                <h3 class="product-title"><%= s.name %></h3>
+
+                <!-- FIX: Слайдер изображений (до 5 картинок) -->
+                <div class="product-images-slider" data-product-id="<%= s._id %>">
+                  <%
+                    // FIX: Поддержка массива изображений или одного изображения (обратная совместимость)
+                    let images = [];
+                    if (s.images && Array.isArray(s.images) && s.images.length > 0) {
+                      images = s.images;
+                    } else if (s.image_url) {
+                      images = [s.image_url];
+                    }
+                  %>
+                  <% if (images.length > 0) { %>
+                    <div class="product-images-container">
+                      <% images.forEach((img, idx) => { %>
+                        <img
+                          src="<%= img %>"
+                          alt="<%= s.name %> - изображение <%= idx + 1 %>"
+                          class="product-image-slide <%= idx === 0 ? 'active' : '' %> image-clickable"
+                          data-image-index="<%= idx %>"
+                          data-image-src="<%= img %>"
+                          data-product-images='<%= JSON.stringify(images) %>'
+                          data-product-name="<%= s.name %>"
+                          loading="<%= idx === 0 ? 'eager' : 'lazy' %>"
+                          style="cursor: pointer;"
+                        >
+                      <% }) %>
+                      <% if (images.length > 1) { %>
+                        <!-- FIX: Стрелки навигации слайдера -->
+                        <button class="slider-arrow slider-arrow-prev" aria-label="Предыдущее изображение">‹</button>
+                        <button class="slider-arrow slider-arrow-next" aria-label="Следующее изображение">›</button>
+                        <!-- FIX: Индикаторы слайдера -->
+                        <div class="slider-indicators">
+                          <% images.forEach((img, idx) => { %>
+                            <span class="slider-indicator <%= idx === 0 ? 'active' : '' %>" data-slide-index="<%= idx %>"></span>
+                          <% }) %>
+                        </div>
+                      <% } %>
+                    </div>
+                  <% } else { %>
+                    <div class="no-image">Нет изображения</div>
+                  <% } %>
+                </div>
+
+                <!-- FIX: Отображение контактов продавца сразу ниже картинки -->
+                <%
+                  const contacts = s.contacts || {};
+                  const hasContacts = (contacts.phone || contacts.email || contacts.telegram || contacts.whatsapp || contacts.contact_method);
+                %>
+                <% if (hasContacts) { %>
+                  <div class="product-contacts">
+                    <h4 class="contacts-title">Контакты:</h4>
+                    <div class="contacts-list">
+                      <% if (contacts.phone) { %>
+                        <a href="tel:<%= contacts.phone %>" class="contact-item">
+                          <span class="contact-icon">📞</span>
+                          <span><%= contacts.phone %></span>
+                        </a>
+                      <% } %>
+                      <% if (contacts.email) { %>
+                        <a href="mailto:<%= contacts.email %>" class="contact-item">
+                          <span class="contact-icon">✉️</span>
+                          <span><%= contacts.email %></span>
+                        </a>
+                      <% } %>
+                      <% if (contacts.telegram) { %>
+                        <a href="https://t.me/<%= contacts.telegram.replace('@', '') %>" target="_blank" rel="noopener" class="contact-item">
+                          <span class="contact-icon">✈️</span>
+                          <span><%= contacts.telegram %></span>
+                        </a>
+                      <% } %>
+                      <% if (contacts.whatsapp) { %>
+                        <a href="https://wa.me/<%= contacts.whatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener" class="contact-item">
+                          <span class="contact-icon">💬</span>
+                          <span><%= contacts.whatsapp %></span>
+                        </a>
+                      <% } %>
+                    </div>
+                    <!-- FIX: Отображение способа связи -->
+                    <% if (contacts.contact_method) { %>
+                      <div class="contact-method">
+                        <span class="contact-method-label">Способ связи:</span>
+                        <span class="contact-method-text"><%= contacts.contact_method %></span>
+                      </div>
+                    <% } %>
+                  </div>
+                <% } %>
+
+                <div class="product-bottom">
+
+                  <span class="price"><%= s.price %> ₸</span>
+
+                  <div class="product-actions">
+                    <a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">Перейти</a>
+                    <% if (s.video_url) { %>
+                      <!-- Кнопка "Обзор" доступна для всех пользователей, включая гостей -->
+                      <button class="btn small video-btn" data-video="<%= s.video_url %>">Обзор</button>
+                    <% } %>
+                    <button class="chat-btn btn small outline" data-card-id="<%= s._id %>" type="button">💬 Чат</button>
+                  </div>
+
+                  <!-- 🔹 Блок рейтинга -->
+                  <div class="service-rating" data-id="<%= s._id %>" data-voted="false">
+                    <button class="like-btn btn icon" type="button" aria-label="Лайк">▲</button>
+
+                    <span class="result">
+                      <% const likes = s.likes || 0; %>
+                      <% const dislikes = s.dislikes || 0; %>
+                      <%= likes - dislikes %>
+                    </span>
+
+                    <button class="dislike-btn btn icon" type="button" aria-label="Дизлайк">▼</button>
+
+                    <span class="votes">
+                      (<%= (s.likes || 0) + (s.dislikes || 0) %> голосов)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- FIX: Блок описания товара под карточкой (шире карточки) -->
+              <% if (s.description) { %>
+                <div class="product-description-block" data-product-id="<%= s._id %>" style="display: none;">
+                  <div class="product-description-content">
+                    <h4 class="product-description-title">Описание услуги</h4>
+                    <p class="product-description-text"><%= s.description %></p>
+                  </div>
+                </div>
+              <% } %>
+            </div>
+          <% }) %>
+        <% } else { %>
+          <p class="empty-state">Пока нет услуг</p>
+        <% } %>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer с вкладками для мобильных устройств -->
+  <footer class="mobile-tabs-footer">
+    <div class="mobile-tabs-container">
+      <a href="/products" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'products' ? 'active' : '' %>">
+        <span class="tab-icon">🛒</span>
+        <span>Товары</span>
+      </a>
+      <a href="/services" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'services' ? 'active' : '' %>">
+        <span class="tab-icon">🔧</span>
+        <span>Услуги</span>
+      </a>
+      <a href="/ad" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'ad' ? 'active' : '' %>">
+        <span class="tab-icon">📢</span>
+        <span>Реклама</span>
+      </a>
+      <a href="/about" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'about' ? 'active' : '' %>">
+        <span class="tab-icon">📖</span>
+        <span>О Нас</span>
+      </a>
+      <a href="/contacts" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'contacts' ? 'active' : '' %>">
+        <span class="tab-icon">📞</span>
+        <span>Контакты</span>
+      </a>
+    </div>
+  </footer>
+
+  <footer class="footer">
+    <p>© 2025 Albamount Ecosystem</p>
+  </footer>
+
+  <!-- Модальные окна чата для всех карточек -->
+  <% if (services && services.length) { %>
+    <% services.forEach(s => { %>
+      <div class="chat-modal" id="chat-modal-<%= s._id %>" style="display: none;">
+        <div class="chat-modal-overlay" data-close-chat-modal="<%= s._id %>"></div>
+        <div class="chat-modal-content">
+          <div class="chat-modal-header">
+            <h3>Чат комментариев</h3>
+            <button class="chat-close-btn" data-close-chat-modal="<%= s._id %>" type="button">×</button>
+          </div>
+          <div class="chat-messages" id="chat-messages-<%= s._id %>">
+            <!-- Сообщения будут загружаться динамически -->
+          </div>
+          <div class="chat-input-container">
+            <textarea
+              class="chat-input"
+              id="chat-input-<%= s._id %>"
+              placeholder="Введите сообщение..."
+              maxlength="1000"
+              rows="2"
+            ></textarea>
+            <button class="chat-send-btn" data-send-chat-message="<%= s._id %>" type="button">Отправить</button>
+          </div>
+        </div>
+      </div>
+    <% }) %>
+  <% } %>
+
+  <!-- FIX: Полноэкранный overlay для YouTube видео -->
+  <div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
+    <div class="video-overlay-container">
+      <button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
+      <div class="video-overlay-iframe-container" id="videoIframeContainer">
+        <!-- FIX: iframe создается динамически по клику, пустой при загрузке -->
+      </div>
+    </div>
+  </div>
+
+  <!-- FIX: Overlay для просмотра изображений в полном размере -->
+  <div id="imageOverlay" class="image-overlay" aria-hidden="true">
+    <div class="image-overlay-container">
+      <button class="image-overlay-close" data-close-image aria-label="Закрыть изображение">&times;</button>
+      <img id="imageOverlayImg" src="" alt="" class="image-overlay-img">
+      <button class="image-overlay-nav image-overlay-prev" data-image-nav="prev" aria-label="Предыдущее изображение">‹</button>
+      <button class="image-overlay-nav image-overlay-next" data-image-nav="next" aria-label="Следующее изображение">›</button>
+    </div>
+  </div>
+
+<!-- FIX: Модальное окно для просмотра изображений в полном размере -->
+  <div id="imageModal" class="modal image-modal" aria-hidden="true" style="display:none;">
+    <div class="modal-content image-modal-content" role="dialog" aria-modal="true" aria-label="Просмотр изображения">
+      <button class="close" data-close-image aria-label="Закрыть изображение">&times;</button>
+      <div class="image-modal-container">
+        <button class="image-nav-btn image-nav-prev" aria-label="Предыдущее изображение">‹</button>
+        <div class="image-modal-image-wrapper">
+          <img id="imageModalImage" src="" alt="" class="image-modal-image">
+          <div class="image-modal-counter">
+            <span id="imageModalCurrent">1</span> / <span id="imageModalTotal">1</span>
+          </div>
+          <div class="image-modal-title" id="imageModalTitle"></div>
+        </div>
+        <button class="image-nav-btn image-nav-next" aria-label="Следующее изображение">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно описания товара -->
+  <div id="descriptionModal" class="modal description-modal" aria-hidden="true" style="display:none;">
+    <div class="modal-content description-modal-content" role="dialog" aria-modal="true" aria-label="Описание товара">
+      <button class="close" data-close-description aria-label="Закрыть">&times;</button>
+      <h3 id="descriptionModalTitle" style="margin-bottom:20px;font-size:1.5rem;color:#fff;">Описание товара</h3>
+      <div id="descriptionModalContent" style="max-height:75vh;overflow-y:auto;padding:20px 0;line-height:1.6;font-size:1.1rem;color:#ddd;">
+        <!-- Описание будет вставлено динамически -->
+      </div>
+    </div>
+  </div>
+
+  <!-- окно регистрации -->
+  <div id="registerModal" class="modal" aria-hidden="true" style="display:none;">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Регистрация">
+      <button class="close" data-close-register aria-label="Закрыть">&times;</button>
+      <h3>Регистрация</h3>
+      <form id="registerForm">
+        <input type="text" name="username" placeholder="Никнейм" autocomplete="username" required>
+        <input type="email" name="email" placeholder="Email" autocomplete="email" required>
+        <input type="password" name="password" placeholder="Пароль" autocomplete="new-password" minlength="6" required>
+        <button type="submit">Создать аккаунт</button>
+      </form>
+      <div id="registerError" class="error" style="color:#b00020;margin-top:10px;display:none;"></div>
+      <div id="registerSuccess" style="color:green;margin-top:10px;display:none;"></div>
+    </div>
+  </div>
+
+  <!-- модальное окно для гостей чата -->
+  <div id="authModal" class="modal" aria-hidden="true" style="display:none;">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Авторизация для чата">
+      <button class="close" data-close-auth aria-label="Закрыть">&times;</button>
+      <h3>Чтобы воспользоваться чатом, войдите в систему</h3>
+      <div style="display:flex;gap:10px;margin-top:20px;">
+        <a href="/user/login" class="btn">Войти</a>
+        <a href="/user/register" class="btn outline">Регистрация</a>
+      </div>
+    </div>
+  </div>
+
+  <% let isAuthValue = typeof isAuth !== 'undefined' ? isAuth : false; %>
+  <% if (isAuthValue) { %>
+  <script>window.IS_AUTH = true;</script>
+  <% } else { %>
+  <script>window.IS_AUTH = false;</script>
+  <% } %>
+
+  <% let isAdminValue = typeof isAdmin !== 'undefined' ? isAdmin : false; %>
+  <% if (isAdminValue) { %>
+  <script>window.IS_ADMIN = true;</script>
+  <% } else { %>
+  <script>window.IS_ADMIN = false;</script>
+  <% } %>
+
+  <% let userRoleValue = typeof userRole !== 'undefined' ? userRole : null; %>
+  <script>window.USER_ROLE = '<%= userRoleValue %>';</script>
+
+  <!-- Загружаем YouTube IFrame API перед основным скриптом -->
+  <script>
+    // Загрузка YouTube IFrame API
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  </script>
+
+  <!-- Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- Подключаем основной скрипт (включает весь JS: youtube init, модалки, рейтинг, категории, регистрация) -->
+  <script src="/script.js"></script>
+</body>
+</html>

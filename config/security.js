@@ -9,8 +9,10 @@ function createSecurityMiddleware() {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        // Разрешаем YouTube IFrame API для единой логики видео-плееров
+        // Разрешаем YouTube IFrame API для единой логики видео-плееров и inline скрипты для передачи данных
         scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://www.youtube.com", "https://youtube.com", "https://*.youtube.com"],
+        // Разрешаем inline event handlers для атрибутов
+        scriptSrcAttr: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", "https:"],
         fontSrc: ["'self'", "https:", "data:"],
         imgSrc: ["'self'", "data:", "https:", "blob:", "https://res.cloudinary.com"], // Добавляем Cloudinary

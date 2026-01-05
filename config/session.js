@@ -1,9 +1,14 @@
 // Конфигурация сессий
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
+const RedisStore = require("connect-redis").default;
 const { HAS_MONGO } = require("./database");
+const { redisClient } = require("./redis");
 
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+
+// Проверяем, доступен ли Redis
+const hasRedis = Boolean(process.env.REDIS_HOST || process.env.REDIS_PORT);
 
 const sessionOptions = {
   secret: process.env.SESSION_SECRET || "exto-secret-change-in-production",
@@ -17,13 +22,23 @@ const sessionOptions = {
   }
 };
 
-if (HAS_MONGO && process.env.MONGODB_URI) {
+if (hasRedis) {
+  // Используем Redis для хранения сессий
+  sessionOptions.store = new RedisStore({
+    client: redisClient,
+    prefix: "exto:sess:",
+    ttl: 60 * 60 // 1 час в секундах
+  });
+  console.log("✅ Сессии хранятся в Redis");
+} else if (HAS_MONGO && process.env.MONGODB_URI) {
+  // Резервный вариант: MongoDB для хранения сессий
   sessionOptions.store = MongoStore.create({
     mongoUrl: process.env.MONGODB_URI,
     collectionName: "sessions"
   });
+  console.log("✅ Сессии хранятся в MongoDB");
 } else {
-  console.warn("⚠️  MONGODB_URI не задан. Используется MemoryStore для сессий (только для локальной разработки).");
+  console.warn("⚠️  Ни Redis, ни MongoDB не настроены. Используется MemoryStore для сессий (только для локальной разработки).");
 }
 
 module.exports = session(sessionOptions);

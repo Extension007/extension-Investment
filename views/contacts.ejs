@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Контакты — Albamount</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/header-tabs.css">
+</head>
+<body>
+  <!-- Одноэтажный header без вкладок -->
+  <header class="main-header">
+    <div class="container header-inner">
+      <!-- Основные элементы -->
+      <div class="header-top">
+        <div class="header-left">
+          <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+          <div class="header-stats">
+            <div class="stat-item">
+              <span style="opacity: 0.8;">👥</span>
+              <strong style="color: #4caf50;"><%= typeof visitorCount !== 'undefined' ? visitorCount : 0 %></strong>
+            </div>
+            <div class="stat-item">
+              <span style="opacity: 0.8;">👤</span>
+              <strong style="color: #2196f3;"><%= typeof userCount !== 'undefined' ? userCount : 0 %></strong>
+            </div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <% if (isAuth) { %>
+            <% if (isAdmin) { %>
+              <a class="btn outline" href="/admin">Админ-панель</a>
+            <% } else { %>
+              <a class="btn outline" href="/cabinet">Личный кабинет</a>
+            <% } %>
+          <% } else { %>
+            <a class="btn outline" href="/user/login">Вход</a>
+            <button id="openRegister" type="button" class="btn outline">Регистрация</button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ОСНОВНАЯ СЕКЦИЯ КОНТАКТОВ -->
+    <section id="contacts" class="section contacts-section">
+      <div class="section-header">
+        <h2>Свяжитесь с нами</h2>
+        <p class="contacts-description">
+          Мы всегда рады помочь вам и ответить на любые вопросы. 
+          Выберите удобный способ связи или оставьте сообщение.
+        </p>
+      </div>
+
+      <div class="contacts-content">
+        <div class="contacts-grid">
+          <!-- Контактная информация -->
+          <div class="contact-info">
+            <h3>📞 Контактная информация</h3>
+            <div class="contact-cards">
+              <div class="contact-card">
+                <div class="contact-icon">📧</div>
+                <div class="contact-details">
+                  <h4>Email</h4>
+                  <p>info@albamount.kz</p>
+                  <span>Основной email для общих вопросов</span>
+                </div>
+              </div>
+              
+              <div class="contact-card">
+                <div class="contact-icon">💬</div>
+                <div class="contact-details">
+                  <h4>Telegram</h4>
+                  <p>@albamount_support</p>
+                  <span>Быстрая связь через Telegram</span>
+                </div>
+              </div>
+              
+              <div class="contact-card">
+                <div class="contact-icon">📱</div>
+                <div class="contact-details">
+                  <h4>WhatsApp</h4>
+                  <p>+7 (777) 123-45-67</p>
+                  <span>Звонки и сообщения</span>
+                </div>
+              </div>
+              
+              <div class="contact-card">
+                <div class="contact-icon">🌐</div>
+                <div class="contact-details">
+                  <h4>Сайт</h4>
+                  <p>www.albamount.kz</p>
+                  <span>Официальный сайт проекта</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Форма обратной связи -->
+          <div class="contact-form-section">
+            <h3>✉️ Напишите нам</h3>
+            <form class="contact-form" id="contactForm">
+              <div class="form-group">
+                <label for="contact-name">Ваше имя *</label>
+                <input type="text" id="contact-name" name="name" required placeholder="Введите ваше имя">
+              </div>
+              
+              <div class="form-group">
+                <label for="contact-email">Email *</label>
+                <input type="email" id="contact-email" name="email" required placeholder="your@email.com">
+              </div>
+              
+              <div class="form-group">
+                <label for="contact-subject">Тема обращения</label>
+                <select id="contact-subject" name="subject">
+                  <option value="">Выберите тему</option>
+                  <option value="general">Общие вопросы</option>
+                  <option value="partnership">Сотрудничество</option>
+                  <option value="technical">Техническая поддержка</option>
+                  <option value="business">Коммерческие предложения</option>
+                  <option value="other">Другое</option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="contact-message">Сообщение *</label>
+                <textarea id="contact-message" name="message" required rows="5" placeholder="Опишите ваш вопрос или предложение..."></textarea>
+              </div>
+              
+              <button type="submit" class="btn primary contact-submit-btn">
+                <span>📤</span> Отправить сообщение
+              </button>
+            </form>
+            
+            <div id="contact-success" class="contact-message success" style="display: none;">
+              ✅ Сообщение отправлено! Мы ответим в ближайшее время.
+            </div>
+            
+            <div id="contact-error" class="contact-message error" style="display: none;">
+              ❌ Ошибка отправки. Попробуйте позже или свяжитесь с нами другим способом.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer с вкладками для мобильных устройств -->
+  <footer class="mobile-tabs-footer">
+    <div class="mobile-tabs-container">
+      <a href="/products" class="mobile-tab-button <%= '' %>">
+        <span class="tab-icon">🛒</span>
+        <span>Товары</span>
+      </a>
+      <a href="/services" class="mobile-tab-button <%= '' %>">
+        <span class="tab-icon">🔧</span>
+        <span>Услуги</span>
+      </a>
+      <a href="/ad" class="mobile-tab-button <%= '' %>">
+        <span class="tab-icon">📢</span>
+        <span>Реклама</span>
+      </a>
+      <a href="/about" class="mobile-tab-button <%= '' %>">
+        <span class="tab-icon">📖</span>
+        <span>О Нас</span>
+      </a>
+      <a href="/contacts" class="mobile-tab-button active">
+        <span class="tab-icon">📞</span>
+        <span>Контакты</span>
+      </a>
+    </div>
+  </footer>
+
+  <footer class="footer">
+    <p>© 2025 Albamount Ecosystem</p>
+  </footer>
+
+<!-- Модальное окно регистрации -->
+<div id="registerModal" class="modal" aria-hidden="true" style="display:none;">
+  <div class="modal-content" role="dialog" aria-modal="true" aria-label="Регистрация">
+    <button class="close" data-close-register aria-label="Закрыть">&times;</button>
+    <h3>Регистрация</h3>
+    <form id="registerForm">
+      <input type="text" name="username" placeholder="Никнейм" required>
+      <input type="email" name="email" placeholder="Email" required>
+      <input type="password" name="password" placeholder="Пароль" minlength="6" required>
+      <button type="submit">Создать аккаунт</button>
+    </form>
+    <div id="registerError" class="error" style="color:#b00020;margin-top:10px;display:none;"></div>
+    <div id="registerSuccess" style="color:green;margin-top:10px;display:none;"></div>
+  </div>
+</div>
+
+<% let isAuthValue = typeof isAuth !== 'undefined' ? isAuth : false; %>
+<% if (isAuthValue) { %>
+<script>window.IS_AUTH = true;</script>
+<% } else { %>
+<script>window.IS_AUTH = false;</script>
+<% } %>
+
+<% let isAdminValue = typeof isAdmin !== 'undefined' ? isAdmin : false; %>
+<% if (isAdminValue) { %>
+<script>window.IS_ADMIN = true;</script>
+<% } else { %>
+<script>window.IS_ADMIN = false;</script>
+<% } %>
+
+<% let userRoleValue = typeof userRole !== 'undefined' ? userRole : null; %>
+<script>window.USER_ROLE = '<%= userRoleValue %>';</script>
+
+<script src="/script.js"></script>
+
+<style>
+/* Дополнительные стили для страницы контактов */
+.contacts-section {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+}
+
+.contacts-description {
+  text-align: center;
+  color: #ccc;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.contacts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 40px;
+}
+
+.contact-info h3,
+.contact-form-section h3 {
+  color: #ff9999;
+  margin-bottom: 20px;
+  font-size: 1.3rem;
+}
+
+.contact-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.contact-card {
+  background: rgba(255, 51, 51, 0.05);
+  border: 1px solid rgba(255, 51, 51, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: all 0.3s ease;
+}
+
+.contact-card:hover {
+  background: rgba(255, 51, 51, 0.1);
+  transform: translateY(-2px);
+}
+
+.contact-icon {
+  font-size: 2rem;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 51, 51, 0.1);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.contact-details h4 {
+  color: #ff3333;
+  margin-bottom: 5px;
+  font-size: 1.1rem;
+}
+
+.contact-details p {
+  color: #fff;
+  font-weight: 600;
+  margin-bottom: 5px;
+  font-size: 1rem;
+}
+
+.contact-details span {
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.contact-form {
+  background: rgba(255, 51, 51, 0.05);
+  border: 1px solid rgba(255, 51, 51, 0.2);
+  border-radius: 12px;
+  padding: 25px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  color: #ff9999;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px;
+  background: #2a2a2a;
+  border: 1px solid rgba(255, 51, 51, 0.3);
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Poppins', Arial, sans-serif;
+  font-size: 0.95rem;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #ff3333;
+  box-shadow: 0 0 8px rgba(255, 51, 51, 0.3);
+}
+
+.contact-submit-btn {
+  width: 100%;
+  padding: 15px;
+  font-size: 1.1rem;
+  justify-content: center;
+}
+
+.contact-message {
+  margin-top: 15px;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.contact-message.success {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+  border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+.contact-message.error {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 1px solid rgba(244, 67, 54, 0.5);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .contacts-grid {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  
+  .contact-card {
+    padding: 15px;
+  }
+  
+  .contact-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+  }
+}
+</style>
+
+<script>
+// Обработка формы контактов
+document.addEventListener('DOMContentLoaded', function() {
+  const contactForm = document.getElementById('contactForm');
+  const successMessage = document.getElementById('contact-success');
+  const errorMessage = document.getElementById('contact-error');
+  
+  if (contactForm) {
+    contactForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Показываем индикатор загрузки
+      const submitBtn = contactForm.querySelector('.contact-submit-btn');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span>⏳</span> Отправка...';
+      submitBtn.disabled = true;
+      
+      // Скрываем предыдущие сообщения
+      successMessage.style.display = 'none';
+      errorMessage.style.display = 'none';
+      
+      // Собираем данные формы
+      const formData = new FormData(contactForm);
+      const data = Object.fromEntries(formData.entries());
+      
+      // Здесь можно добавить отправку на сервер
+      // Пока что имитируем успешную отправку
+      setTimeout(() => {
+        // Показываем успешное сообщение
+        successMessage.style.display = 'block';
+        contactForm.reset();
+        
+        // Возвращаем кнопку в исходное состояние
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        
+        // Прокручиваем к сообщению
+        successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 2000);
+    });
+  }
+});
+</script>
+</body>
+</html>

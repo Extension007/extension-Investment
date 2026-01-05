@@ -112,7 +112,7 @@ const validateProduct = [
     .trim()
     .isLength({ max: 100 })
     .matches(/^@?[a-zA-Z0-9_]{5,100}$/)
-    .withMessage("Telegram должен содержать только буквы, цифры и подчеркивание (5-10 символов)"),
+    .withMessage("Telegram должен содержать только буквы, цифры и подчеркивание (5-100 символов)"),
   
   body("whatsapp")
     .optional({ checkFalsy: true })

@@ -22,8 +22,10 @@
 <button type="submit" class="btn outline small">Выход</button>
 </form>
 </div>
-</div>
+  </div>
 </header>
+
+<main style="margin-bottom: 64px;">
 
 <!-- Модерация товаров -->
 <section class="section">
@@ -639,7 +641,7 @@ data-type="banner">
 </main>
 
 <footer class="footer">
-<p>© 2025 EXTO Ecosystem</p>
+  <p>© 2025 EXTO Ecosystem</p>
 </footer>
 
 <!-- Модальное окно для отклонения -->
@@ -665,10 +667,6 @@ data-type="banner">
 </div>
 
 <script>
-// FIX: УДАЛЕН ДУБЛИРУЮЩИЙ КОД - теперь используется единая логика из public/script.js
-// Все функции для работы с видео (getVideoType, extractVideoId, createYouTubeIframe и т.д.)
-// теперь находятся в public/script.js и используются через единый API
-
 // Глобальный CSRF токен
 const CSRF_TOKEN = "<%- typeof csrfToken !== 'undefined' ? csrfToken : '' %>";
 
@@ -713,12 +711,11 @@ e.preventDefault();
 e.stopPropagation();
 const id = btn.getAttribute("data-id");
 const currentStatus = btn.getAttribute("data-status");
-const itemType = btn.getAttribute("data-type") || "product"; // product, service, banner
+const itemType = btn.getAttribute("data-type") || "product";
 const action = (currentStatus === "approved" || currentStatus === "published") ? "заблокировать" : "разблокировать";
 if (!confirm(`Вы уверены, что хотите ${action} эту карточку?`)) return;
 
 try {
-// Определяем эндпоинт в зависимости от типа
 let endpoint;
 if (itemType === "banner") {
 endpoint = `/admin/banners/${id}/toggle-visibility`;
@@ -752,7 +749,6 @@ e.stopPropagation();
 const id = btn.getAttribute("data-id");
 if (!confirm("Одобрить эту карточку?")) return;
 try {
-// Определяем эндпоинт в зависимости от типа карточки
 const itemType = btn.getAttribute("data-type") || "product";
 let endpoint;
 if (itemType === "banner") {
@@ -781,12 +777,12 @@ alert("Ошибка сети: " + err.message);
 const rejectModal = document.getElementById("rejectModal");
 const rejectForm = document.getElementById("rejectForm");
 let currentRejectId = null;
-let currentRejectType = "product"; // Тип карточки для отклонения
+let currentRejectType = "product";
 
 document.querySelectorAll(".reject-btn").forEach(btn => {
 btn.addEventListener("click", () => {
 currentRejectId = btn.getAttribute("data-id");
-currentRejectType = btn.getAttribute("data-type") || "product"; // Сохраняем тип для использования в форме
+currentRejectType = btn.getAttribute("data-type") || "product";
 rejectModal.style.display = "block";
 rejectModal.setAttribute("aria-hidden", "false");
 });
@@ -809,7 +805,6 @@ e.preventDefault();
 if (!currentRejectId) return;
 const reason = new FormData(rejectForm).get("reason") || "Несоответствие правилам публикации";
 try {
-// Определяем эндпоинт в зависимости от типа карточки
 let rejectEndpoint;
 if (currentRejectType === "banner") {
 rejectEndpoint = `/admin/banners/${currentRejectId}/reject`;
@@ -833,58 +828,6 @@ alert("Ошибка сети: " + err.message);
 });
 }
 
-// Модерация баннеров: одобрение
-const approveBannerBtns = document.querySelectorAll(".approve-banner-btn");
-approveBannerBtns.forEach(btn => {
-btn.addEventListener("click", async (e) => {
-e.preventDefault();
-e.stopPropagation();
-const id = btn.getAttribute("data-id");
-if (!confirm("Одобрить этот баннер?")) return;
-try {
-const res = await postJSON(`/admin/banners/${id}/approve`);
-const data = await res.json();
-if (data.success) {
-alert("Баннер одобрен!");
-location.reload();
-} else {
-alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-}
-} catch (err) {
-console.error("❌ Ошибка одобрения баннера:", err);
-alert("Ошибка сети: " + err.message);
-}
-});
-});
-
-// Модерация баннеров: отклонение
-document.querySelectorAll(".reject-banner-btn").forEach(btn => {
-btn.addEventListener("click", () => {
-const id = btn.getAttribute("data-id");
-const reason = prompt("Укажите причину отклонения (необязательно):") || "Несоответствие правилам публикации";
-if (reason === null) return; // Пользователь отменил
-
-(async () => {
-try {
-const res = await postJSON(`/admin/banners/${id}/reject`, { reason });
-const data = await res.json();
-if (data.success) {
-alert("Баннер отклонен");
-location.reload();
-} else {
-alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-}
-} catch (err) {
-console.error("Ошибка отклонения баннера:", err);
-alert("Ошибка сети: " + err.message);
-}
-})();
-});
-});
-
-// FIX: УДАЛЕН ДУБЛИРУЮЩИЙ КОД ВИДЕО-ЛОГИКИ - теперь используется единая логика из public/script.js
-// Функции openVideoOverlay, closeVideoOverlay и обработчики кликов находятся в public/script.js
-
 // Обработка формы создания товара админом
 const adminCreateForm = document.getElementById('adminCreateProductForm');
 const adminCreateMsg = document.getElementById('adminCreateMsg');
@@ -895,7 +838,6 @@ if (adminCreateForm) {
 adminCreateForm.addEventListener('submit', async function(e) {
 e.preventDefault();
 
-// Проверка количества изображений
 if (adminImagesInput && adminImagesInput.files.length > 5) {
 adminCreateMsg.textContent = 'Максимальное количество изображений: 5';
 adminCreateMsg.style.color = '#b00020';
@@ -930,7 +872,6 @@ adminCreateMsg.textContent = data.message || 'Ошибка при добавле
 adminCreateMsg.style.color = '#b00020';
 }
 } else {
-// Если ответ HTML (redirect), перезагружаем страницу
 location.reload();
 }
 } catch (err) {
@@ -950,7 +891,6 @@ if (adminCreateBannerForm) {
 adminCreateBannerForm.addEventListener('submit', async function(e) {
 e.preventDefault();
 
-// Проверка количества изображений
 if (adminBannerImagesInput && adminBannerImagesInput.files.length > 5) {
 adminCreateBannerMsg.textContent = 'Максимальное количество изображений: 5';
 adminCreateBannerMsg.style.color = '#b00020';
@@ -985,7 +925,6 @@ adminCreateBannerMsg.textContent = data.message || 'Ошибка при доба
 adminCreateBannerMsg.style.color = '#b00020';
 }
 } else {
-// Если ответ HTML (redirect), перезагружаем страницу
 location.reload();
 }
 } catch (err) {
@@ -1104,17 +1043,7 @@ reader.readAsDataURL(file);
 });
 </script>
 
-<!-- FIX: Загружаем YouTube IFrame API перед основным скриптом для единой логики видео -->
-<script>
-// Загрузка YouTube IFrame API
-var tag = document.createElement('script');
-tag.src = "https://www.youtube.com/iframe_api";
-var firstScriptTag = document.getElementsByTagName('script')[0];
-firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-</script>
 
-<!-- FIX: Подключаем единую логику видео-плееров из public/script.js -->
-<script src="/script.js"></script>
 
 <style>
 /* Status styles for product cards */

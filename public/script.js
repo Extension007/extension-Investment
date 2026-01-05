@@ -2,6 +2,31 @@
 // Вспомогательные функции
 // =======================
 
+// Функция для получения пути к элементу (для отладки)
+function getElementPath(element) {
+  if (!element) return '';
+  const path = [];
+  while (element && element.nodeType === Node.ELEMENT_NODE) {
+    let selector = element.nodeName.toLowerCase();
+    if (element.id) {
+      selector += '#' + element.id;
+      path.unshift(selector);
+      break;
+    } else {
+      let sibling = element;
+      let nth = 1;
+      while (sibling = sibling.previousElementSibling) {
+        if (sibling.nodeName.toLowerCase() === selector) nth++;
+      }
+      if (nth !== 1) selector += `:nth-of-type(${nth})`;
+    }
+    path.unshift(selector);
+    element = element.parentElement;
+  }
+  return path.join(' > ');
+}
+
+
 // =======================
 // Универсальный видеоплеер
 // =======================
@@ -141,9 +166,25 @@ async function getInstagramEmbed(url) {
 // Обработчики видео overlay, регистрация, категории, рейтинг
 // =======================
 
+// Инициализация DOM элементов (сразу при загрузке скрипта)
+let videoOverlay = document.getElementById('videoOverlay');
+let videoIframeContainer = document.getElementById('videoIframeContainer');
+let imageOverlay = document.getElementById('imageOverlay');
+let imageModal = document.getElementById('imageModal');
+let imageModalImage = document.getElementById('imageModalImage');
+let imageModalCurrent = document.getElementById('imageModalCurrent');
+let imageModalTotal = document.getElementById('imageModalTotal');
+let imageModalTitle = document.getElementById('imageModalTitle');
+
 document.addEventListener("DOMContentLoaded", () => {
+  console.log('🔄 DOM загружен, инициализация скрипта...');
+  console.log('🌐 Текущий URL:', window.location.href);
+  console.log('📊 User Agent:', navigator.userAgent);
+  console.log('📱 Viewport:', `${window.innerWidth}x${window.innerHeight}`);
+
   // Проверяем, находимся ли мы на странице кабинета пользователя
   const isCabinetPage = window.IS_CABINET_PAGE === true;
+  console.log('📍 isCabinetPage:', isCabinetPage);
 
   // Если это страница кабинета, пропускаем инициализацию публичных функций
   if (isCabinetPage) {
@@ -151,8 +192,88 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // FIX: Объявляем productId один раз на уровне DOMContentLoaded для избежания повторных объявлений
+  console.log('✅ Инициализация публичных функций...');
+
+  // Элементы DOM для видео overlay (инициализируем в начале)
+  let videoOverlay = document.getElementById('videoOverlay');
+  let videoIframeContainer = document.getElementById('videoIframeContainer');
+  let imageOverlay = document.getElementById('imageOverlay');
+  let imageModal = document.getElementById('imageModal');
+  let imageModalImage = document.getElementById('imageModalImage');
+  let imageModalCurrent = document.getElementById('imageModalCurrent');
+  let imageModalTotal = document.getElementById('imageModalTotal');
+  let imageModalTitle = document.getElementById('imageModalTitle');
+
+  // Глобальные переменные
   let productId;
+  let currentVideoIframe = null;
+  let currentVideoUrl = null;
+  let isVideoOpening = false;
+  let youtubePlayer = null;
+  let isPlaying = false;
+  let isPaused = false;
+  let currentImageIndex = 0;
+  let currentImages = [];
+  let currentProductName = '';
+  let socket = null;
+  let currentChatCardId = null;
+  let socketInitialized = false;
+
+  // Подсчитываем карточки товаров и услуг отдельно
+  const productCards = document.querySelectorAll('#catalog .product-card');
+  const serviceCards = document.querySelectorAll('#services .product-card');
+  const allCards = document.querySelectorAll('.product-card');
+
+  console.log('📊 Количество карточек товаров:', productCards.length);
+  console.log('📊 Количество карточек услуг:', serviceCards.length);
+  console.log('📊 Всего карточек (.product-card):', allCards.length);
+  console.log('📊 Сравнение с DOM:', {
+    'Товары в #catalog .product-card': productCards.length,
+    'Услуги в #services .product-card': serviceCards.length,
+    'Все .product-card': allCards.length,
+    'Проверка: товары + услуги = все': (productCards.length + serviceCards.length) === allCards.length
+  });
+
+  // Проверяем наличие элементов страницы услуг
+  const servicesSection = document.getElementById('services');
+  const servicesGrid = document.getElementById('services-grid');
+  console.log('🔍 Элементы страницы услуг:', {
+    servicesSection: !!servicesSection,
+    servicesGrid: !!servicesGrid,
+    serviceCardsOnPage: serviceCards.length
+  });
+
+  // Проверяем каждую карточку услуги отдельно
+  serviceCards.forEach((card, index) => {
+    const cardId = card.getAttribute('data-product-id');
+    const ratingBlock = card.querySelector('.service-rating');
+    const chatBtn = card.querySelector('.chat-btn');
+    const videoBtn = card.querySelector('.btn[data-video]');
+
+    console.log(`📋 Карточка услуги ${index + 1} (ID: ${cardId}):`, {
+      ratingBlock: !!ratingBlock,
+      chatBtn: !!chatBtn,
+      videoBtn: !!videoBtn,
+      chatBtnData: chatBtn ? chatBtn.getAttribute('data-card-id') : null,
+      videoBtnData: videoBtn ? videoBtn.getAttribute('data-video') : null
+    });
+  });
+
+  // Проверяем каждую карточку товара отдельно
+  productCards.forEach((card, index) => {
+    const cardId = card.getAttribute('data-product-id');
+    const ratingBlock = card.querySelector('.product-rating');
+    const chatBtn = card.querySelector('.chat-btn');
+    const videoBtn = card.querySelector('.btn[data-video]');
+
+    console.log(`📋 Карточка товара ${index + 1} (ID: ${cardId}):`, {
+      ratingBlock: !!ratingBlock,
+      chatBtn: !!chatBtn,
+      videoBtn: !!videoBtn,
+      chatBtnData: chatBtn ? chatBtn.getAttribute('data-card-id') : null,
+      videoBtnData: videoBtn ? videoBtn.getAttribute('data-video') : null
+    });
+  });
   
   // Инициализация состояния голосования для гостей (проверка cookie)
   if (!window.IS_AUTH) {
@@ -170,38 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
-  // FIX: Полноэкранный overlay для YouTube видео
-  const videoOverlay = document.getElementById('videoOverlay');
-  const videoIframeContainer = document.getElementById('videoIframeContainer');
-  let currentVideoIframe = null;
-  let currentVideoUrl = null;
-  let isVideoOpening = false; // Флаг для предотвращения повторных вызовов
-  let youtubePlayer = null; // Глобальная переменная для YouTube IFrame API плеера
-  let isPlaying = false; // Флаг для защиты от двойного вызова play()
-  let isPaused = false; // Флаг для защиты от двойного вызова pause()
-  
-  // Проверка наличия элементов видео overlay
-  if (!videoOverlay) {
-    console.warn('⚠️ videoOverlay element not found in DOM');
-  }
-  if (!videoIframeContainer) {
-    console.warn('⚠️ videoIframeContainer element not found in DOM');
-  }
 
-  // FIX: Overlay для просмотра изображений
-  const imageOverlay = document.getElementById('imageOverlay');
-  const imageOverlayImg = document.getElementById('imageOverlayImg');
-  
-  // FIX: Модальное окно для просмотра изображений
-  const imageModal = document.getElementById('imageModal');
-  const imageModalImage = document.getElementById('imageModalImage');
-  const imageModalCurrent = document.getElementById('imageModalCurrent');
-  const imageModalTotal = document.getElementById('imageModalTotal');
-  const imageModalTitle = document.getElementById('imageModalTitle');
-  
-  let currentImageIndex = 0;
-  let currentImages = [];
-  let currentProductName = '';
   
   // Создание YouTube iframe с использованием YouTube IFrame API (исправление ошибки 153)
   function createYouTubeIframe(videoId) {
@@ -339,11 +429,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 errorMessage = 'Ошибка 153: Проблема с кодированием видеопотока. Попробуйте обновить страницу.';
                 // Для ошибки 153 пытаемся пересоздать плеер
                 console.warn('⚠️ Обнаружена ошибка 153, пробуем пересоздать плеер...');
-                setTimeout(() => {
-                  if (videoId && videoIframeContainer) {
-                    createYouTubeIframe(videoId);
+                // FIX: Добавляем проверку, чтобы избежать бесконечной рекурсии при создании плеера
+                if (!window.youtubePlayerRetry) {
+                  window.youtubePlayerRetry = 0;
+                }
+                if (window.youtubePlayerRetry < 3 && videoId && videoIframeContainer) {
+                  window.youtubePlayerRetry++;
+                  setTimeout(() => {
+                    if (videoId && videoIframeContainer) {
+                      createYouTubeIframe(videoId);
+                    }
+                  }, 2000);
+                } else {
+                  console.error('❌ Превышено количество попыток воспроизведения YouTube видео');
+                  if (currentVideoUrl) {
+                    window.open(currentVideoUrl, '_blank');
                   }
-                }, 2000);
+                  closeVideoOverlay();
+                }
                 return;
               default:
                 errorMessage = `Ошибка ${errorCode}: Проблема с воспроизведением видео.`;
@@ -688,15 +791,8 @@ document.addEventListener("DOMContentLoaded", () => {
       
       console.log('✅ Overlay показан, класс show добавлен');
       
-      // FIX: Для YouTube плеер создаётся строго в обработчике клика на кнопку "Обзор" (не через openVideoOverlay)
-      // Это обеспечивает передачу gesture context для устранения ошибки 153 в Chrome на iPhone
-      if (videoType === 'youtube') {
-        console.warn('⚠️ YouTube видео должно обрабатываться через обработчик клика на кнопку "Обзор"');
-        window.open(videoUrl, '_blank');
-        closeVideoOverlay();
-        return;
-        
-      } else if (videoType === 'vk') {
+      // Обработка разных типов видео
+      if (videoType === 'vk') {
         const vkParams = extractVKVideoParams(videoUrl);
         if (!vkParams) {
           console.warn('⚠️ Не удалось извлечь параметры VK из URL:', videoUrl);
@@ -1025,14 +1121,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // FIX: Обработчик клика на кнопку "Обзор" и закрытия overlay
   // Просмотр видео доступен для всех пользователей (включая гостей)
+  console.log('🎯 Регистрация основного обработчика кликов');
   document.addEventListener('click', (e) => {
+    // Фильтруем клики по основным интерактивным элементам для избежания лишних обработок
+    if (!e.target.closest('a, button, .product-card, .service-rating, .chat-btn, .btn[data-video], [data-close-chat-modal], .chat-close-btn, .chat-send-btn, .image-clickable, [data-close-image], [data-image-nav], .chat-edit-btn, .chat-delete-btn, .banner-clickable, .banner-link-icon, .product-info-icon, [data-description-modal], [data-close-description], .slider-arrow, .slider-indicator, .product-image-slide')) {
+      return;
+    }
+
+    console.log('🖱️ Общий обработчик клика сработал, target:', e.target.className, e.target.tagName, 'id:', e.target.id);
+    console.log('🖱️ Полный путь к элементу:', getElementPath(e.target));
+
     // FIX: Открытие видео по клику на кнопку "Обзор" - создаём плеер строго внутри клика пользователя
     const videoBtn = e.target.closest('.btn[data-video]');
     if (videoBtn) {
+      // Определяем тип карточки
+      const cardElement = videoBtn.closest('.product-card');
+      let cardType = 'неизвестный';
+      if (cardElement) {
+        if (cardElement.closest('#catalog')) {
+          cardType = 'товар';
+        } else if (cardElement.closest('#services')) {
+          cardType = 'услуга';
+        }
+      }
+      console.log('🎬 Найдена кнопка видео в карточке', cardType + ':', videoBtn, 'data-video:', videoBtn.getAttribute('data-video'));
+      console.log('🎬 Обработка кнопки видео...');
       e.preventDefault();
       e.stopPropagation();
       e.stopImmediatePropagation(); // Останавливаем дальнейшее распространение события
-      
+
       const videoUrl = videoBtn.getAttribute('data-video');
       if (videoUrl) {
         console.log('🎬 Клик на кнопку видео, URL:', videoUrl);
@@ -1040,6 +1157,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // FIX: Определяем тип видео для правильной обработки
         const videoType = getVideoType(videoUrl);
         
+        // Обработка всех типов видео в overlay
         if (videoType === 'youtube') {
           const videoId = extractVideoId(videoUrl);
           if (!videoId) {
@@ -1047,14 +1165,14 @@ document.addEventListener("DOMContentLoaded", () => {
             window.open(videoUrl, '_blank');
             return false;
           }
-          
+
           // FIX: Показываем overlay перед созданием плеера
           if (!videoOverlay || !videoIframeContainer) {
             console.error('❌ Video overlay elements not found, opening in new tab');
             window.open(videoUrl, '_blank');
             return false;
           }
-          
+
           // Очищаем предыдущий контент
           if (currentVideoIframe) {
             try {
@@ -1073,19 +1191,19 @@ document.addEventListener("DOMContentLoaded", () => {
             youtubePlayer = null;
           }
           videoIframeContainer.innerHTML = '';
-          
+
           // Показываем overlay
           videoOverlay.classList.add('show');
           videoOverlay.setAttribute('aria-hidden', 'false');
           videoOverlay.style.display = 'flex';
           document.body.style.overflow = 'hidden';
-          
+
           currentVideoUrl = videoUrl;
-          
+
           // FIX: Создаём плеер строго внутри клика пользователя для устранения ошибки 153 в Chrome на iPhone
           // Gesture context передаётся корректно в WKWebView
           console.log('✅ Создание YouTube плеера внутри обработчика клика (gesture context передан)');
-          
+
           // Проверяем, что YouTube IFrame API загружен
           if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {
             console.warn('⚠️ YouTube IFrame API еще не загружен, используем fallback');
@@ -1095,20 +1213,155 @@ document.addEventListener("DOMContentLoaded", () => {
             // FIX: Создаём плеер строго внутри клика пользователя - gesture context передаётся в WKWebView
             createYouTubeIframe(videoId);
           }
-        } else if (videoType === 'vk' || videoType === 'instagram') {
-          // Для VK и Instagram используем старую логику (они не требуют gesture context)
+        } else if (videoType === 'vk') {
+          // VK видео обрабатываем через overlay
+          if (!videoOverlay || !videoIframeContainer) {
+            console.error('❌ Video overlay elements not found, opening in new tab');
+            window.open(videoUrl, '_blank');
+            return false;
+          }
+
+          const vkParams = extractVKVideoParams(videoUrl);
+          if (!vkParams) {
+            console.warn('⚠️ Не удалось извлечь параметры VK из URL:', videoUrl);
+            window.open(videoUrl, '_blank');
+            return false;
+          }
+
+          const embedUrl = buildVKEmbedUrl(vkParams);
+          console.log('▶️ Открытие VK видео в overlay:', embedUrl);
+
+          // Показываем overlay
+          videoOverlay.classList.add('show');
+          videoOverlay.setAttribute('aria-hidden', 'false');
+          videoOverlay.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+
+          currentVideoUrl = videoUrl;
+          createVkIframe(embedUrl);
+        } else if (videoType === 'instagram') {
+          // Instagram видео обрабатываем через overlay
+          console.log('▶️ Открытие Instagram видео в overlay:', videoUrl);
           openVideoOverlay(videoUrl).catch(err => {
-            console.error('❌ Ошибка при открытии видео:', err);
+            console.error('❌ Ошибка при открытии Instagram видео:', err);
             window.open(videoUrl, '_blank');
           });
         } else {
-          // Неизвестный тип - открываем в новой вкладке
-          window.open(videoUrl, '_blank');
+          // Неизвестный тип - показываем пользователю сообщение в overlay с предложением открыть в новой вкладке
+          console.log('⚠️ Неизвестный тип видео, показываем сообщение пользователю:', videoUrl);
+          
+          // Показываем overlay
+          if (!videoOverlay || !videoIframeContainer) {
+            console.error('❌ Video overlay elements not found, opening in new tab');
+            window.open(videoUrl, '_blank');
+            return false;
+          }
+
+          // Очищаем предыдущий контент
+          if (currentVideoIframe) {
+            try {
+              currentVideoIframe.src = '';
+            } catch (e) {
+              // Игнорируем ошибки при очистке
+            }
+            currentVideoIframe = null;
+          }
+          if (youtubePlayer) {
+            try {
+              youtubePlayer.destroy();
+            } catch (e) {
+              // Игнорируем ошибки
+            }
+            youtubePlayer = null;
+          }
+          videoIframeContainer.innerHTML = '';
+
+          // Показываем overlay
+          videoOverlay.classList.add('show');
+          videoOverlay.setAttribute('aria-hidden', 'false');
+          videoOverlay.style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+
+          currentVideoUrl = videoUrl;
+          
+          // Создаем сообщение пользователю
+          const messageDiv = document.createElement('div');
+          messageDiv.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            text-align: center;
+            padding: 20px;
+            color: white;
+            font-family: Arial, sans-serif;
+          `;
+          
+          messageDiv.innerHTML = `
+            <h3 style="margin-bottom: 20px;">Неизвестный тип видео</h3>
+            <p style="margin-bottom: 20px; max-width: 80%;">Видео не может быть воспроизведено в режиме предварительного просмотра из-за ограничений безопасности.</p>
+            <button id="openVideoBtn" class="btn" style="background: #ff4081; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; margin-top: 10px;">
+              Открыть видео в новой вкладке
+            </button>
+          `;
+          
+          videoIframeContainer.appendChild(messageDiv);
+          
+          // Добавляем обработчик для кнопки открытия видео
+          const openVideoBtn = document.getElementById('openVideoBtn');
+          if (openVideoBtn) {
+            openVideoBtn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              window.open(videoUrl, '_blank');
+              closeVideoOverlay();
+            });
+          }
         }
       } else {
         console.warn('⚠️ Кнопка видео не содержит data-video атрибут');
       }
       return false; // Дополнительная защита от всплытия
+    }
+    
+    // Обработчик для закрытия чата по клику на overlay
+    const closeChatOverlay = e.target.closest('[data-close-chat-modal]');
+    if (closeChatOverlay) {
+      e.preventDefault();
+      e.stopPropagation();
+      const cardId = closeChatOverlay.getAttribute('data-close-chat-modal');
+      if (cardId) {
+        console.log('💬 Закрытие чата по клику на overlay для карточки:', cardId);
+        window.closeChatModal(cardId);
+      }
+      return false;
+    }
+    
+    // Обработчик для закрытия чата по клику на кнопку закрытия
+    const closeChatBtn = e.target.closest('.chat-close-btn');
+    if (closeChatBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const cardId = closeChatBtn.getAttribute('data-close-chat-modal');
+      if (cardId) {
+        console.log('💬 Закрытие чата по клику на кнопку для карточки:', cardId);
+        window.closeChatModal(cardId);
+      }
+      return false;
+    }
+    
+    // Обработчик для отправки сообщения чата
+    const sendChatBtn = e.target.closest('.chat-send-btn');
+    if (sendChatBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const cardId = sendChatBtn.getAttribute('data-send-chat-message');
+      if (cardId) {
+        console.log('💬 Отправка сообщения чата для карточки:', cardId);
+        window.sendChatMessage(cardId);
+      }
+      return false;
     }
     
     // FIX: Закрытие видео overlay по кнопке закрытия (обрабатывается выше вместе с кликом на фон)
@@ -1218,11 +1471,53 @@ document.addEventListener("DOMContentLoaded", () => {
       navigateImage(direction);
       return;
     }
+
+    // FIX: Обработчик клика на кнопку чата
+    const chatBtn = e.target.closest('.chat-btn');
+    if (chatBtn) {
+      console.log('💬 Найдена кнопка чата:', chatBtn, 'data-card-id:', chatBtn.dataset.cardId);
+      e.preventDefault();
+      const cardId = chatBtn.dataset.cardId;
+      if (cardId) {
+        console.log('💬 Открываем чат для карточки:', cardId);
+        openChatModal(cardId);
+      } else {
+        console.warn('⚠️ Кнопка чата не содержит data-card-id');
+      }
+      return;
+    }
+    
+    // Обработчик кнопки редактирования комментария
+    const editBtn = e.target.closest('.chat-edit-btn');
+    if (editBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const commentId = editBtn.getAttribute('data-edit-comment');
+      const commentText = editBtn.getAttribute('data-comment-text');
+      if (commentId) {
+        console.log('✏️ Редактирование комментария:', commentId);
+        editComment(commentId, commentText);
+      }
+      return;
+    }
+    
+    // Обработчик кнопки удаления комментария
+    const deleteBtn = e.target.closest('.chat-delete-btn');
+    if (deleteBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      const commentId = deleteBtn.getAttribute('data-delete-comment');
+      if (commentId) {
+        console.log('🗑️ Удаление комментария:', commentId);
+        deleteComment(commentId);
+      }
+      return;
+    }
   });
 
   // FIX: Поддержка клавиатурной навигации в overlay изображений
   document.addEventListener('keydown', (e) => {
-    if (!imageOverlay.classList.contains('show')) return;
+    if (imageOverlay && imageOverlay.classList && imageOverlay.classList.contains('show')) return;
     
     if (e.key === 'Escape') {
       closeImageOverlay();
@@ -1523,15 +1818,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Рейтинг (лайк/дизлайк) - доступно всем: гостям и пользователям
-    const likeBtn = e.target.closest(".like-btn");
-    const dislikeBtn = e.target.closest(".dislike-btn");
+    const likeBtn = e.target.closest(".like-btn, .product-like-btn, .service-like-btn, .banner-like-btn");
+    const dislikeBtn = e.target.closest(".dislike-btn, .product-dislike-btn, .service-dislike-btn, .banner-dislike-btn");
 
     if (likeBtn || dislikeBtn) {
-      const ratingBlock = e.target.closest(".product-rating");
+      // Используем более широкий селектор для поддержки разных типов карточек (товары, услуги, баннеры)
+      const ratingBlock = e.target.closest(".product-rating, .service-rating, .banner-rating, .item-rating");
       if (!ratingBlock) return;
       
       // FIX: убрано повторное объявление productId - используем присвоение
       productId = ratingBlock.dataset.id;
+      
+      // Определяем тип карточки
+      let itemType = 'product'; // по умолчанию
+      if (ratingBlock.classList.contains('service-rating')) {
+        itemType = 'service';
+      } else if (ratingBlock.classList.contains('banner-rating')) {
+        itemType = 'banner';
+      } else if (ratingBlock.dataset.type) {
+        itemType = ratingBlock.dataset.type;
+      }
       
       // Проверяем, голосовал ли уже (через cookie для гостей или data-атрибут для пользователей)
       if (ratingBlock.dataset.voted === "true") {
@@ -1540,7 +1846,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Для гостей также проверяем cookie
       if (!window.IS_AUTH) {
-        const voteCookie = document.cookie.split(';').some(cookie => cookie.trim().startsWith(`exto_vote_${productId}=`));
+        const voteCookie = document.cookie.split(';').some(cookie => cookie.trim().startsWith(`exto_${itemType}_vote_${productId}=`));
         if (voteCookie) {
           ratingBlock.dataset.voted = "true";
           ratingBlock.querySelectorAll("button").forEach((b) => {
@@ -1566,13 +1872,21 @@ document.addEventListener("DOMContentLoaded", () => {
         // Унифицированный формат: используем vote вместо value
         const vote = value === 'like' ? 'up' : 'down';
         
-        const res = await fetch(`/api/rating/${productId}`, {
+        // Используем правильный эндпоинт в зависимости от типа карточки
+        let endpoint;
+        if (itemType === 'service') {
+          endpoint = `/api/services/${productId}/vote`;
+        } else {
+          endpoint = `/api/rating/${productId}`;
+        }
+        
+        const res = await fetch(endpoint, {
           method: "POST",
-          headers: { 
+          headers: {
             "Content-Type": "application/json",
             "X-CSRF-Token": csrfToken || ''
           },
-          body: JSON.stringify({ vote }),
+          body: JSON.stringify({ vote, type: itemType }), // Передаем тип карточки в запросе
           credentials: 'include' // Важно для отправки cookie
         });
         const data = await res.json();
@@ -1668,7 +1982,7 @@ async function deleteItem(itemType, itemId, cardElement) {
           }
           
           // Проверяем, остались ли еще карточки
-          const remainingCards = document.querySelectorAll('.catalog-item, .product-card');
+          const remainingCards = document.querySelectorAll('.catalog-item, .product-card, .service-card');
           if (remainingCards && remainingCards.length === 0) {
             location.reload();
           }
@@ -1736,10 +2050,14 @@ async function voteItem(itemType, itemId, vote, ratingBlock) {
     // Унифицированный формат: используем vote: "up"/"down" для всех типов
     if (itemType === 'product') {
       endpoint = `/api/rating/${itemId}`;
+    } else if (itemType === 'service') {
+      // Для услуг используем специальный эндпоинт
+      endpoint = `/api/services/${itemId}/vote`;
     } else {
-      endpoint = `/api/${itemType === 'service' ? 'services' : 'banners'}/${itemId}/vote`;
+      // Для баннеров используем тот же эндпоинт, что и для товаров
+      endpoint = `/api/rating/${itemId}`;
     }
-    body = JSON.stringify({ vote }); // Единый формат для всех типов
+    body = JSON.stringify({ vote, type: itemType }); // Включаем тип карточки в запрос для всех типов
 
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -1755,8 +2073,8 @@ async function voteItem(itemType, itemId, vote, ratingBlock) {
 
     if (data.success) {
       // Обновляем отображение
-      const resultEl = ratingBlock.querySelector(`.${itemType}-result`) || ratingBlock.querySelector('.rating-result');
-      const votesEl = ratingBlock.querySelector(`.${itemType}-votes`) || ratingBlock.querySelector('.rating-votes');
+      const resultEl = ratingBlock.querySelector(`.${itemType}-result`) || ratingBlock.querySelector('.rating-result') || ratingBlock.querySelector('.result');
+      const votesEl = ratingBlock.querySelector(`.${itemType}-votes`) || ratingBlock.querySelector('.rating-votes') || ratingBlock.querySelector('.votes');
 
       if (resultEl && resultEl.textContent !== undefined) {
         resultEl.textContent = data.result !== undefined ? data.result : ((data.rating_up || data.likes || 0) - (data.rating_down || data.dislikes || 0));
@@ -1996,96 +2314,971 @@ function showToast(message, type = 'info') {
   }, 5000);
 }
 
-  // Инициализация универсальных обработчиков при загрузке DOM
-document.addEventListener('DOMContentLoaded', () => {
-  // Обработчики удаления (с безопасными проверками)
-  document.addEventListener('click', async (e) => {
-    if (!e || !e.target) return;
-    
-    const deleteBtn = e.target.closest && e.target.closest('.delete-product-btn, .delete-service-btn, .delete-banner-btn');
-    if (deleteBtn && deleteBtn.classList) {
-      e.preventDefault();
-      const itemType = deleteBtn.classList.contains('delete-product-btn') ? 'product' 
-        : deleteBtn.classList.contains('delete-service-btn') ? 'service' 
-        : 'banner';
-      const itemId = deleteBtn.dataset && deleteBtn.dataset.id ? deleteBtn.dataset.id : null;
-      if (!itemId) {
-        console.error('❌ Отсутствует ID карточки');
+  // ======= Чат комментариев =======
+
+  // Инициализация Socket.IO
+  let socket = null;
+  let currentChatCardId = null;
+
+  let socketInitialized = false; // Флаг для отслеживания инициализации сокета
+
+  function initializeSocket() {
+    if (socketInitialized && socket) return socket;
+
+    socket = io({
+      transports: ['websocket', 'polling']
+    });
+
+    socket.on('connect', () => {
+      console.log('💬 Подключен к чату');
+      socketInitialized = true;
+    });
+
+    socket.on('disconnect', () => {
+      console.log('💬 Отключен от чата');
+      socketInitialized = false;
+    });
+
+    socket.on('comment:new', (data) => {
+      try {
+        if (data && data.cardId === currentChatCardId) {
+          addCommentToChat(data);
+        }
+      } catch (error) {
+        console.error('❌ Ошибка при добавлении нового комментария:', error);
+      }
+    });
+
+    socket.on('error', (error) => {
+      console.error('❌ Ошибка чата:', typeof error === 'object' && error ? JSON.stringify(error) : error);
+      // Проверяем, что функция showToast существует перед вызовом
+      if (typeof showToast === 'function') {
+        showToast('Ошибка подключения к чату', 'error');
+      } else {
+        console.warn('⚠️ Функция showToast не найдена');
+      }
+    });
+
+    // Обработчик успешного присоединения к чату
+    socket.on('joined-comment-chat', (data) => {
+      try {
+        if (data && data.success) {
+          console.log('✅ Успешно присоединился к чату карточки:', data.cardId);
+        } else {
+          console.warn('⚠️ Неудачное присоединение к чату:', data);
+        }
+      } catch (error) {
+        console.error('❌ Ошибка при обработке присоединения к чату:', error);
+      }
+    });
+
+    // Обработчик уведомления о новом пользователе в чате
+    socket.on('user-joined-chat', (data) => {
+      try {
+        console.log('👤 Новый пользователь в чате:', data.username);
+      } catch (error) {
+        console.error('❌ Ошибка при обработке уведомления о новом пользователе:', error);
+      }
+    });
+
+    // Обработчик уведомления о выходе пользователя из чата
+    socket.on('user-left-chat', (data) => {
+      try {
+        console.log('👤 Пользователь покинул чат:', data.socketId);
+      } catch (error) {
+        console.error('❌ Ошибка при обработке уведомления о выходе пользователя:', error);
+      }
+    });
+
+    // Обработчик обновления комментария
+    socket.on('comment:updated', (data) => {
+      try {
+        if (data && data._id) {
+          // Находим комментарий в DOM и обновляем его текст
+          const commentElement = document.querySelector(`[data-comment-id="${data._id}"]`);
+          if (commentElement) {
+            const textElement = commentElement.querySelector('.chat-message-text');
+            if (textElement && data.text) {
+              textElement.textContent = data.text;
+              // Добавляем визуальный индикатор обновления
+              commentElement.style.backgroundColor = '#e8f5e8';
+              setTimeout(() => {
+                commentElement.style.backgroundColor = '';
+              }, 500);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Ошибка при обработке обновления комментария:', error);
+      }
+    });
+
+    // Обработчик удаления комментария
+    socket.on('comment:deleted', (data) => {
+      try {
+        if (data && data._id) {
+          // Находим комментарий в DOM и удаляем его
+          const commentElement = document.querySelector(`[data-comment-id="${data._id}"]`);
+          if (commentElement) {
+            // Плавное удаление
+            commentElement.style.opacity = '0';
+            commentElement.style.transform = 'translateX(-100%)';
+            commentElement.style.transition = 'opacity 0.3s, transform 0.3s';
+            
+            setTimeout(() => {
+              if (commentElement && commentElement.parentNode) {
+                commentElement.parentNode.removeChild(commentElement);
+              }
+            }, 300);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Ошибка при обработке удаления комментария:', error);
+      }
+    });
+
+    return socket;
+  }
+
+  // Открытие модального окна чата
+  async function openChatModal(cardId) {
+    try {
+      // Проверяем роль пользователя
+      const userRole = window.USER_ROLE;
+      const isGuest = !userRole; // Гость - это пользователь без роли
+
+      // Все пользователи (включая гостей) могут открывать чат для чтения
+      currentChatCardId = cardId;
+      const modal = document.getElementById(`chat-modal-${cardId}`);
+      if (!modal) {
+        console.error('❌ Модальное окно чата не найдено');
         return;
       }
-      const cardElement = deleteBtn.closest && deleteBtn.closest('.catalog-item, .product-card');
-      await deleteItem(itemType, itemId, cardElement);
+
+      // Инициализируем сокет
+      initializeSocket();
+
+      // Проверяем, что сокет был инициализирован
+      if (!socket) {
+        console.error('❌ Не удалось инициализировать сокет');
+        showToast('Ошибка подключения к чату', 'error');
+        return;
+      }
+
+      // Присоединяемся к комнате
+      socket.emit('join-comment-chat', { cardId });
+
+      // Загружаем историю комментариев
+      await loadChatMessages(cardId);
+
+      // Показываем модальное окно
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+
+      // Настраиваем интерфейс в зависимости от роли пользователя
+      const inputContainer = modal.querySelector('.chat-input-container');
+      const sendBtn = modal.querySelector('.chat-send-btn');
+
+      if (isGuest) {
+        // Гости могут только читать комментарии
+        if (inputContainer) inputContainer.style.display = 'none';
+
+        // Добавляем информационное сообщение для гостей
+        const messagesContainer = document.getElementById(`chat-messages-${cardId}`);
+        if (messagesContainer && !messagesContainer.querySelector('.guest-info')) {
+          const guestInfo = document.createElement('div');
+          guestInfo.className = 'guest-info';
+          guestInfo.style.cssText = `
+            text-align: center;
+            color: #888;
+            font-style: italic;
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 51, 51, 0.2);
+            background: rgba(255, 51, 51, 0.05);
+            margin-bottom: 10px;
+          `;
+          guestInfo.textContent = 'Вы можете читать комментарии. Для отправки сообщений необходимо войти в систему.';
+          messagesContainer.insertBefore(guestInfo, messagesContainer.firstChild);
+        }
+      } else {
+        // Авторизованные пользователи могут отправлять сообщения
+        if (inputContainer) inputContainer.style.display = 'flex';
+        if (sendBtn) sendBtn.disabled = false;
+
+        // Фокус на поле ввода
+        const input = document.getElementById(`chat-input-${cardId}`);
+        if (input) {
+          setTimeout(() => {
+            if (input && input.focus) {
+              input.focus();
+            }
+          }, 100);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Ошибка при открытии модального окна чата:', error);
+      showToast('Ошибка открытия чата', 'error');
+    }
+  }
+
+  // Открытие модалки авторизации для гостей
+  function openAuthModal() {
+    const modal = document.getElementById('authModal');
+    if (modal) {
+      modal.style.display = 'block';
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  // Закрытие модалки авторизации
+  function closeAuthModal() {
+    const modal = document.getElementById('authModal');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    }
+  }
+
+  // Закрытие модального окна чата
+  window.closeChatModal = function(cardId) {
+    try {
+      console.log('💬 Закрытие чата с ID:', cardId);
+      const modal = document.getElementById(`chat-modal-${cardId}`);
+      if (!modal) {
+        console.error('❌ Модальное окно не найдено для ID:', cardId);
+        return;
+      }
+
+      // Отсоединяемся от комнаты
+      if (socket && currentChatCardId) {
+        socket.emit('leave-comment-chat', { cardId: currentChatCardId });
+        currentChatCardId = null;
+      }
+
+      // Скрываем модальное окно
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+
+      // Очищаем сообщения
+      const messagesContainer = document.getElementById(`chat-messages-${cardId}`);
+      if (messagesContainer) {
+        messagesContainer.innerHTML = '';
+      }
+
+      console.log('✅ Чат успешно закрыт');
+    } catch (error) {
+      console.error('❌ Ошибка при закрытии модального окна чата:', error);
+      // Попробуем восстановить состояние
+      document.body.style.overflow = '';
+    }
+  }
+
+  // Дополнительный обработчик для закрытия чата
+  function addChatCloseHandlers() {
+    // Обработчик клика на кнопку закрытия
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.chat-close-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const button = e.target.closest('.chat-close-btn');
+        const cardId = button.getAttribute('data-close-chat-modal');
+        if (cardId) {
+          console.log('💬 Клик на кнопку закрытия чата:', cardId);
+          window.closeChatModal(cardId);
+        }
+      }
+    });
+
+    // Обработчик клика на фон модального окна
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.chat-modal-overlay')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const overlay = e.target.closest('.chat-modal-overlay');
+        const cardId = overlay.getAttribute('data-close-chat-modal');
+        if (cardId) {
+          console.log('💬 Клик на фон чата:', cardId);
+          window.closeChatModal(cardId);
+        }
+      }
+    });
+  }
+
+  // Загрузка истории комментариев
+  async function loadChatMessages(cardId) {
+    try {
+      const messagesContainer = document.getElementById(`chat-messages-${cardId}`);
+      if (!messagesContainer) return;
+
+      const response = await fetch(`/api/comments/${cardId}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ошибка! Статус: ${response.status}`);
+      }
+      
+      const data = await response.json();
+
+      if (data.success) {
+        messagesContainer.innerHTML = '';
+
+        if (data.comments && data.comments.length === 0) {
+          messagesContainer.innerHTML = '<div class="no-comments">Комментариев пока нет. Будьте первым!</div>';
+          return;
+        }
+
+        if (data.comments && Array.isArray(data.comments)) {
+          data.comments.forEach(comment => {
+            addCommentToChat(comment, false); // false - не скроллить автоматически
+          });
+        }
+
+        // Скролл к последнему сообщению
+        setTimeout(() => {
+          if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+        }, 100);
+      } else {
+        messagesContainer.innerHTML = '<div class="error">Ошибка загрузки комментариев</div>';
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки комментариев:', error);
+      const messagesContainer = document.getElementById(`chat-messages-${cardId}`);
+      if (messagesContainer) {
+        messagesContainer.innerHTML = '<div class="error">Ошибка сети</div>';
+      }
+    }
+  }
+
+  // Добавление комментария в чат
+  function addCommentToChat(comment, autoScroll = true) {
+    try {
+      if (!currentChatCardId) return;
+
+      const messagesContainer = document.getElementById(`chat-messages-${currentChatCardId}`);
+      if (!messagesContainer) return;
+
+      // Проверяем, что комментарий содержит необходимые поля
+      if (!comment || !comment._id || !comment.text) {
+        console.warn('⚠️ Некорректный комментарий:', comment);
+        return;
+      }
+
+      const commentElement = document.createElement('div');
+      commentElement.className = 'chat-message';
+      commentElement.setAttribute('data-comment-id', comment._id);
+
+      let adminButtons = '';
+      if (window.IS_ADMIN && comment._id) {
+        adminButtons = `
+          <button class="chat-edit-btn" data-edit-comment="${comment._id}" data-comment-text="${escapeHtml(comment.text || '')}">✏️</button>
+          <button class="chat-delete-btn" data-delete-comment="${comment._id}">🗑️</button>
+        `;
+      }
+
+      commentElement.innerHTML = `
+        <div class="chat-message-header">
+          <strong>${comment.username || 'Пользователь'}</strong>
+          <span class="chat-message-time">${new Date(comment.createdAt || Date.now()).toLocaleString()}</span>
+          <div class="chat-admin-actions">${adminButtons}</div>
+        </div>
+        <div class="chat-message-text">${escapeHtml(comment.text || '')}</div>
+      `;
+
+      messagesContainer.appendChild(commentElement);
+
+      if (autoScroll) {
+        setTimeout(() => {
+          if (messagesContainer) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+        }, 100);
+      }
+    } catch (error) {
+      console.error('❌ Ошибка при добавлении комментария в чат:', error);
+    }
+  }
+
+  // Экранирование HTML
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  // Отправка сообщения - глобально доступная функция
+  window.sendChatMessage = async function(cardId) {
+    try {
+      console.log('💬 Попытка отправки сообщения в чат карточки:', cardId);
+      console.log('🔍 USER_ROLE:', window.USER_ROLE);
+      console.log('🔍 IS_AUTH:', window.IS_AUTH);
+      console.log('🔍 IS_ADMIN:', window.IS_ADMIN);
+
+      // Проверяем, что пользователь авторизован
+      const userRole = window.USER_ROLE;
+      if (!userRole) {
+        console.log('❌ Пользователь не авторизован (userRole: null)');
+        showToast('Для отправки сообщений необходимо войти в систему', 'error');
+        return;
+      }
+
+      console.log('✅ Пользователь авторизован с ролью:', userRole);
+
+      const input = document.getElementById(`chat-input-${cardId}`);
+      if (!input) {
+        console.error('❌ Поле ввода не найдено для ID:', cardId);
+        return;
+      }
+
+      const text = input.value.trim();
+      console.log('📝 Текст сообщения:', text);
+
+      if (!text) {
+        console.log('⚠️ Текст сообщения пустой');
+        return;
+      }
+
+      // Проверяем длину сообщения
+      if (text.length > 1000) {
+        console.log('⚠️ Сообщение слишком длинное:', text.length);
+        showToast('Сообщение слишком длинное (максимум 1000 символов)', 'error');
+        return;
+      }
+
+      // Отключаем кнопку
+      const sendBtn = document.querySelector(`#chat-modal-${cardId} .chat-send-btn`);
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.textContent = 'Отправка...';
+      }
+
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      console.log('🔑 CSRF токен найден:', !!csrfToken);
+
+      if (!csrfToken) {
+        console.warn('⚠️ CSRF токен не найден - возможны проблемы с авторизацией');
+      }
+
+      console.log('🚀 Отправка POST запроса на /api/comments/' + cardId);
+      // Определяем endpoint в зависимости от типа карточки
+      const commentEndpoint = `/api/comments/${cardId}`;
+      const response = await fetch(commentEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || ''
+        },
+        body: JSON.stringify({ text }),
+        credentials: 'same-origin'
+      });
+
+      console.log('📡 Ответ сервера:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ HTTP ошибка:', response.status, errorText);
+        throw new Error(`HTTP ошибка! Статус: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('📋 Данные ответа:', data);
+
+      if (data.success) {
+        console.log('✅ Комментарий успешно отправлен');
+        input.value = '';
+        // Сообщение будет добавлено через Socket.IO
+      } else {
+        console.error('❌ Сервер вернул ошибку:', data.message);
+        showToast('Ошибка: ' + (data.message || 'Не удалось отправить сообщение'), 'error');
+      }
+    } catch (error) {
+      console.error('❌ Ошибка отправки сообщения:', error);
+      showToast('Ошибка сети при отправке сообщения', 'error');
+    } finally {
+      // Включаем кнопку обратно
+      const sendBtn = document.querySelector(`#chat-modal-${cardId} .chat-send-btn`);
+      if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Отправить';
+      }
+    }
+  }
+
+  // Обработчики клавиш в поле ввода чата
+  document.addEventListener('keydown', (e) => {
+    if (e.target.classList.contains('chat-input')) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const cardId = e.target.id.replace('chat-input-', '');
+        sendChatMessage(cardId);
+      }
     }
   });
 
-  // Обработчики голосования (с безопасными проверками)
-  document.addEventListener('click', async (e) => {
-    if (!e || !e.target) return;
-    
-    const likeBtn = e.target.closest && e.target.closest('.product-like-btn, .service-like-btn, .banner-like-btn');
-    const dislikeBtn = e.target.closest && e.target.closest('.product-dislike-btn, .service-dislike-btn, .banner-dislike-btn');
-    
-    if (likeBtn || dislikeBtn) {
-      e.preventDefault();
-      const ratingBlock = e.target.closest && e.target.closest('.product-rating, .service-rating, .banner-rating, .item-rating');
-      if (!ratingBlock || !ratingBlock.dataset) return;
-      
-      const itemId = ratingBlock.dataset.id;
-      if (!itemId) {
-        console.error('❌ Отсутствует ID карточки для голосования');
-        return;
-      }
-      const itemType = ratingBlock.dataset.type || 
-        (ratingBlock.classList && ratingBlock.classList.contains('product-rating') ? 'product' :
-         ratingBlock.classList && ratingBlock.classList.contains('service-rating') ? 'service' : 'banner');
-      const vote = likeBtn ? 'up' : 'down';
-      
-      await voteItem(itemType, itemId, vote, ratingBlock);
-    }
-  });
+  // Редактирование комментария (только для админа)
+  async function editComment(commentId, currentText) {
+    const newText = prompt('Редактировать комментарий:', currentText);
+    if (newText === null || newText.trim() === currentText) return;
 
-  // Обработчики блокировки/публикации (только для админа, с безопасными проверками)
-  document.addEventListener('click', async (e) => {
-    if (!e || !e.target) return;
-    
-    const blockBtn = e.target.closest && e.target.closest('.block-product-btn, .block-service-btn, .block-banner-btn');
-    const publishBtn = e.target.closest && e.target.closest('.publish-product-btn, .publish-service-btn, .publish-banner-btn');
-    
-    if (blockBtn || publishBtn) {
-      e.preventDefault();
-      const btn = blockBtn || publishBtn;
-      if (!btn || !btn.classList || !btn.dataset) return;
-      
-      const itemType = blockBtn ? 
-        (blockBtn.classList.contains('block-product-btn') ? 'product' :
-         blockBtn.classList.contains('block-service-btn') ? 'service' : 'banner') :
-        (publishBtn.classList.contains('publish-product-btn') ? 'product' :
-         publishBtn.classList.contains('publish-service-btn') ? 'service' : 'banner');
-      const itemId = btn.dataset.id;
-      if (!itemId) {
-        console.error('❌ Отсутствует ID карточки для блокировки/публикации');
-        return;
-      }
-      await toggleBlock(itemType, itemId, btn);
+    const trimmedText = newText.trim();
+    if (!trimmedText) {
+      showToast('Текст комментария не может быть пустым', 'error');
+      return;
     }
-  });
 
-  // Обработчики редактирования (с безопасными проверками)
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      const response = await fetch(`/api/comments/${commentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || ''
+        },
+        body: JSON.stringify({ text: trimmedText }),
+        credentials: 'same-origin'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showToast('Комментарий обновлен', 'success');
+        // Обновление будет выполнено через сокет событие 'comment:updated'
+      } else {
+        showToast('Ошибка: ' + (data.message || 'Не удалось обновить комментарий'), 'error');
+      }
+    } catch (error) {
+      console.error('❌ Ошибка редактирования комментария:', error);
+      showToast('Ошибка сети при редактировании комментария', 'error');
+    }
+  }
+
+  // Удаление комментария (только для админа)
+  async function deleteComment(commentId) {
+    if (!confirm('Вы уверены, что хотите удалить этот комментарий?')) return;
+
+    try {
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+      const response = await fetch(`/api/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          'X-CSRF-Token': csrfToken || ''
+        },
+        credentials: 'same-origin'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showToast('Комментарий удален', 'success');
+        // Удаление будет выполнено через сокет событие 'comment:deleted'
+      } else {
+        showToast('Ошибка: ' + (data.message || 'Не удалось удалить комментарий'), 'error');
+      }
+    } catch (error) {
+      console.error('❌ Ошибка удаления комментария:', error);
+      showToast('Ошибка сети при удалении комментария', 'error');
+    }
+  }
+
+  // Закрытие модалки авторизации
   document.addEventListener('click', (e) => {
-    if (!e || !e.target) return;
-    
-    const editBtn = e.target.closest && e.target.closest('.edit-product-btn, .edit-service-btn, .edit-banner-btn');
-    if (editBtn && editBtn.classList && editBtn.dataset) {
+    // Закрытие модалки авторизации
+    if (e.target.closest('[data-close-auth]')) {
       e.preventDefault();
-      const itemType = editBtn.classList.contains('edit-product-btn') ? 'product' 
-        : editBtn.classList.contains('edit-service-btn') ? 'service' 
-        : 'banner';
-      const itemId = editBtn.dataset.id;
-      if (!itemId) {
-        console.error('❌ Отсутствует ID карточки для редактирования');
-        return;
-      }
-      editItem(itemType, itemId);
+      e.stopPropagation();
+      closeAuthModal();
+      return;
+    }
+
+    // Закрытие по клику на фон модалки авторизации
+    const authModal = document.getElementById('authModal');
+    if (authModal && e.target === authModal) {
+      closeAuthModal();
+      return;
     }
   });
+
+  // Обработчик клавиш для модалки авторизации
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const authModal = document.getElementById('authModal');
+      if (authModal && authModal.style.display === 'block') {
+        closeAuthModal();
+      }
+    }
+  });
+
+// Инициализируем обработчики закрытия чата
+// addChatCloseHandlers(); // Закомментировано, так как дублируется в основном обработчике событий
+
+// Обработчики вкладок для навигации по разделам
+document.addEventListener('DOMContentLoaded', () => {
+  // Обработчики desktop вкладок (header)
+  const desktopTabButtons = document.querySelectorAll('.header-tabs .tab-button');
+  
+  if (desktopTabButtons.length > 0) {
+    desktopTabButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Удаляем активный класс у всех кнопок
+        desktopTabButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // Добавляем активный класс к нажатой кнопке
+        button.classList.add('active');
+        
+        // Получаем href для перехода
+        const href = button.getAttribute('href');
+        if (href) {
+          window.location.href = href;
+        }
+      });
+    });
+  }
+  
+  // Обработчики mobile вкладок (footer)
+  const mobileTabButtons = document.querySelectorAll('.mobile-tab-button');
+  
+  if (mobileTabButtons.length > 0) {
+    mobileTabButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Удаляем активный класс у всех кнопок
+        mobileTabButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // Добавляем активный класс к нажатой кнопке
+        button.classList.add('active');
+        
+        // Получаем href для перехода
+        const href = button.getAttribute('href');
+        if (href) {
+          window.location.href = href;
+        }
+      });
+    });
+  }
+  
+  // Обработчики для переключения вкладок с контентом
+  const contentTabButtons = document.querySelectorAll('.js-tab-switcher');
+  
+  if (contentTabButtons.length > 0) {
+    contentTabButtons.forEach(button => {
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        // Удаляем активный класс у всех кнопок
+        contentTabButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // Добавляем активный класс к нажатой кнопке
+        button.classList.add('active');
+        
+        // Получаем ID вкладки
+        const tabId = button.getAttribute('data-tab');
+        
+        // Выполняем действия в зависимости от выбранной вкладки
+        switch(tabId) {
+          case 'overview':
+            showOverviewTab();
+            break;
+          case 'settings':
+            showSettingsTab();
+            break;
+          case 'comments':
+            showCommentsTab();
+            break;
+        }
+      });
+    });
+  }
+  
+  // Инициализация содержимого вкладок
+  function initializeTabContent() {
+    // При загрузке страницы показываем вкладку "Обзор" по умолчанию
+    showOverviewTab();
+  }
+  
+  // Функции отображения содержимого вкладок
+  function showOverviewTab() {
+    // Показываем секции каталога товаров и услуг
+    document.querySelectorAll('.section').forEach(section => {
+      if (section.id === 'catalog' || section.id === 'services') {
+        section.style.display = 'block';
+      } else if (section.id === 'ad' || section.id === 'about' || section.id === 'contacts') {
+        // Показываем также рекламу, о проекте и контакты
+        section.style.display = 'block';
+      } else {
+        // Скрываем другие секции
+        section.style.display = 'none';
+      }
+    });
+    
+    // Скрываем контент специальных вкладок, если он существует
+    const settingsSection = document.getElementById('settings-content');
+    const commentsSection = document.getElementById('comments-content');
+    if (settingsSection) settingsSection.style.display = 'none';
+    if (commentsSection) commentsSection.style.display = 'none';
+  }
+  
+ function showSettingsTab() {
+    // Скрываем все стандартные секции
+    document.querySelectorAll('.section').forEach(section => {
+      if (section.id !== 'settings-content') {
+        section.style.display = 'none';
+      }
+    });
+    
+    // Создаем и показываем контент для вкладки "Настройки"
+    createSettingsContent();
+ }
+  
+  function showCommentsTab() {
+    // Скрываем все стандартные секции
+    document.querySelectorAll('.section').forEach(section => {
+      if (section.id !== 'comments-content') {
+        section.style.display = 'none';
+      }
+    });
+    
+    // Создаем и показываем контент для вкладки "Комментарии"
+    createCommentsContent();
+  }
+  
+  // Функция создания контента для вкладки "Настройки"
+  function createSettingsContent() {
+    // Создаем элемент с контентом настроек
+    let settingsSection = document.getElementById('settings-content');
+    if (!settingsSection) {
+      settingsSection = document.createElement('section');
+      settingsSection.id = 'settings-content';
+      settingsSection.className = 'section';
+      settingsSection.innerHTML = `
+        <h2>Настройки</h2>
+        <div class="settings-container">
+          <div class="form-section">
+            <h3>Персональные настройки</h3>
+            <div class="form-grid">
+              <div>
+                <label for="theme-select">Тема оформления</label>
+                <select id="theme-select" class="theme-select">
+                  <option value="dark">Темная (по умолчанию)</option>
+                  <option value="light">Светлая</option>
+                  <option value="auto">Автоматическая</option>
+                </select>
+              </div>
+              <div>
+                <label for="lang-select">Язык интерфейса</label>
+                <select id="lang-select" class="lang-select">
+                  <option value="ru">Русский</option>
+                  <option value="en">English</option>
+                  <option value="kz">Қазақша</option>
+                </select>
+              </div>
+            </div>
+          <div class="form-section">
+            <h3>Уведомления</h3>
+            <div class="form-grid">
+              <div class="checkbox-group">
+                <input type="checkbox" id="email-notifications" checked>
+                <label for="email-notifications">Email-уведомления</label>
+              </div>
+              <div class="checkbox-group">
+                <input type="checkbox" id="push-notifications">
+                <label for="push-notifications">Push-уведомления</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.querySelector('main').appendChild(settingsSection);
+    }
+    
+    // Показываем секцию настроек
+    settingsSection.style.display = 'block';
+  }
+  
+  // Функция создания контента для вкладки "Комментарии"
+  function createCommentsContent() {
+    // Создаем элемент с контентом комментариев
+    let commentsSection = document.getElementById('comments-content');
+    if (!commentsSection) {
+      commentsSection = document.createElement('section');
+      commentsSection.id = 'comments-content';
+      commentsSection.className = 'section';
+      commentsSection.innerHTML = `
+        <h2>Комментарии</h2>
+        <div class="comments-container">
+          <div class="comments-filter">
+            <div class="form-grid" style="display: flex; gap: 10px; align-items: center;">
+              <div style="flex: 1;">
+                <select id="comments-filter-type" class="comments-filter-select">
+                  <option value="all">Все комментарии</option>
+                  <option value="mine">Мои комментарии</option>
+                  <option value="recent">Недавние</option>
+                </select>
+              </div>
+              <div>
+                <input type="text" id="comments-search" placeholder="Поиск комментариев..." class="comments-search-input">
+              </div>
+            </div>
+          <div class="comments-list">
+            <div class="comment-item">
+              <div class="comment-header">
+                <strong>Пользователь123</strong>
+                <span class="comment-date">2023-12-01</span>
+              </div>
+              <div class="comment-content">
+                <p>Отличный товар! Рекомендую к покупке.</p>
+                <div class="comment-actions">
+                  <button class="btn small outline">Ответить</button>
+                  <button class="btn small">Пожаловаться</button>
+                </div>
+              </div>
+            <div class="comment-item">
+              <div class="comment-header">
+                <strong>Аноним</strong>
+                <span class="comment-date">2023-11-28</span>
+              </div>
+              <div class="comment-content">
+                <p>Цена завышена, аналогичный товар дешевле в другом месте.</p>
+                <div class="comment-actions">
+                  <button class="btn small outline">Ответить</button>
+                  <button class="btn small">Пожаловаться</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+      document.querySelector('main').appendChild(commentsSection);
+    }
+    
+    // Показываем секцию комментариев
+    commentsSection.style.display = 'block';
+  }
+  
+  // Инициализируем содержимое вкладок при загрузке
+  initializeTabContent();
 });
+
+// Функция создания контента для вкладки "Настройки"
+function createSettingsContent() {
+  // Создаем элемент с контентом настроек
+  let settingsSection = document.getElementById('settings-content');
+  if (!settingsSection) {
+    settingsSection = document.createElement('section');
+    settingsSection.id = 'settings-content';
+    settingsSection.className = 'section';
+    settingsSection.innerHTML = `
+      <h2>Настройки</h2>
+      <div class="settings-container">
+        <div class="form-section">
+          <h3>Персональные настройки</h3>
+          <div class="form-grid">
+            <div>
+              <label for="theme-select">Тема оформления</label>
+              <select id="theme-select" class="theme-select">
+                <option value="dark">Темная (по умолчанию)</option>
+                <option value="light">Светлая</option>
+                <option value="auto">Автоматическая</option>
+              </select>
+            </div>
+            <div>
+              <label for="lang-select">Язык интерфейса</label>
+              <select id="lang-select" class="lang-select">
+                <option value="ru">Русский</option>
+                <option value="en">English</option>
+                <option value="kz">Қазақша</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="form-section">
+          <h3>Уведомления</h3>
+          <div class="form-grid">
+            <div class="checkbox-group">
+              <input type="checkbox" id="email-notifications" checked>
+              <label for="email-notifications">Email-уведомления</label>
+            </div>
+            <div class="checkbox-group">
+              <input type="checkbox" id="push-notifications">
+              <label for="push-notifications">Push-уведомления</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.querySelector('main').appendChild(settingsSection);
+  }
+  
+  // Показываем секцию настроек
+  settingsSection.style.display = 'block';
+}
+
+// Функция создания контента для вкладки "Комментарии"
+function createCommentsContent() {
+  // Создаем элемент с контентом комментариев
+  let commentsSection = document.getElementById('comments-content');
+  if (!commentsSection) {
+    commentsSection = document.createElement('section');
+    commentsSection.id = 'comments-content';
+    commentsSection.className = 'section';
+    commentsSection.innerHTML = `
+      <h2>Комментарии</h2>
+      <div class="comments-container">
+        <div class="comments-filter">
+          <div class="form-grid" style="display: flex; gap: 10px; align-items: center;">
+            <div style="flex: 1;">
+              <select id="comments-filter-type" class="comments-filter-select">
+                <option value="all">Все комментарии</option>
+                <option value="mine">Мои комментарии</option>
+                <option value="recent">Недавние</option>
+              </select>
+            </div>
+            <div>
+              <input type="text" id="comments-search" placeholder="Поиск комментариев..." class="comments-search-input">
+            </div>
+          </div>
+        </div>
+        <div class="comments-list">
+          <div class="comment-item">
+            <div class="comment-header">
+              <strong>Пользователь123</strong>
+              <span class="comment-date">2023-12-01</span>
+            </div>
+            <div class="comment-content">
+              <p>Отличный товар! Рекомендую к покупке.</p>
+              <div class="comment-actions">
+                <button class="btn small outline">Ответить</button>
+                <button class="btn small">Пожаловаться</button>
+              </div>
+            </div>
+          </div>
+          <div class="comment-item">
+            <div class="comment-header">
+              <strong>Аноним</strong>
+              <span class="comment-date">2023-11-28</span>
+            </div>
+            <div class="comment-content">
+              <p>Цена завышена, аналогичный товар дешевле в другом месте.</p>
+              <div class="comment-actions">
+                <button class="btn small outline">Ответить</button>
+                <button class="btn small">Пожаловаться</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.querySelector('main').appendChild(commentsSection);
+  }
+  
+  // Показываем секцию комментариев
+  commentsSection.style.display = 'block';
+}

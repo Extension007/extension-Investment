@@ -1,6 +1,7 @@
-// FIX: Контроллер для обработки товаров
+// FIX: Контроллер для обработки товаров - С САНИТИЗАЦИЕЙ
 const Product = require("../models/Product");
 const { deleteImages } = require("../utils/imageUtils");
+const { sanitizeProductDescription, sanitizeContacts, sanitizeText } = require("../utils/sanitize");
 
 // FIX: Получение всех товаров для отображения
 exports.getAllProducts = async (req, res, next) => {
@@ -41,9 +42,12 @@ exports.getAddForm = (req, res) => {
 exports.createProduct = async (req, res, next) => {
   try {
     // FIX: Валидация и санитизация данных
-    const { title, description, phone, email, telegram, whatsapp, price, link, video_url, category } = req.body;
+    const { name, title, description, phone, email, telegram, whatsapp, price, link, video_url, category } = req.body;
     
-    if (!title || !title.trim()) {
+    // FIX: Поддержка старого формата с title для обратной совместимости
+    const productName = name || title;
+    
+    if (!productName || !productName.trim()) {
       return res.status(400).json({ success: false, message: "Название товара обязательно" });
     }
 
@@ -60,12 +64,9 @@ exports.createProduct = async (req, res, next) => {
       }
 
       req.files.forEach(file => {
-        // FIX: Формируем путь к изображению
         if (file.path && !file.path.startsWith('http')) {
-          // Локальное хранилище
           images.push('/uploads/' + file.filename);
         } else {
-          // Cloudinary
           images.push(file.path);
         }
       });
@@ -76,23 +77,32 @@ exports.createProduct = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Максимальное количество изображений: 5" });
     }
 
-    // FIX: Формируем объект контактов
-    const contacts = {
-      phone: phone ? phone.trim() : "",
-      email: email ? email.trim() : "",
-      telegram: telegram ? telegram.trim() : "",
-      whatsapp: whatsapp ? whatsapp.trim() : ""
-    };
+    // FIX: Проверка дублирования изображений
+    const uniqueImages = [...new Set(images)];
+    if (uniqueImages.length !== images.length) {
+      return res.status(400).json({ success: false, message: "Обнаружены дублирующиеся изображения" });
+    }
 
-    // FIX: Создаем товар
+    // FIX: САНИТИЗАЦИЯ ДАННЫХ
+    const sanitizedDescription = sanitizeProductDescription(description);
+    const sanitizedContacts = sanitizeContacts({
+      phone,
+      email,
+      telegram,
+      whatsapp
+    });
+    const sanitizedLink = link ? sanitizeText(link, 500) : "";
+    const sanitizedVideoUrl = video_url ? sanitizeText(video_url, 500) : "";
+
+    // FIX: Создаем товар с санитизированными данными
     const productData = {
-      name: title.trim(),
-      description: description ? description.trim() : "",
+      name: productName.trim(),
+      description: sanitizedDescription,
       price: priceNum,
-      link: link ? link.trim() : "",
-      video_url: video_url ? video_url.trim() : "",
-      images: images,
-      contacts: contacts,
+      link: sanitizedLink,
+      video_url: sanitizedVideoUrl,
+      images: uniqueImages,
+      contacts: sanitizedContacts,
       category: category || "home",
       owner: req.user?._id || null,
       status: req.user?.role === 'admin' ? "approved" : "pending"
@@ -117,6 +127,14 @@ exports.getEditForm = async (req, res, next) => {
       return res.status(404).send("Товар не найден");
     }
 
+    // FIX: Проверка прав доступа
+    const isOwner = req.user && product.owner && product.owner.toString() === req.user._id.toString();
+    const isAdmin = req.user && req.user.role === 'admin';
+    
+    if (!isOwner && !isAdmin) {
+      return res.status(403).send("У вас нет прав на редактирование этого товара");
+    }
+
     res.render('products/edit', {
       product,
       isAuth: !!req.user,
@@ -130,15 +148,26 @@ exports.getEditForm = async (req, res, next) => {
 // FIX: Обновление товара
 exports.updateProduct = async (req, res, next) => {
   try {
-    const { title, description, phone, email, telegram, whatsapp, price, link, video_url, category, current_images } = req.body;
+    const { name, title, description, phone, email, telegram, whatsapp, price, link, video_url, category, current_images } = req.body;
+    
+    // FIX: Поддержка старого формата с title для обратной совместимости
+    const productName = name || title;
     
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ success: false, message: "Товар не найден" });
     }
 
+    // FIX: Проверка прав доступа
+    const isOwner = req.user && product.owner && product.owner.toString() === req.user._id.toString();
+    const isAdmin = req.user && req.user.role === 'admin';
+    
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ success: false, message: "У вас нет прав на редактирование этого товара" });
+    }
+
     // FIX: Валидация
-    if (!title || !title.trim()) {
+    if (!productName || !productName.trim()) {
       return res.status(400).json({ success: false, message: "Название товара обязательно" });
     }
 
@@ -148,108 +177,106 @@ exports.updateProduct = async (req, res, next) => {
     }
 
     // FIX: Обработка изображений
-    // Получаем старый массив изображений из базы
     const oldImages = product.images || [];
-    console.log(`📸 Старые изображения в БД (${oldImages.length}):`, oldImages);
-    
-    // Получаем новый массив изображений (оставшиеся + новые)
     let newImages = [];
     
-    // FIX: Если есть текущие изображения (из скрытого поля - это оставшиеся после удаления)
+    // FIX: Безопасная обработка current_images
     if (current_images) {
       try {
-        const parsedImages = typeof current_images === 'string' 
-          ? JSON.parse(current_images) 
-          : Array.isArray(current_images) 
-            ? current_images 
-            : [];
-        newImages = parsedImages.filter(img => img && typeof img === 'string');
-        console.log(`📸 Оставшиеся изображения из current_images (${newImages.length}):`, newImages);
+        let parsedImages = [];
+        if (typeof current_images === 'string') {
+          parsedImages = JSON.parse(current_images);
+        } else if (Array.isArray(current_images)) {
+          parsedImages = current_images;
+        }
+        
+        newImages = parsedImages
+          .filter(img => img && typeof img === 'string' && img.trim().length > 0)
+          .map(img => img.trim())
+          .slice(0, 5);
+        
       } catch (e) {
         console.warn("⚠️  Ошибка парсинга current_images:", e.message);
-        // Если не удалось распарсить, используем старые изображения из БД
-        newImages = oldImages;
+        newImages = [...oldImages];
       }
     } else {
-      // Если current_images не передано, используем существующие
       newImages = [...oldImages];
     }
 
     // FIX: Добавляем новые загруженные изображения
     if (req.files && req.files.length > 0) {
-      const uploadedImages = req.files.map(file => {
-        if (file.path && !file.path.startsWith('http')) {
-          return '/uploads/' + file.filename;
-        } else {
-          return file.path;
-        }
-      });
-      console.log(`📸 Новые загруженные изображения (${uploadedImages.length}):`, uploadedImages);
+      const uploadedImages = req.files
+        .filter(file => file && file.filename)
+        .map(file => {
+          if (file.path && !file.path.startsWith('http')) {
+            return '/uploads/' + file.filename;
+          } else {
+            return file.path;
+          }
+        });
 
-      // Объединяем оставшиеся и новые, но не более 5
-      newImages = [...newImages, ...uploadedImages].slice(0, 5);
+      const allImages = [...newImages, ...uploadedImages];
+      const uniqueImages = [...new Set(allImages)];
+      
+      if (uniqueImages.length > 5) {
+        return res.status(400).json({ success: false, message: "Максимальное количество изображений: 5" });
+      }
+
+      newImages = uniqueImages;
     }
-
-    console.log(`📸 Итоговый новый массив изображений (${newImages.length}):`, newImages);
 
     // FIX: Проверка лимита
     if (newImages.length > 5) {
       return res.status(400).json({ success: false, message: "Максимальное количество изображений: 5" });
     }
 
-    // FIX: Находим изображения, которые нужно удалить (есть в старом, но нет в новом)
-    // Сравниваем массивы: удалённые = старые, которых нет в новых
+    // FIX: Находим изображения для удаления
     const imagesToDelete = oldImages.filter(oldImg => {
-      // Проверяем, есть ли старое изображение в новом массиве
-      const existsInNew = newImages.some(newImg => {
-        // Сравниваем как строки, учитывая возможные различия в формате URL
-        return String(oldImg).trim() === String(newImg).trim();
-      });
+      const existsInNew = newImages.some(newImg => 
+        String(oldImg).trim() === String(newImg).trim()
+      );
       return !existsInNew;
     });
     
-    console.log(`🗑️  Изображения для удаления (${imagesToDelete.length}):`, imagesToDelete);
-    
-    // Удаляем изображения из хранилища (Cloudinary или локальное)
+    // Удаляем изображения из хранилища
     if (imagesToDelete.length > 0) {
       try {
         const deletedCount = await deleteImages(imagesToDelete);
-        // deleteImages уже логирует процесс, здесь только итоговый результат для карточки
         if (deletedCount < imagesToDelete.length) {
           console.warn(`⚠️  Для карточки ${product._id}: не все изображения удалены (${deletedCount}/${imagesToDelete.length})`);
         }
       } catch (err) {
         console.error(`❌ Ошибка удаления изображений при редактировании карточки ${product._id}:`, err);
-        // Не прерываем выполнение, продолжаем обновление карточки
       }
     }
 
-    // FIX: Формируем объект контактов
-    const contacts = {
-      phone: phone ? phone.trim() : "",
-      email: email ? email.trim() : "",
-      telegram: telegram ? telegram.trim() : "",
-      whatsapp: whatsapp ? whatsapp.trim() : ""
-    };
+    // FIX: САНИТИЗАЦИЯ ДАННЫХ
+    const sanitizedDescription = sanitizeProductDescription(description);
+    const sanitizedContacts = sanitizeContacts({
+      phone,
+      email,
+      telegram,
+      whatsapp
+    });
+    const sanitizedLink = link ? sanitizeText(link, 500) : "";
+    const sanitizedVideoUrl = video_url ? sanitizeText(video_url, 500) : "";
 
-    // FIX: Обновляем товар
-    // Используем $set для гарантированного обновления массива изображений и статуса
+    // FIX: Обновляем товар с санитизированными данными
     const updateData = {
-      name: title.trim(),
-      description: description ? description.trim() : "",
+      name: productName.trim(),
+      description: sanitizedDescription,
       price: priceNum,
-      link: link ? link.trim() : "",
-      video_url: video_url ? video_url.trim() : "",
-      images: newImages, // Новый массив изображений (заменяет старый)
-      contacts: contacts,
-      status: "pending" // ВСЕГДА сбрасываем статус на pending при редактировании
+      link: sanitizedLink,
+      video_url: sanitizedVideoUrl,
+      images: newImages,
+      contacts: sanitizedContacts,
+      status: "pending"
     };
     
     if (category) {
       updateData.category = category;
     }
     
-    // Обновляем карточку
     Object.assign(product, updateData);
     
     console.log(`✅ Обновление карточки ${product._id}: статус установлен в "pending", изображений: ${newImages.length}`);

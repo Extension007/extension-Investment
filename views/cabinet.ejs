@@ -202,17 +202,13 @@
     </section>
   </main>
 
+
+
   <footer class="footer">
     <p>© 2025 EXTO Ecosystem</p>
   </footer>
 
-  <!-- Полноэкранный overlay для видео -->
-  <div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
-    <div class="video-overlay-container">
-      <button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
-      <div class="video-overlay-iframe-container" id="videoIframeContainer"></div>
-    </div>
-  </div>
+
 
   <script>
     // Переключение вкладок
@@ -479,12 +475,6 @@
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
   </script>
 
-  <!-- Подключаем единую логику (только базовые функции для кабинета) -->
-  <script>
-    // Устанавливаем флаг, что это страница кабинета (не публичная)
-    window.IS_CABINET_PAGE = true;
-    window.IS_AUTH = true; // Пользователь авторизован в кабинете
-  </script>
-  <script src="/script.js"></script>
+
 </body>
 </html>

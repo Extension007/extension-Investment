@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
+const { generateToken } = require("../config/jwt");
 const { hasMongo } = require("../config/database");
 
 exports.register = async (req, res) => {
@@ -21,6 +22,8 @@ exports.register = async (req, res) => {
     };
 
     const isVercel = Boolean(process.env.VERCEL);
+    const token = generateToken(userData);
+
     if (isVercel) {
       // В Vercel serverless используем cookie для хранения данных пользователя
       res.cookie('exto_user', JSON.stringify(userData), {
@@ -29,12 +32,26 @@ exports.register = async (req, res) => {
         sameSite: 'lax',
         maxAge: 1000 * 60 * 60 // 1 час
       });
+      // Также возвращаем JWT токен для API вызовов
+      res.cookie('exto_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 24 // 24 часа
+      });
     } else {
       // В обычной среде используем сессии
       req.session.user = userData;
+      // Также возвращаем JWT токен для API вызовов
+      res.cookie('exto_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 24 // 24 часа
+      });
     }
 
-    res.status(200).json({ success: true, user: { id: user._id, email: user.email } });
+    res.status(200).json({ success: true, user: { id: user._id, email: user.email }, token });
   } catch (err) {
     console.error("Ошибка регистрации:", err);
     res.status(500).json({ success: false, message: "Registration failed", error: err.message });
@@ -65,17 +82,33 @@ exports.userLogin = async (req, res) => {
     };
 
     const isVercel = Boolean(process.env.VERCEL);
+    const token = generateToken(userData);
+
     if (isVercel) {
       // В Vercel serverless используем cookie для хранения данных пользователя
       res.cookie('exto_user', JSON.stringify(userData), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 // 1 час
+        maxAge: 1000 * 60 // 1 час
+      });
+      // Также возвращаем JWT токен для API вызовов
+      res.cookie('exto_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 24 // 24 часа
       });
     } else {
       // В обычной среде используем сессии
       req.session.user = userData;
+      // Также возвращаем JWT токен для API вызовов
+      res.cookie('exto_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 24 // 24 часа
+      });
     }
 
     console.log("✅ Пользователь залогинен:", {
@@ -114,17 +147,33 @@ exports.adminLogin = async (req, res) => {
     };
 
     const isVercel = Boolean(process.env.VERCEL);
+    const token = generateToken(userData);
+
     if (isVercel) {
       // В Vercel serverless используем cookie для хранения данных пользователя
       res.cookie('exto_user', JSON.stringify(userData), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 // 1 час
+        maxAge: 1000 * 60 // 1 час
+      });
+      // Также возвращаем JWT токен для API вызовов
+      res.cookie('exto_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 24 // 24 часа
       });
     } else {
       // В обычной среде используем сессии
       req.session.user = userData;
+      // Также возвращаем JWT токен для API вызовов
+      res.cookie('exto_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 24 // 24 часа
+      });
     }
 
     console.log("✅ Админ залогинен:", {
@@ -145,6 +194,7 @@ exports.logout = async (req, res) => {
   if (isVercel) {
     // В Vercel serverless удаляем cookie
     res.clearCookie('exto_user');
+    res.clearCookie('exto_token');
   } else {
     // В обычной среде уничтожаем сессию
     req.session.destroy((err) => {
@@ -153,6 +203,7 @@ exports.logout = async (req, res) => {
         return res.status(500).json({ success: false, message: "Ошибка выхода" });
       }
     });
+    res.clearCookie('exto_token');
   }
 
   res.json({ success: true, message: "Вы успешно вышли" });

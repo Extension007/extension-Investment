@@ -1,0 +1,39 @@
+// Конфигурация JWT
+const jwt = require('jsonwebtoken');
+
+// Секретный ключ для подписи JWT токенов
+const JWT_SECRET = process.env.JWT_SECRET || 'exto-jwt-secret-change-in-production';
+
+// Время жизни токена (по умолчанию 24 часа)
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+
+/**
+ * Создание JWT токена
+ * @param {Object} payload - данные для включения в токен
+ * @param {string} expiresIn - время жизни токена
+ * @returns {string} - подписанный JWT токен
+ */
+const generateToken = (payload, expiresIn = JWT_EXPIRES_IN) => {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn });
+};
+
+/**
+ * Проверка и декодирование JWT токена
+ * @param {string} token - JWT токен для проверки
+ * @returns {Object|null} - декодированные данные токена или null в случае ошибки
+ */
+const verifyToken = (token) => {
+  try {
+    return jwt.verify(token, JWT_SECRET);
+  } catch (error) {
+    console.error('❌ Ошибка проверки JWT токена:', error.message);
+    return null;
+  }
+};
+
+module.exports = {
+ JWT_SECRET,
+  JWT_EXPIRES_IN,
+  generateToken,
+  verifyToken
+};

@@ -105,6 +105,13 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname, "../public")));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// Инициализация Redis кэша при старте приложения
+// Redis удален из проекта
+// if (!isVercel) {
+//   const { redisClient } = require("./redis");
+//   // Подключаемся к Redis при старте приложения
+//   redisClient.connect().catch(console.error);
+// }
 
 module.exports = {
   app,

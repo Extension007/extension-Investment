@@ -1,23 +1,37 @@
 // Middleware для авторизации
+const { verifyToken } = require("../config/jwt");
+
 function requireAdmin(req, res, next) {
-  // В Vercel serverless режиме используем cookie, в обычной среде - сессии
-  const isVercel = Boolean(process.env.VERCEL);
+  // Сначала пробуем получить данные из JWT токена
   let user = null;
+  const token = req.cookies.exto_token || req.headers.authorization?.split(' ')[1]; // Bearer token
   
-  if (isVercel) {
-    // В Vercel serverless получаем данные из cookie
-    const userCookie = req.cookies.exto_user;
-    if (userCookie) {
-      try {
-        user = JSON.parse(userCookie);
-      } catch (err) {
-        // Если cookie повреждена, удаляем её
-        res.clearCookie('exto_user');
-      }
+  if (token) {
+    const decoded = verifyToken(token);
+    if (decoded) {
+      user = decoded;
     }
-  } else {
-    // В обычной среде используем сессии
-    user = req.session?.user;
+  }
+  
+  // Если JWT токен не действителен, пробуем старую систему (cookie или сессия)
+  if (!user) {
+    const isVercel = Boolean(process.env.VERCEL);
+    
+    if (isVercel) {
+      // В Vercel serverless получаем данные из cookie
+      const userCookie = req.cookies.exto_user;
+      if (userCookie) {
+        try {
+          user = JSON.parse(userCookie);
+        } catch (err) {
+          // Если cookie повреждена, удаляем её
+          res.clearCookie('exto_user');
+        }
+      }
+    } else {
+      // В обычной среде используем сессии
+      user = req.session?.user;
+    }
   }
 
   if (!user) {
@@ -36,24 +50,36 @@ function requireAdmin(req, res, next) {
 }
 
 function requireUser(req, res, next) {
-  // В Vercel serverless режиме используем cookie, в обычной среде - сессии
-  const isVercel = Boolean(process.env.VERCEL);
+  // Сначала пробуем получить данные из JWT токена
   let user = null;
+  const token = req.cookies.exto_token || req.headers.authorization?.split(' ')[1]; // Bearer token
   
-  if (isVercel) {
-    // В Vercel serverless получаем данные из cookie
-    const userCookie = req.cookies.exto_user;
-    if (userCookie) {
-      try {
-        user = JSON.parse(userCookie);
-      } catch (err) {
-        // Если cookie повреждена, удаляем её
-        res.clearCookie('exto_user');
-      }
+  if (token) {
+    const decoded = verifyToken(token);
+    if (decoded) {
+      user = decoded;
     }
-  } else {
-    // В обычной среде используем сессии
-    user = req.session?.user;
+  }
+  
+  // Если JWT токен не действителен, пробуем старую систему (cookie или сессия)
+  if (!user) {
+    const isVercel = Boolean(process.env.VERCEL);
+    
+    if (isVercel) {
+      // В Vercel serverless получаем данные из cookie
+      const userCookie = req.cookies.exto_user;
+      if (userCookie) {
+        try {
+          user = JSON.parse(userCookie);
+        } catch (err) {
+          // Если cookie повреждена, удаляем её
+          res.clearCookie('exto_user');
+        }
+      }
+    } else {
+      // В обычной среде используем сессии
+      user = req.session?.user;
+    }
   }
 
   if (!user) {
@@ -97,24 +123,36 @@ function requireOwnerOrAdmin(modelName = 'Product', paramName = 'id') {
         return res.status(404).send("Карточка не найдена");
       }
 
-      // В Vercel serverless режиме используем cookie, в обычной среде - сессии
-      const isVercel = Boolean(process.env.VERCEL);
+      // Сначала пробуем получить данные из JWT токена
       let user = null;
+      const token = req.cookies.exto_token || req.headers.authorization?.split(' ')[1]; // Bearer token
       
-      if (isVercel) {
-        // В Vercel serverless получаем данные из cookie
-        const userCookie = req.cookies.exto_user;
-        if (userCookie) {
-          try {
-            user = JSON.parse(userCookie);
-          } catch (err) {
-            // Если cookie повреждена, удаляем её
-            res.clearCookie('exto_user');
-          }
+      if (token) {
+        const decoded = verifyToken(token);
+        if (decoded) {
+          user = decoded;
         }
-      } else {
-        // В обычной среде используем сессии
-        user = req.session?.user;
+      }
+      
+      // Если JWT токен не действителен, пробуем старую систему (cookie или сессия)
+      if (!user) {
+        const isVercel = Boolean(process.env.VERCEL);
+        
+        if (isVercel) {
+          // В Vercel serverless получаем данные из cookie
+          const userCookie = req.cookies.exto_user;
+          if (userCookie) {
+            try {
+              user = JSON.parse(userCookie);
+            } catch (err) {
+              // Если cookie повреждена, удаляем её
+              res.clearCookie('exto_user');
+            }
+          }
+        } else {
+          // В обычной среде используем сессии
+          user = req.session?.user;
+        }
       }
 
       // Админ имеет полный доступ
