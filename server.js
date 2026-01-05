@@ -10,21 +10,27 @@ const { Server } = require("socket.io");
 // Создаём HTTP сервер
 const server = http.createServer(app);
 
-// Инициализируем Socket.IO сервер
-const io = new Server(server, {
-  cors: {
-    origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL || '' : '*', // В продакшене нужно указать конкретные домены
-    methods: ["GET", "POST"],
-    credentials: true
-  }
-});
+// Инициализируем Socket.IO сервер только если не на Vercel
+let io;
+if (!process.env.VERCEL) {
+  io = new Server(server, {
+    cors: {
+      origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL || '' : '*', // В продакшене нужно указать конкретные домены
+      methods: ["GET", "POST"],
+      credentials: true
+    }
+  });
 
-// Подключаем маршруты
-require("./routes/comments").setSocketIO(io); // Передаем io в комментарии до подключения маршрутов
-app.use("/", routes);
+  // Подключаем маршруты с Socket.IO
+  require("./routes/comments").setSocketIO(io); // Передаем io в комментарии до подключения маршрутов
+  app.use("/", routes);
 
-// Подключаем обработчики WebSocket событий
-require("./socket/commentChat")(io);
+  // Подключаем обработчики WebSocket событий
+  require("./socket/commentChat")(io);
+} else {
+  // На Vercel подключаем маршруты без Socket.IO
+  app.use("/", routes);
+}
 
 // Экспорт приложения для Vercel
 module.exports = app;
