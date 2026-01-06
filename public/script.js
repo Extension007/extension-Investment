@@ -2325,6 +2325,12 @@ function showToast(message, type = 'info') {
   function initializeSocket() {
     if (socketInitialized && socket) return socket;
 
+    // Проверяем, доступна ли библиотека Socket.IO
+    if (typeof io === 'undefined') {
+      console.warn('⚠️ Socket.IO библиотека не загружена');
+      return null;
+    }
+
     socket = io({
       transports: ['websocket', 'polling']
     });
@@ -2456,17 +2462,21 @@ function showToast(message, type = 'info') {
       }
 
       // Инициализируем сокет
-      initializeSocket();
+      socket = initializeSocket();
 
       // Проверяем, что сокет был инициализирован
       if (!socket) {
-        console.error('❌ Не удалось инициализировать сокет');
-        showToast('Ошибка подключения к чату', 'error');
+        console.error('❌ Socket.IO недоступен на этом сервере');
+        showToast('Чат временно недоступен на этом сервере', 'error');
         return;
       }
 
-      // Присоединяемся к комнате
-      socket.emit('join-comment-chat', { cardId });
+      // Присоединяемся к комнате, если сокет доступен
+      try {
+        socket.emit('join-comment-chat', { cardId });
+      } catch (error) {
+        console.warn('⚠️ Ошибка при присоединении к комнате чата:', error);
+      }
 
       // Загружаем историю комментариев
       await loadChatMessages(cardId);
@@ -2551,9 +2561,13 @@ function showToast(message, type = 'info') {
         return;
       }
 
-      // Отсоединяемся от комнаты
+      // Отсоединяемся от комнаты, если сокет доступен
       if (socket && currentChatCardId) {
-        socket.emit('leave-comment-chat', { cardId: currentChatCardId });
+        try {
+          socket.emit('leave-comment-chat', { cardId: currentChatCardId });
+        } catch (error) {
+          console.warn('⚠️ Ошибка при отсоединении от комнаты чата:', error);
+        }
         currentChatCardId = null;
       }
 
@@ -2759,6 +2773,11 @@ function showToast(message, type = 'info') {
 
       if (!csrfToken) {
         console.warn('⚠️ CSRF токен не найден - возможны проблемы с авторизацией');
+      }
+
+      // Проверяем, доступен ли сокет
+      if (!socket) {
+        console.warn('⚠️ Socket.IO недоступен, сообщение будет отправлено без сокета');
       }
 
       console.log('🚀 Отправка POST запроса на /api/comments/' + cardId);

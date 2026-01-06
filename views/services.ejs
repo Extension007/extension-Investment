@@ -373,8 +373,10 @@
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
   </script>
 
+  <% if (!process.env.VERCEL) { %>
   <!-- Socket.IO -->
   <script src="/socket.io/socket.io.js"></script>
+  <% } %>
   
   <!-- Подключаем основной скрипт (включает весь JS: youtube init, модалки, рейтинг, категории, регистрация) -->
   <script src="/script.js"></script>
