@@ -81,6 +81,33 @@ body {
    border-radius: 0 0 8px 8px;
 }
 
+/* Адаптивность: tablet (769px - 1023px) */
+@media (min-width: 769px) and (max-width: 1023px) {
+  .main-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .mobile-tabs-footer {
+    display: block;
+  }
+
+  /* Контент не должен перекрываться header и footer */
+  main {
+    margin-top: 64px;
+    margin-bottom: 64px;
+    padding-bottom: 80px;
+  }
+
+  /* Секции для планшетов */
+  .section {
+    margin: 100px auto 120px auto;
+    width: 95%;
+  }
+}
+
 /* Адаптивность: desktop (≥1024px) */
 @media (min-width: 1024px) {
   .main-header {
@@ -98,7 +125,7 @@ body {
   main {
     margin-top: 64px;
     margin-bottom: 64px;
-    padding-bottom: 80px; /* Дополнительное пространство для предотвращения перекрытия футером */
+    padding-bottom: 80px;
   }
 }
 
@@ -117,20 +144,59 @@ body {
 
   /* Контент не должен перекрываться header и footer */
   main {
-    margin-top: 80px;
-    margin-bottom: 80px;
-    padding-bottom: 100px; /* Дополнительное пространство для предотвращения перекрытия футером на мобильных */
+    margin-top: 64px; /* Уменьшен для лучшей адаптации */
+    margin-bottom: 64px;
+    padding-bottom: 80px;
   }
 
-  /* Секции с отступами для мобильных */
+  /* Секции с отступами для мобильных - оптимизированные */
   .section {
-    margin-top: 140px; /* Больше отступа сверху под header */
-    margin-bottom: 120px; /* Увеличенный отступ снизу */
+    margin: 80px auto 100px auto; /* Уменьшенные отступы */
+    width: 95%;
+    padding: 30px 15px; /* Уменьшенный внутренний отступ */
   }
-  
+
   /* Дополнительный отступ для последней секции на мобильных */
   .section:last-child {
-    margin-bottom: 180px; /* Еще больший отступ для последней секции */
+    margin-bottom: 140px; /* Оптимизированный отступ */
+  }
+}
+
+/* Адаптивность: очень маленькие экраны (≤480px) */
+@media (max-width: 480px) {
+  .main-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+  }
+
+  .mobile-tabs-footer {
+    display: block;
+  }
+
+  /* Контент не должен перекрываться header и footer */
+  main {
+    margin-top: 60px; /* Минимальный отступ для очень маленьких экранов */
+    margin-bottom: 60px;
+    padding-bottom: 60px;
+  }
+
+  /* Секции для очень маленьких экранов */
+  .section {
+    margin: 60px auto 80px auto;
+    width: 98%;
+    padding: 20px 10px;
+  }
+
+  .section:last-child {
+    margin-bottom: 120px;
+  }
+
+  /* Оптимизация кнопок навигации для маленьких экранов */
+  .mobile-tab-button {
+    padding: 10px 6px;
+    font-size: 0.75rem;
   }
 }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }

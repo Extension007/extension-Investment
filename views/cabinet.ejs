@@ -81,7 +81,7 @@
         <% if (products && products.length > 0) { %>
           <div class="product-grid">
             <% products.forEach(product => { %>
-              <%- include('partials/card', { product, itemType: 'product', mode: 'user', user }) %>
+              <%- include('partials/card', { product, itemType: 'product', mode: 'user', user, socket_io_available }) %>
             <% }) %>
           </div>
         <% } else { %>
@@ -98,7 +98,7 @@
         <% if (services && services.length > 0) { %>
           <div class="product-grid">
             <% services.forEach(service => { %>
-              <%- include('partials/card', { service, itemType: 'service', mode: 'user', user }) %>
+              <%- include('partials/card', { service, itemType: 'service', mode: 'user', user, socket_io_available }) %>
             <% }) %>
           </div>
         <% } else { %>
@@ -115,7 +115,7 @@
         <% if (banners && banners.length > 0) { %>
           <div class="product-grid">
             <% banners.forEach(banner => { %>
-              <%- include('partials/card', { banner, itemType: 'banner', mode: 'user', user }) %>
+              <%- include('partials/card', { banner, itemType: 'banner', mode: 'user', user, socket_io_available }) %>
             <% }) %>
           </div>
         <% } else { %>
@@ -475,6 +475,11 @@
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
   </script>
 
+
+  <!-- Передаем информацию о доступности Socket.IO на клиент -->
+  <script>
+    window.SOCKET_IO_AVAILABLE = <%= typeof socket_io_available !== 'undefined' ? (Boolean(socket_io_available) ? 'true' : 'false') : 'false' %>;
+  </script>
 
 <% if (!process.env.VERCEL) { %>
 <!-- Socket.IO -->

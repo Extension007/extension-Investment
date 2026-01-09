@@ -29,6 +29,9 @@
   const itemOwner = item.owner || null;
   const itemImages = item.images || [];
   const itemImageUrl = item.image_url || (itemImages.length > 0 ? itemImages[0] : null);
+
+  // Передаем информацию о доступности Socket.IO на клиент
+  // socket_io_available передается как параметр
   
   // Контакты (для товаров и услуг)
   const contacts = item.contacts || {};
@@ -59,6 +62,11 @@
   const cardClass = displayMode === 'admin' ? 'catalog-item' : 'product-card';
   const cardDataAttr = `data-${type}-id="${itemId}"`;
 %>
+
+<!-- Передаем информацию о доступности Socket.IO на клиент -->
+<script>
+  window.SOCKET_IO_AVAILABLE = <%- socket_io_available ? 'true' : 'false' %>;
+</script>
 
 <div class="<%= cardClass %>" <%= cardDataAttr %>>
   <!-- Статус карточки -->

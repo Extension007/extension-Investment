@@ -73,10 +73,11 @@ router.get("/", requireUser, conditionalCsrfToken, async (req, res) => {
 
     res.render("cabinet", {
       user: req.user,
-      products: myProducts, 
-      services: myServices || [], 
+      products: myProducts,
+      services: myServices || [],
       banners: myBanners || [],
-      csrfToken: csrfTokenValue
+      csrfToken: csrfTokenValue,
+      socket_io_available: res.locals.socket_io_available
     });
   } catch (err) {
     console.error("❌ Ошибка загрузки кабинета:", err);

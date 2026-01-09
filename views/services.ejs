@@ -364,6 +364,11 @@
   <% let userRoleValue = typeof userRole !== 'undefined' ? userRole : null; %>
   <script>window.USER_ROLE = '<%= userRoleValue %>';</script>
 
+  <!-- Передаем информацию о доступности Socket.IO на клиент -->
+  <script>
+    window.SOCKET_IO_AVAILABLE = <%= typeof socket_io_available !== 'undefined' ? (Boolean(socket_io_available) ? 'true' : 'false') : 'false' %>;
+  </script>
+
   <!-- Загружаем YouTube IFrame API перед основным скриптом -->
   <script>
     // Загрузка YouTube IFrame API
@@ -374,7 +379,7 @@
   </script>
 
   <% if (!process.env.VERCEL) { %>
-  <!-- Socket.IO -->
+  <!-- Socket.IO (только если не на Vercel) -->
   <script src="/socket.io/socket.io.js"></script>
   <% } %>
   

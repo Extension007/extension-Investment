@@ -98,6 +98,10 @@ app.use((req, res, next) => {
       })()
     : req.session?.user || null;
   req.user = res.locals.user; // Для удобства в контроллерах и middleware
+  
+  // Передаем информацию о доступности Socket.IO в шаблоны
+  res.locals.socket_io_available = !isVercel; // Socket.IO доступен только не на Vercel
+  
   next();
 });
 

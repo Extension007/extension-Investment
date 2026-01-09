@@ -151,4 +151,9 @@ router.get("/health", (req, res) => {
   res.json({ mongo: hasMongo() ? "connected" : "disconnected" });
 });
 
+// Обработчик для Chrome DevTools и других .well-known запросов
+router.get("/.well-known/*", (req, res) => {
+  res.status(404).send("Not Found");
+});
+
 module.exports = router;

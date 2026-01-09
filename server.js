@@ -25,11 +25,45 @@ if (!process.env.VERCEL) {
   require("./routes/comments").setSocketIO(io); // Передаем io в комментарии до подключения маршрутов
   app.use("/", routes);
 
+  // Обработчик 404 для правильных CSP заголовков (для Chrome DevTools)
+  app.use((req, res, next) => {
+    // Применяем CSP заголовки для 404 ответов
+    const { createSecurityMiddleware } = require("./config/security");
+    createSecurityMiddleware()(req, res, () => {});
+    res.status(404).send('Not Found');
+  });
+
   // Подключаем обработчики WebSocket событий
   require("./socket/commentChat")(io);
+  
+  // Make io available globally for access in views
+  app.set('io', io);
+  
+  // Also set socket_io_available to true for non-Vercel deployments
+  app.use((req, res, next) => {
+    res.locals.socket_io_available = true;
+    next();
+  });
 } else {
   // На Vercel подключаем маршруты без Socket.IO
   app.use("/", routes);
+
+  // Обработчик 404 для правильных CSP заголовков (для Chrome DevTools)
+  app.use((req, res, next) => {
+    // Применяем CSP заголовки для 404 ответов
+    const { createSecurityMiddleware } = require("./config/security");
+    createSecurityMiddleware()(req, res, () => {});
+    res.status(404).send('Not Found');
+  });
+
+  // Set io to null for Vercel deployments to indicate it's not available
+  app.set('io', null);
+
+  // Set socket_io_available to false for Vercel deployments
+  app.use((req, res, next) => {
+    res.locals.socket_io_available = false;
+    next();
+  });
 }
 
 // Экспорт приложения для Vercel

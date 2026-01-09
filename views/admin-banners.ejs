@@ -198,8 +198,8 @@
   <script src="/js/admin-catalog.js"></script>
 
   <% if (!process.env.VERCEL) { %>
-  <!-- Socket.IO -->
-  <script src="/socket.io/socket.io.js"></script>
-  <% } %>
+    <!-- Socket.IO (только если не на Vercel) -->
+    <script src="/socket.io/socket.io.js"></script>
+    <% } %>
 </body>
 </html>

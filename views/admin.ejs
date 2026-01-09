@@ -197,10 +197,10 @@
 <% } %>
 
 <div class="product-actions" style="flex-direction:column;gap:8px;">
-<button class="btn small approve-banner-btn" data-id="<%= b._id %>" style="background:#4caf50;color:#fff;">
+<button class="btn small approve-btn" data-id="<%= b._id %>" data-type="banner" style="background:#4caf50;color:#fff;">
 ✅ Одобрить
 </button>
-<button class="btn small reject-banner-btn" data-id="<%= b._id %>" style="background:#f44336;color:#fff;">
+<button class="btn small reject-btn" data-id="<%= b._id %>" data-type="banner" style="background:#f44336;color:#fff;">
 ❌ Отклонить
 </button>
 <% if (b.link) { %>
@@ -665,6 +665,11 @@ data-type="banner">
 </div>
 </div>
 </div>
+
+<!-- Передаем информацию о доступности Socket.IO на клиент -->
+<script>
+  window.SOCKET_IO_AVAILABLE = <%= typeof socket_io_available !== 'undefined' ? (Boolean(socket_io_available) ? 'true' : 'false') : 'false' %>;
+</script>
 
 <script>
 // Глобальный CSRF токен

@@ -159,6 +159,11 @@
 <% let userRoleValue = typeof userRole !== 'undefined' ? userRole : null; %>
 <script>window.USER_ROLE = '<%= userRoleValue %>';</script>
 
+<!-- Передаем информацию о доступности Socket.IO на клиент -->
+<script>
+  window.SOCKET_IO_AVAILABLE = <%= typeof socket_io_available !== 'undefined' ? (Boolean(socket_io_available) ? 'true' : 'false') : 'false' %>;
+</script>
+
 <script src="/script.js"></script>
 
 <!-- Подключаем скрипт для предотвращения перекрытия контента футером -->
