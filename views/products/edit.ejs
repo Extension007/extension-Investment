@@ -44,7 +44,7 @@
         <!-- Основные поля товара -->
         <input type="text" name="name" value="<%= product.name %>" placeholder="Название товара/услуги" required aria-label="Название товара">
         <textarea name="description" placeholder="Описание товара" rows="4" aria-label="Описание товара"><%= product.description || '' %></textarea>
-        <input type="number" name="price" value="<%= product.price %>" placeholder="Цена" min="0" step="1" required aria-label="Цена">
+        <input type="text" name="price" value="<%= product.price %>" placeholder="Цена" required aria-label="Цена">
         <input type="url" name="link" value="<%= product.link || '' %>" placeholder="Ссылка на товар" aria-label="Ссылка на товар">
         <input type="url" name="video_url" value="<%= product.video_url || '' %>" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)" aria-label="Ссылка на видео">
         

@@ -8,7 +8,7 @@ const bannerSchema = new mongoose.Schema({
   video_url: { type: String, trim: true, default: "" },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   category: { type: String, trim: true, default: "" }, // Категория (реклама, промо и т.д.)
-  price: { type: Number, default: 0 },
+  price: { type: String, default: "" },
   
   // Массив изображений (до 5 штук)
   images: {
@@ -84,4 +84,3 @@ bannerSchema.index({ createdAt: -1 });
 bannerSchema.index({ status: 1, category: 1 });
 
 module.exports = mongoose.model("Banner", bannerSchema);
-

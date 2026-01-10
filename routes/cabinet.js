@@ -132,9 +132,9 @@ router.post("/product", requireUser, productLimiter, upload.array("images", 5), 
 router.post("/product/:id/price", requireUser, conditionalCsrfProtection, validateProductId, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
-    const price = Number(req.body.price);
-    if (!Number.isFinite(price) || price < 0) {
-      return res.status(400).json({ success: false, message: "Некорректная цена" });
+    const price = req.body.price;
+    if (!price || price.trim().length === 0) {
+      return res.status(400).json({ success: false, message: "Цена не может быть пустой" });
     }
     const updated = await Product.findOneAndUpdate(
       { _id: req.params.id, owner: req.user._id, deleted: { $ne: true } },
@@ -283,7 +283,7 @@ router.post("/banner", requireUser, productLimiter, upload.single("image"), hand
       link: req.body.link ? req.body.link.trim() : "",
       owner: ownerId,
       status: "pending",
-      price: req.body.price ? Number(req.body.price) : 0,
+      price: req.body.price || "",
       category: req.body.category || ""
     };
     
@@ -381,7 +381,7 @@ router.post("/banner/:id/edit", requireUser, productLimiter, upload.array("image
     // Обновляем данные
     banner.title = req.body.name || banner.title;
     banner.description = req.body.description || "";
-    banner.price = req.body.price ? Number(req.body.price) : 0;
+    banner.price = req.body.price || "";
     banner.link = req.body.link || "";
     banner.video_url = req.body.video_url || "";
     banner.category = req.body.category || "";

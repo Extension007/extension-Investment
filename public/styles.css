@@ -5,6 +5,10 @@ html, body { height: 100%; }
 body {
   font-family: 'Poppins', Arial, sans-serif;
   background-color: #2b2b2b;
+  background-image: url('/wav.jpeg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   color: #fff;
   line-height: 1.45;
 }
@@ -16,23 +20,29 @@ body {
 
 /* Шапка */
 .main-header {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  background: #111;
-  z-index: 1000;
+  background: linear-gradient(to top, transparent, rgba(17, 17, 0.8));
   border-bottom: 1px solid rgba(255,0,0,0.25);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  width: 100%;
 }
 
 /* Mobile footer для вкладок */
 .mobile-tabs-footer {
+  display: block; /* Показываем на всех устройствах */
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  background: #1e1e1e;
+  background: linear-gradient(to bottom, transparent, rgba(30, 46, 0.8));
   border-top: 1px solid rgba(255,0,0,0.25);
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
   z-index: 1000;
-  display: block; /* Показываем на всех устройствах */
+  padding: 8px 0;
 }
 
 .mobile-tabs-container {
@@ -144,21 +154,62 @@ body {
 
   /* Контент не должен перекрываться header и footer */
   main {
-    margin-top: 64px; /* Уменьшен для лучшей адаптации */
+    margin-top: 64px;
     margin-bottom: 64px;
     padding-bottom: 80px;
   }
 
   /* Секции с отступами для мобильных - оптимизированные */
-  .section {
+ .section {
     margin: 80px auto 100px auto; /* Уменьшенные отступы */
     width: 95%;
     padding: 30px 15px; /* Уменьшенный внутренний отступ */
   }
 
   /* Дополнительный отступ для последней секции на мобильных */
-  .section:last-child {
+ .section:last-child {
     margin-bottom: 140px; /* Оптимизированный отступ */
+  }
+  
+  /* Улучшаем выравнивание элементов в заголовке для мобильных */
+  .header-top,
+  .header-inner {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px;
+    min-height: auto;
+    justify-content: space-between;
+  }
+
+  .header-left,
+  .header-inner .header-left {
+    gap: 8px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .logo-img,
+  .header-inner .logo-img {
+    height: 28px;
+    flex-shrink: 0;
+  }
+
+  .header-stats {
+    display: none; /* Полностью скрываем счетчики на мобильных для экономии места */
+  }
+
+  .header-actions,
+  .header-inner .header-actions {
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  .header-actions .btn,
+  .header-inner .header-actions .btn {
+    padding: 5px 8px;
+    font-size: 11px;
+    height: 28px;
   }
 }
 
@@ -183,24 +234,181 @@ body {
   }
 
   /* Секции для очень маленьких экранов */
-  .section {
+ .section {
     margin: 60px auto 80px auto;
     width: 98%;
     padding: 20px 10px;
   }
 
-  .section:last-child {
+ .section:last-child {
     margin-bottom: 120px;
   }
 
   /* Оптимизация кнопок навигации для маленьких экранов */
-  .mobile-tab-button {
+ .mobile-tab-button {
     padding: 10px 6px;
     font-size: 0.75rem;
   }
+  
+  /* Улучшаем выравнивание элементов в заголовке для очень маленьких экранов */
+  .header-top,
+  .header-inner {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    min-height: auto;
+    justify-content: space-between;
+  }
+
+  .header-left,
+  .header-inner .header-left {
+    gap: 6px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .logo-img,
+  .header-inner .logo-img {
+    height: 40px;
+    flex-shrink: 0;
+    max-width: 120px;
+  }
+
+  .header-actions,
+  .header-inner .header-actions {
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .header-actions .btn,
+  .header-inner .header-actions .btn {
+    padding: 4px 6px;
+    font-size: 10px;
+    height: 26px;
+  }
 }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
-.header-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 60px;
+  flex-wrap: nowrap;
+  max-width: 1400px;
+  width: 96%;
+  margin: 0 auto;
+  padding: 15px 10px;
+  z-index: 1001;
+  transition: all 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.header-inner .header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.header-inner .logo-img {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  max-width: 120px;
+}
+
+.header-inner .header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+  max-width: 35%;
+  justify-content: flex-end;
+}
+
+.header-inner .header-actions .btn {
+  min-width: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* ВЕРХНИЙ ЭТАЖ - основные элементы */
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 60px;
+  flex-wrap: nowrap;
+  max-width: 1400px;
+  width: 96%;
+  margin: 0 auto;
+  padding: 15px 10px;
+  z-index: 1001;
+  transition: all 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.logo-img {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  max-width: 120px;
+}
+
+.header-stats {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  transition: opacity 0.3s ease;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: #fff;
+}
+
+/* Скрываем счетчики при уменьшении окна для предотвращения переполнения */
+@media (max-width: 1200px) {
+  .header-stats {
+    display: none;
+  }
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+  max-width: 35%;
+  justify-content: flex-end;
+}
+
+.header-actions .btn {
+  min-width: 0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
 .header-left {
   display: flex;
   align-items: center;
@@ -240,8 +448,6 @@ body {
     display: none; /* Скрываем на мобильных для экономии места */
   }
 }
-
-.header-actions { display: flex; gap: 10px; align-items: center; }
 
 /* Панель вкладок */
 .tabs-panel {
@@ -1185,6 +1391,13 @@ body {
   background: linear-gradient(to bottom, transparent, rgba(17, 17, 17, 0.8));
   color: #fff;
   box-shadow: 0 -2px 10px rgba(255,0,0,0.5); /* тень сверху, как у шапки */
+  font-size: 1.5rem;
+}
+
+/* Скрыть footer в кабинете и админ-панели */
+.cabinet-page .footer,
+.admin-page .footer {
+  display: none;
 }
 
 /* Добавляем дополнительное пространство внизу страницы для предотвращения перекрытия контента футером */
@@ -1227,6 +1440,15 @@ body::after {
   max-width: 900px;
   box-shadow: 0 0 20px #ff3333;
   position: relative;
+}
+
+/* Цвет текста в полях ввода в модальном окне регистрации */
+.modal input[type="text"],
+.modal input[type="email"],
+.modal input[type="password"],
+.modal textarea,
+.modal select {
+  color: #000 !important;
 }
 
 /* Улучшения для мобильных устройств */

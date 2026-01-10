@@ -37,7 +37,7 @@ const productSchema = new mongoose.Schema({
   // FIX: Основные поля товара
   name: { type: String, required: true, trim: true },
   description: { type: String, default: "", maxlength: 5000 },
-  price: { type: Number, required: true },
+  price: { type: String, required: true },
   link: { type: String, trim: true },
   
   // FIX: Массив изображений (до 5 штук)
