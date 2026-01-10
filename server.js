@@ -4,6 +4,8 @@ const express = require("express"); // важно для Vercel
 const { connectMongoDB } = require("./config/database");
 const { app } = require("./config/app"); // берём готовый app из config/app.js
 const routes = require("./routes/index");
+const { checkConfiguration } = require("./services/emailService");
+
 const http = require("http");
 const { Server } = require("socket.io");
 
@@ -80,6 +82,9 @@ if (require.main === module) {
       } else {
         console.log("✅ MongoDB подключена");
       }
+
+      // Проверка конфигурации email
+      checkConfiguration();
 
       const PORT = process.env.PORT || 3000;
       server.listen(PORT, () => {

@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/authController");
+const emailVerificationController = require("../controllers/emailVerificationController");
 const { hasMongo } = require("../config/database");
 const mongoose = require("mongoose");
 const { loginLimiter } = require("../middleware/rateLimiter");
@@ -45,7 +46,7 @@ router.get("/csrf-token", (req, res) => {
 // Выход (logout) - GET
 router.get("/logout", (req, res) => {
   const isVercel = Boolean(process.env.VERCEL);
-  
+
   if (isVercel) {
     // В Vercel serverless удаляем cookie
     res.clearCookie('exto_user');
@@ -58,8 +59,13 @@ router.get("/logout", (req, res) => {
       }
     });
   }
-  
+
   res.redirect("/");
 });
+
+// Email verification routes
+router.get('/auth/verify-email/:token', emailVerificationController.verifyEmail);
+router.post('/auth/resend-verification', emailVerificationController.resendVerification);
+router.get('/auth/verification-status', emailVerificationController.verificationStatus);
 
 module.exports = router;

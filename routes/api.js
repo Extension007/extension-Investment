@@ -748,7 +748,8 @@ router.get("/services/:id", apiLimiter, async (req, res) => {
 });
 
 // Создать услугу
-router.post("/services", apiLimiter, requireUser, csrfProtection, async (req, res) => {
+const { requireEmailVerification } = require("../middleware/emailVerification");
+router.post("/services", apiLimiter, requireUser, requireEmailVerification, csrfProtection, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: нет БД" });
     

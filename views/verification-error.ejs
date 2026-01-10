@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ошибка верификации</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #fff5f5; margin: 0; padding: 20px; text-align: center; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .icon { font-size: 64px; color: #dc3545; margin-bottom: 20px; }
+        h1 { color: #333; margin-bottom: 20px; }
+        .error-details { background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; text-align: left; }
+        p { color: #666; line-height: 1.6; margin-bottom: 30px; }
+        .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 0 10px 10px 0; }
+        .button:hover { background-color: #0056b3; }
+        .secondary { background-color: #6c757d; }
+        .secondary:hover { background-color: #545b62; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">❌</div>
+        <h1>Ошибка верификации email</h1>
+        <% if (typeof error !== 'undefined') { %>
+            <div class="error-details">
+                <strong>Ошибка:</strong> <%= error %>
+            </div>
+        <% } %>
+        <p>Ссылка для подтверждения email недействительна или срок ее действия истек.</p>
+        <p>Возможные причины:</p>
+        <ul style="text-align: left; display: inline-block; margin-bottom: 30px;">
+            <li>Ссылка уже была использована</li>
+            <li>Срок действия ссылки истек (24 часа)</li>
+            <li>Неверный токен верификации</li>
+        </ul>
+        <div>
+            <a href="/auth/resend-verification" class="button">Отправить письмо повторно</a>
+            <a href="/" class="button secondary">Вернуться на главную</a>
+        </div>
+    </div>
+</body>
+</html>

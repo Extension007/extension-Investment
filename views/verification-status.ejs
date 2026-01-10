@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Статус подтверждения - Albamount</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.0/axios.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="profile-header">
+      <h1>Профиль пользователя</h1>
+    </div>
+    
+    <div class="profile-content">
+      <div class="profile-card">
+        <h2>Информация о профиле</h2>
+        
+        <div class="profile-info">
+          <p><strong>Имя пользователя:</strong> <%= typeof user !== 'undefined' ? user.username : 'Гость' %></p>
+          <p><strong>Email:</strong> <%= typeof user !== 'undefined' ? user.email : 'Не указан' %></p>
+          
+          <div class="verification-status">
+            <% if (typeof user !== 'undefined' && user.emailVerified) { %>
+              <span class="status-badge verified">✓ Email подтвержден</span>
+            <% } else { %>
+              <span class="status-badge unverified">⚠ Email не подтвержден</span>
+              
+              <div class="verification-actions">
+                <button id="resendVerificationBtn" class="btn btn-secondary">Отправить письмо подтверждения</button>
+                <div id="resendStatus"></div>
+              </div>
+            <% } %>
+          </div>
+        
+        <div class="form-group">
+          <a href="/cabinet" class="btn btn-primary">Вернуться в кабинет</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('resendVerificationBtn')?.addEventListener('click', async function() {
+      try {
+        const response = await axios.post('/auth/resend-verification', {
+          email: "<%= typeof user !== 'undefined' ? user.email : '' %>",
+          _csrf: '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
+        });
+        
+        const statusDiv = document.getElementById('resendStatus');
+        if (response.data.success) {
+          statusDiv.innerHTML = '<div class="success-message">Письмо с подтверждением отправлено!</div>';
+        } else {
+          statusDiv.innerHTML = '<div class="error-message">' + response.data.message + '</div>';
+        }
+      } catch (error) {
+        console.error('Ошибка повторной отправки:', error);
+        const statusDiv = document.getElementById('resendStatus');
+        const errorMessage = error.response?.data?.message || 'Ошибка при отправке письма';
+        statusDiv.innerHTML = '<div class="error-message">' + errorMessage + '</div>';
+      }
+    });
+  </script>
+</body>
+</html>

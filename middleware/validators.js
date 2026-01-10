@@ -234,16 +234,30 @@ const validateRegister = [
     .isLength({ min: 3, max: 50 })
     .withMessage("Логин должен быть от 3 до 50 символов")
     .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage("Логин может содержать только буквы, цифры и подчеркивание"),
-
+    .withMessage("Логин может содержать только буквы, цифры и подчеркивание")
+    .custom(async (value) => {
+      // Проверяем, не существует ли уже пользователя с таким именем
+      const existingUser = await require('../models/User').findOne({ username: value });
+      if (existingUser) {
+        throw new Error("Пользователь с таким логином уже существует");
+      }
+      return true;
+    }),
   body("email")
     .trim()
     .notEmpty()
     .withMessage("Email обязателен")
-    .custom((value) => {
+    .custom(async (value) => {
       if (!validateEmail(value)) {
         throw new Error("Некорректный формат email");
       }
+      
+      // Проверяем, не существует ли уже пользователя с таким email
+      const existingUser = await require('../models/User').findOne({ email: value });
+      if (existingUser) {
+        throw new Error("Пользователь с таким email уже существует");
+      }
+      
       return true;
     })
     .normalizeEmail({ gmail_remove_dots: false }),

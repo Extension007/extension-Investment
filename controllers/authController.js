@@ -2,6 +2,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const { generateToken } = require("../config/jwt");
 const { hasMongo } = require("../config/database");
+const { sendVerificationEmail } = require("../services/emailVerificationService");
 
 exports.register = async (req, res) => {
   try {
@@ -10,48 +11,50 @@ exports.register = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email and password required" });
     }
 
+    // Проверяем, не существует ли уже пользователь с таким email
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "Пользователь с таким email уже существует" });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, email, password_hash: hashedPassword, role: "user" });
+    // Создаем пользователя с emailVerified: false по умолчанию
+    const user = new User({
+      username,
+      email,
+      password_hash: hashedPassword,
+      role: "user",
+      emailVerified: false // Новый пользователь не подтвержден
+    });
     await user.save();
 
-    // Сохраняем _id как строку для совместимости
-    const userData = {
-      _id: user._id.toString(),
-      username: user.username,
-      role: user.role
-    };
-
-    const isVercel = Boolean(process.env.VERCEL);
-    const token = generateToken(userData);
-
-    if (isVercel) {
-      // В Vercel serverless используем cookie для хранения данных пользователя
-      res.cookie('exto_user', JSON.stringify(userData), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 // 1 час
-      });
-      // Также возвращаем JWT токен для API вызовов
-      res.cookie('exto_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 1000 * 60 * 24 // 24 часа
-      });
-    } else {
-      // В обычной среде используем сессии
-      req.session.user = userData;
-      // Также возвращаем JWT токен для API вызовов
-      res.cookie('exto_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 1000 * 60 * 24 // 24 часа
+    // Генерируем и отправляем токен подтверждения
+    try {
+      await sendVerificationEmail(user);
+    } catch (emailError) {
+      // Если не удалось отправить email, удаляем только что созданного пользователя
+      // Дополнительно проверяем, что пользователь имеет роль "user", а не "admin"
+      if (user.role === 'user') {
+        await User.findByIdAndDelete(user._id);
+      }
+      console.error("Ошибка отправки письма подтверждения:", emailError);
+      return res.status(500).json({
+        success: false,
+        message: "Ошибка регистрации: не удалось отправить письмо подтверждения"
       });
     }
 
-    res.status(200).json({ success: true, user: { id: user._id, email: user.email }, token });
+    // Возвращаем информацию о пользователе без полного токена
+    // Пользователь будет неавторизованным до подтверждения email
+    res.status(200).json({
+      success: true,
+      message: "Регистрация успешна. Проверьте ваш email для подтверждения.",
+      user: {
+        id: user._id,
+        email: user.email,
+        emailVerified: user.emailVerified
+      }
+    });
   } catch (err) {
     console.error("Ошибка регистрации:", err);
     res.status(500).json({ success: false, message: "Registration failed", error: err.message });
@@ -65,10 +68,22 @@ exports.userLogin = async (req, res) => {
     if (!user) {
       return res.render("user-login", { error: "Неверный логин или пароль", csrfToken: res.locals.csrfToken });
     }
-    // Пользователи не могут входить через админку
+    
+    // Проверяем, является ли пользователь администратором
     if (user.role === "admin") {
       return res.render("user-login", { error: "Для входа администратора используйте /admin/login", csrfToken: res.locals.csrfToken });
     }
+    
+    // Проверяем статус подтверждения email
+    if (!user.emailVerified) {
+      return res.render("user-login", {
+        error: "Пожалуйста, подтвердите ваш email перед входом. Проверьте папку Входящие или Спам.",
+        csrfToken: res.locals.csrfToken,
+        showResendVerification: true,
+        email: user.email
+      });
+    }
+    
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) {
       return res.render("user-login", { error: "Неверный логин или пароль", csrfToken: res.locals.csrfToken });
@@ -78,7 +93,8 @@ exports.userLogin = async (req, res) => {
     const userData = {
       _id: user._id.toString(),
       username: user.username,
-      role: user.role
+      role: user.role,
+      emailVerified: user.emailVerified
     };
 
     const isVercel = Boolean(process.env.VERCEL);
@@ -90,7 +106,7 @@ exports.userLogin = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 1000 * 60 // 1 час
+        maxAge: 1000 * 60 * 60 // 1 час
       });
       // Также возвращаем JWT токен для API вызовов
       res.cookie('exto_token', token, {
