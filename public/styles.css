@@ -183,10 +183,10 @@ body {
   }
 
   .header-left,
-  .header-inner .header-left {
+  .header-inner .header-left,
+  .main-header .header-left {
     gap: 8px;
-    flex-shrink: 1;
-    min-width: 0;
+    flex: 0 0 auto;
   }
 
   .logo-img,
@@ -200,9 +200,12 @@ body {
   }
 
   .header-actions,
-  .header-inner .header-actions {
+  .header-inner .header-actions,
+  .main-header .header-actions {
     gap: 6px;
-    flex-shrink: 0;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    min-width: 0;
   }
 
   .header-actions .btn,
@@ -262,10 +265,20 @@ body {
   }
 
   .header-left,
-  .header-inner .header-left {
+  .header-inner .header-left,
+  .main-header .header-left {
     gap: 6px;
-    flex-shrink: 1;
-    min-width: 0;
+    flex: 1;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  .logo,
+  .header-inner .logo,
+  .main-header .logo {
+    margin: 0 auto;
+    text-align: center;
   }
 
   .logo-img,
@@ -276,9 +289,12 @@ body {
   }
 
   .header-actions,
-  .header-inner .header-actions {
+  .header-inner .header-actions,
+  .main-header .header-actions {
     gap: 4px;
-    flex-shrink: 0;
+    flex: 1 1 auto;
+    justify-content: flex-end;
+    min-width: 0;
   }
 
   .header-actions .btn,
@@ -286,6 +302,7 @@ body {
     padding: 4px 6px;
     font-size: 10px;
     height: 26px;
+    min-width: 50px;
   }
 }
 .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
@@ -326,13 +343,16 @@ body {
   display: flex;
   gap: 10px;
   align-items: center;
-  flex-shrink: 0;
-  max-width: 35%;
+  flex: 1 1 auto;
   justify-content: flex-end;
+  min-width: 0;
 }
 
 .header-inner .header-actions .btn {
-  min-width: 0;
+  flex-shrink: 1;
+  min-width: 60px;
+  font-size: 16px;
+  padding: 8px 12px;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -356,12 +376,14 @@ body {
   white-space: nowrap;
 }
 
-.header-left {
+.header-left,
+.main-header .header-left,
+.header-top .header-left,
+.header-inner .header-left {
   display: flex;
   align-items: center;
-  gap: 20px;
-  flex-shrink: 0;
-  min-width: 0;
+  gap: 15px;
+  flex: 0 0 auto;
 }
 
 .logo-img {
@@ -394,20 +416,46 @@ body {
   }
 }
 
-.header-actions {
+.header-actions,
+.main-header .header-actions {
   display: flex;
   gap: 10px;
   align-items: center;
-  flex-shrink: 0;
-  max-width: 35%;
+  flex: 1 1 auto;
   justify-content: flex-end;
+  min-width: 0;
 }
 
 .header-actions .btn {
-  min-width: 0;
+  flex-shrink: 1;
+  min-width: 60px;
+  font-size: 16px;
+  padding: 8px 12px;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+
+/* Медиазапросы для уменьшения кнопок */
+@media (max-width: 768px) {
+  .header-actions .btn,
+  .header-inner .header-actions .btn,
+  .header-top .header-actions .btn,
+  .main-header .header-actions .btn {
+    font-size: 14px;
+    padding: 6px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-actions .btn,
+  .header-inner .header-actions .btn,
+  .header-top .header-actions .btn,
+  .main-header .header-actions .btn {
+    font-size: 12px;
+    padding: 4px 6px;
+    min-width: 50px;
+  }
 }
 .header-left {
   display: flex;

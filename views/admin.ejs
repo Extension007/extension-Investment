@@ -12,11 +12,21 @@
 <body class="admin-page">
 <header class="main-header">
 <div class="container header-inner">
-  <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
-  <nav class="nav" style="display:none;">
-<!-- Навигация скрыта -->
-</nav>
-<div class="header-actions">
+  <div class="header-top">
+    <div class="header-left">
+      <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+      <div class="header-stats">
+        <div class="stat-item">
+          <span style="opacity: 0.8;">👥</span>
+          <strong style="color: #4caf50;"><%= typeof visitorCount !== 'undefined' ? visitorCount : 0 %></strong>
+        </div>
+        <div class="stat-item">
+          <span style="opacity: 0.8;">👤</span>
+          <strong style="color: #2196f3;"><%= typeof userCount !== 'undefined' ? userCount : 0 %></strong>
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
 <span class="user-chip">Админ-панель</span>
 <form id="logoutForm" method="POST" action="/logout" style="display:inline;margin-left:10px;">
 <button type="submit" class="btn outline small">Выход</button>

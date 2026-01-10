@@ -21,33 +21,18 @@
   <!-- Одноэтажный header без вкладок -->
   <header class="main-header">
     <div class="container header-inner">
-      <!-- Основные элементы -->
-      <div class="header-top">
-        <div class="header-left">
-          <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
-          <div class="header-stats">
-            <div class="stat-item">
-              <span style="opacity: 0.8;">👥</span>
-              <strong style="color: #4caf50;"><%= typeof visitorCount !== 'undefined' ? visitorCount : 0 %></strong>
-            </div>
-            <div class="stat-item">
-              <span style="opacity: 0.8;">👤</span>
-              <strong style="color: #2196f3;"><%= typeof userCount !== 'undefined' ? userCount : 0 %></strong>
-            </div>
-          </div>
-        </div>
-        <div class="header-actions">
-          <% if (isAuth) { %>
-            <% if (isAdmin) { %>
-              <a class="btn outline" href="/admin">Админ-панель</a>
-            <% } else { %>
-              <a class="btn outline" href="/cabinet">Личный кабинет</a>
-            <% } %>
+      <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+      <div class="header-actions">
+        <% if (isAuth) { %>
+          <% if (isAdmin) { %>
+            <a class="btn outline" href="/admin">Админ-панель</a>
           <% } else { %>
-            <a class="btn outline" href="/user/login">Вход</a>
-            <button id="openRegister" type="button" class="btn outline">Регистрация</button>
+            <a class="btn outline" href="/cabinet">Личный кабинет</a>
           <% } %>
-        </div>
+        <% } else { %>
+          <a class="btn outline" href="/user/login">Вход</a>
+          <button id="openRegister" type="button" class="btn outline">Регистрация</button>
+        <% } %>
       </div>
     </div>
   </header>

@@ -3,6 +3,8 @@ const express = require("express");
 const router = express.Router();
 const Product = require("../models/Product");
 const Banner = require("../models/Banner");
+const User = require("../models/User");
+const Statistics = require("../models/Statistics");
 const { HAS_MONGO } = require("../config/database");
 const { requireAdmin, requireAuth } = require("../middleware/auth");
 const { productLimiter } = require("../middleware/rateLimiter");
@@ -41,7 +43,7 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
     if (!HAS_MONGO) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
     
     // Разделяем товары и услуги (исключаем удаленные)
-    const [allProducts, allServices, pendingProducts, pendingServices, allBanners, pendingBanners] = await Promise.all([
+    const [allProducts, allServices, pendingProducts, pendingServices, allBanners, pendingBanners, visitors, users] = await Promise.all([
       Product.find({
         deleted: { $ne: true },
         $or: [
@@ -52,15 +54,15 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
       })
         .sort({ _id: -1 })
         .populate("owner", "username email"),
-      
+
       Product.find({
         deleted: { $ne: true },
         type: "service"
       })
         .sort({ _id: -1 })
         .populate("owner", "username email"),
-      
-      Product.find({ 
+
+      Product.find({
         deleted: { $ne: true },
         $and: [
           { owner: { $ne: null, $exists: true } },
@@ -82,8 +84,8 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
       })
         .sort({ _id: -1 })
         .populate("owner", "username email"),
-      
-      Product.find({ 
+
+      Product.find({
         deleted: { $ne: true },
         $and: [
           { owner: { $ne: null, $exists: true } },
@@ -99,12 +101,12 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
       })
         .sort({ _id: -1 })
         .populate("owner", "username email"),
-      
+
       Banner.find()
         .sort({ _id: -1 })
         .populate("owner", "username email"),
-      
-      Banner.find({ 
+
+      Banner.find({
         $and: [
           { owner: { $ne: null, $exists: true } },
           {
@@ -117,7 +119,15 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
         ]
       })
         .sort({ _id: -1 })
-        .populate("owner", "username email")
+        .populate("owner", "username email"),
+
+      Statistics.findOneAndUpdate(
+        { key: "visitors" },
+        { $inc: { value: 1 } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      ),
+
+      User.countDocuments()
     ]);
     
     console.log(`📋 Всего товаров: ${allProducts.length}`);
@@ -126,7 +136,10 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
     console.log(`⏳ Услуг на модерации: ${pendingServices.length}`);
     console.log(`📋 Всего баннеров: ${allBanners.length}`);
     console.log(`⏳ Баннеров на модерации: ${pendingBanners.length}`);
-    
+
+    const visitorCount = visitors ? visitors.value : 0;
+    const userCount = users || 0;
+
     // Генерируем CSRF токен для формы и API запросов
     const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : null);
 
@@ -137,6 +150,8 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
       pendingServices: pendingServices || [],
       banners: allBanners || [],
       pendingBanners: pendingBanners || [],
+      visitorCount,
+      userCount,
       categories: CATEGORY_LABELS,
       csrfToken: csrfTokenValue
     });
