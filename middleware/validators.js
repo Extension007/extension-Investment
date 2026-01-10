@@ -53,8 +53,8 @@ const validateProduct = [
   body("price")
     .notEmpty()
     .withMessage("Цена обязательна")
-    .isFloat({ min: 0 })
-    .withMessage("Цена должна быть положительным числом"),
+    .isString()
+    .withMessage("Цена должна быть строкой"),
   
   body("description")
     .optional()
@@ -172,8 +172,8 @@ const validateBanner = [
   
   body("price")
     .optional()
-    .isFloat({ min: 0 })
-    .withMessage("Цена должна быть положительным числом"),
+    .isString()
+    .withMessage("Цена должна быть строкой"),
   
   body("description")
     .optional()
