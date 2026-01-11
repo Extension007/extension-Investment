@@ -41,9 +41,14 @@ function createImageUpload(options = {}) {
           process.env.CLOUDINARY_API_SECRET) ||
         process.env.CLOUDINARY_URL;
 
-      let storage;
+      if (req.isMobile && !hasCloudinary) {
+        req.skipImageUpload = true;
+        req.files = [];
+        console.log(`📱 Mobile user without Cloudinary - image upload skipped for product creation`);
+        return next();
+      }
 
-      if (hasCloudinary) {
+      if (req.isMobile && hasCloudinary) {
         try {
           const { CloudinaryStorage } = require("multer-storage-cloudinary");
           const cloudinary = require("cloudinary").v2;
@@ -54,7 +59,7 @@ function createImageUpload(options = {}) {
             api_secret: process.env.CLOUDINARY_API_SECRET,
           });
 
-          storage = new CloudinaryStorage({
+          const storage = new CloudinaryStorage({
             cloudinary,
             params: {
               folder: "products",
@@ -66,47 +71,99 @@ function createImageUpload(options = {}) {
               ],
             },
           });
+
+          const upload = multer({
+            storage,
+            fileFilter,
+            limits: {
+              fileSize: maxFileSize,
+              files: maxFiles,
+            },
+          }).array("images", maxFiles);
+
+          upload(req, res, (err) => {
+            if (err) {
+              return next(err);
+            }
+            next();
+          });
         } catch (cloudinaryErr) {
-          console.warn("Cloudinary init failed, skipping image upload:", cloudinaryErr.message);
+          console.warn("Cloudinary init failed for mobile, skipping image upload:", cloudinaryErr.message);
           req.skipImageUpload = true;
-          console.log(`📱 Mobile user or Cloudinary unavailable - image upload skipped for product creation`);
+          req.files = [];
+          console.log(`📱 Mobile user Cloudinary failed - image upload skipped for product creation`);
           return next();
         }
-      } else {
-        if (req.isMobile) {
-          req.skipImageUpload = true;
-          console.log(`📱 Mobile user without Cloudinary - image upload skipped for product creation`);
-          return next();
+      } else if (!req.isMobile) {
+        let storage;
+
+        if (hasCloudinary) {
+          try {
+            const { CloudinaryStorage } = require("multer-storage-cloudinary");
+            const cloudinary = require("cloudinary").v2;
+
+            cloudinary.config({
+              cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+              api_key: process.env.CLOUDINARY_API_KEY,
+              api_secret: process.env.CLOUDINARY_API_SECRET,
+            });
+
+            storage = new CloudinaryStorage({
+              cloudinary,
+              params: {
+                folder: "products",
+                allowed_formats: ["jpg", "png", "jpeg", "webp"],
+                transformation: [
+                  { width: 1200, height: 1200, crop: "limit" },
+                  { quality: "auto" },
+                  { fetch_format: "auto" },
+                ],
+              },
+            });
+          } catch (cloudinaryErr) {
+            console.warn("Cloudinary init failed for desktop, falling back to local storage:", cloudinaryErr.message);
+            const uploadDir = ensureUploadDir();
+            storage = multer.diskStorage({
+              destination: (req, file, cb) => cb(null, uploadDir),
+              filename: (req, file, cb) => {
+                const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+                cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+              },
+            });
+          }
+        } else {
+          const uploadDir = ensureUploadDir();
+          storage = multer.diskStorage({
+            destination: (req, file, cb) => cb(null, uploadDir),
+            filename: (req, file, cb) => {
+              const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+              cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+            },
+          });
         }
 
-        const uploadDir = ensureUploadDir();
-        storage = multer.diskStorage({
-          destination: (req, file, cb) => cb(null, uploadDir),
-          filename: (req, file, cb) => {
-            const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-            cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+        const upload = multer({
+          storage,
+          fileFilter,
+          limits: {
+            fileSize: maxFileSize,
+            files: maxFiles,
           },
+        }).array("images", maxFiles);
+
+        upload(req, res, (err) => {
+          if (err) {
+            return next(err);
+          }
+          next();
         });
-      }
-
-      const upload = multer({
-        storage,
-        fileFilter,
-        limits: {
-          fileSize: maxFileSize,
-          files: maxFiles,
-        },
-      }).array("images", maxFiles);
-
-      upload(req, res, (err) => {
-        if (err) {
-          return next(err);
-        }
+      } else {
         next();
-      });
+      }
     } catch (initErr) {
       console.error("createImageUpload error:", initErr);
       req.skipImageUpload = true;
+      req.files = [];
       next();
     }
   };

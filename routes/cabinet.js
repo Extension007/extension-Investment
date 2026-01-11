@@ -114,12 +114,22 @@ router.post("/product", requireUser, productLimiter, mobileOptimization, upload,
     };
 
     const created = await createProduct(productData, req.files || []);
-    
+
+    const imagesCount = created.images?.length || 0;
+    const wasSkipped = req.skipImageUpload === true;
+
     console.log("✅ Карточка создана пользователем:", {
       id: created._id.toString(),
       name: created.name,
-      owner: created.owner.toString()
+      owner: created.owner.toString(),
+      imagesCount,
+      uploadSkipped: wasSkipped,
+      deviceType: req.isMobile ? 'mobile' : 'desktop'
     });
+
+    if (wasSkipped) {
+      console.log(`📱 Upload пропущен для мобильного устройства - карточка создана без изображений`);
+    }
     
     res.json({ success: true, productId: created._id });
   } catch (err) {
