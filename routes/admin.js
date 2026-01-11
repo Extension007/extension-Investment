@@ -168,6 +168,11 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
 router.post("/products", requireAdmin, productLimiter, upload, csrfProtection, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
+    // Проверка наличия изображений (если обязательны)
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: "Необходимо загрузить хотя бы одно изображение" });
+    }
+
     const productData = {
       name: req.body.name,
       description: req.body.description,
@@ -186,7 +191,7 @@ router.post("/products", requireAdmin, productLimiter, upload, csrfProtection, v
     };
 
     await createProduct(productData, req.files || []);
-    
+
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) {
       return res.json({ success: true, message: "Товар успешно добавлен" });

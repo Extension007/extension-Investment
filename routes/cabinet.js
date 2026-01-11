@@ -96,6 +96,11 @@ router.post("/product", requireUser, productLimiter, mobileOptimization, upload,
       return res.status(401).json({ success: false, message: "Необходима авторизация" });
     }
 
+    // Проверка наличия изображений (если обязательны)
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ success: false, message: "Необходимо загрузить хотя бы одно изображение" });
+    }
+
     const productData = {
       name: req.body.name,
       description: req.body.description,
@@ -113,26 +118,20 @@ router.post("/product", requireUser, productLimiter, mobileOptimization, upload,
       status: "pending"
     };
 
-    console.log(`📋 Creating product: device=${req.isMobile ? 'mobile' : 'desktop'}, skipUpload=${req.skipImageUpload}, filesCount=${req.files ? req.files.length : 0}`);
+    console.log(`📋 Creating product: device=${req.isMobile ? 'mobile' : 'desktop'}, filesCount=${req.files ? req.files.length : 0}`);
 
     const created = await createProduct(productData, req.files || []);
 
     const imagesCount = created.images?.length || 0;
-    const wasSkipped = req.skipImageUpload === true;
 
     console.log("✅ Карточка создана пользователем:", {
       id: created._id.toString(),
       name: created.name,
       owner: created.owner.toString(),
       imagesCount,
-      uploadSkipped: wasSkipped,
       deviceType: req.isMobile ? 'mobile' : 'desktop'
     });
 
-    if (wasSkipped) {
-      console.log(`📱 Upload пропущен для мобильного устройства - карточка создана без изображений`);
-    }
-    
     res.json({ success: true, productId: created._id });
   } catch (err) {
     console.error("❌ Ошибка создания карточки:", err);
