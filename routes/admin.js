@@ -165,7 +165,7 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
 
 // Добавление товара (админом - сразу approved)
 // ВАЖНО: multer должен быть ПЕРЕД csrfProtection, чтобы _csrf был доступен в req.body
-router.post("/products", requireAdmin, productLimiter, upload, csrfProtection, validateProduct, async (req, res) => {
+router.post("/products", requireAdmin, productLimiter, upload, handleMulterError, csrfProtection, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
     // Проверка наличия изображений (если обязательны)
@@ -277,7 +277,7 @@ router.get("/products/:id/edit", requireAdmin, validateProductId, conditionalCsr
 });
 
 // Редактирование товара (сохранение)
-router.post("/products/:id/edit", requireAdmin, productLimiter, upload, csrfProtection, validateProductId, validateProduct, async (req, res) => {
+router.post("/products/:id/edit", requireAdmin, productLimiter, upload, handleMulterError, csrfProtection, validateProductId, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
     const updateData = {
@@ -649,7 +649,7 @@ router.get("/services/:id/edit", requireAdmin, validateServiceId, conditionalCsr
 });
 
 // Редактирование услуги (сохранение)
-router.post("/services/:id/edit", requireAdmin, productLimiter, upload, csrfProtection, validateServiceId, validateService, async (req, res) => {
+router.post("/services/:id/edit", requireAdmin, productLimiter, upload, handleMulterError, csrfProtection, validateServiceId, validateService, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
     const service = await Product.findById(req.params.id);
@@ -850,7 +850,7 @@ router.get("/banners", requireAdmin, csrfToken, async (req, res) => {
 });
 
 // Добавление баннера (админом)
-router.post("/banners", requireAdmin, productLimiter, upload, csrfProtection, validateBanner, async (req, res) => {
+router.post("/banners", requireAdmin, productLimiter, upload, handleMulterError, csrfProtection, validateBanner, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
     const { title, description, price, link, video_url, category, status } = req.body;
@@ -959,7 +959,7 @@ router.get("/banners/:id/edit", requireAdmin, validateBannerId, csrfToken, async
 });
 
 // Редактирование баннера (сохранение)
-router.post("/banners/:id/edit", requireAdmin, productLimiter, upload, csrfProtection, validateBannerId, validateBanner, async (req, res) => {
+router.post("/banners/:id/edit", requireAdmin, productLimiter, upload, handleMulterError, csrfProtection, validateBannerId, validateBanner, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
     const banner = await Banner.findById(req.params.id);

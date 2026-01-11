@@ -41,14 +41,14 @@ function normalizeImageUrl(imageUrl) {
     // Ищем базовый URL без параметров трансформации
     // Формат: https://res.cloudinary.com/{cloud_name}/image/upload/{transformations}/{public_id}.{format}
     // Нужно получить: https://res.cloudinary.com/{cloud_name}/image/upload/{public_id}.{format}
-    const match = imageUrl.match(/^(https?:\/\/res\.cloudinary\.com\/[^\/]+\/image\/upload\/)(?:v\d+\/)?(?:[^\/]+\/)*([^\/]+\.(jpg|jpeg|png|webp|gif))(?:\?.*)?$/i);
+    const match = imageUrl.match(/^(https?:\/\/res\.cloudinary\.com\/[^\/]+\/image\/upload\/)(?:v\d+\/)?(?:[^\/]+\/)*([^\/]+\.(jpg|jpeg|png|webp|gif|svg|gif|bmp|tiff|ico))(?:\?.*)?$/i);
     if (match) {
       // Возвращаем базовый URL без трансформаций
       return match[1] + match[2];
     }
     
     // Альтернативный формат: /upload/{transformations}/{public_id}
-    const altMatch = imageUrl.match(/\/upload\/(?:v\d+\/)?([^\/]+\.(jpg|jpeg|png|webp|gif))(?:\?.*)?$/i);
+    const altMatch = imageUrl.match(/\/upload\/(?:v\d+\/)?([^\/]+\.(jpg|jpeg|png|webp|gif|svg|gif|bmp|tiff|ico))(?:\?.*)?$/i);
     if (altMatch) {
       return imageUrl.split('/upload/')[0] + '/upload/' + altMatch[1];
     }
@@ -74,7 +74,11 @@ function extractCloudinaryPublicId(imageUrl) {
   // Упрощённый паттерн: ищем путь после /upload/
   // Формат: /upload/(v{version}/)?{folder}/{public_id}.{format}
   const match = normalized.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/);
-  return match ? match[1] : null;
+  if (match) {
+    // Убираем любые дополнительные параметры из public_id
+    return match[1].split('?')[0];
+  }
+  return null;
 }
 
 /**

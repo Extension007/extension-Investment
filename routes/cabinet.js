@@ -89,7 +89,7 @@ router.get("/", requireUser, conditionalCsrfToken, async (req, res) => {
 });
 
 // Пользователь создаёт карточку
-router.post("/product", requireUser, productLimiter, mobileOptimization, upload, conditionalCsrfProtection, validateProduct, async (req, res) => {
+router.post("/product", requireUser, productLimiter, mobileOptimization, upload, handleMulterError, conditionalCsrfProtection, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     if (!req.user || !req.user._id) {
@@ -192,7 +192,7 @@ router.get("/product/:id/edit", requireUser, validateProductId, conditionalCsrfT
 });
 
 // Редактирование товара пользователем
-router.post("/product/:id/edit", requireUser, productLimiter, mobileOptimization, upload, conditionalCsrfProtection, validateProductId, validateProduct, async (req, res) => {
+router.post("/product/:id/edit", requireUser, productLimiter, mobileOptimization, upload, handleMulterError, conditionalCsrfProtection, validateProductId, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     const updateData = {
@@ -241,7 +241,7 @@ router.post("/product/:id/edit", requireUser, productLimiter, mobileOptimization
 });
 
 // Загрузка баннера пользователем
-router.post("/banner", requireUser, productLimiter, bannerUpload, conditionalCsrfProtection, async (req, res) => {
+router.post("/banner", requireUser, productLimiter, bannerUpload, handleMulterError, conditionalCsrfProtection, async (req, res) => {
   if (!HAS_MONGO) {
     return res.status(503).json({ success: false, message: "Нет БД" });
   }
@@ -395,7 +395,7 @@ router.get("/banner/:id/edit", requireUser, conditionalCsrfToken, async (req, re
 });
 
 // Редактирование баннера пользователем
-router.post("/banner/:id/edit", requireUser, productLimiter, bannerUpload, conditionalCsrfProtection, async (req, res) => {
+router.post("/banner/:id/edit", requireUser, productLimiter, bannerUpload, handleMulterError, conditionalCsrfProtection, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     const banner = await Banner.findOne({ 

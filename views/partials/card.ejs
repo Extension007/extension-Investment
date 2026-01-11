@@ -101,7 +101,12 @@
   <% if (itemImages && itemImages.length > 0) { %>
     <div class="item-images">
       <% itemImages.slice(0, 3).forEach((img, idx) => { %>
-        <img src="<%= img %>" alt="<%= itemName %>" loading="lazy">
+        <% if (img && img.startsWith('https://res.cloudinary.com')) { %>
+          <!-- Используем безопасный URL для Cloudinary изображений -->
+          <img src="<%= img %>?f_auto,q_auto,c_limit,w_800,h_600" alt="<%= itemName %>" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.png';" referrerpolicy="no-referrer">
+        <% } else { %>
+          <img src="<%= img %>" alt="<%= itemName %>" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.png';" referrerpolicy="no-referrer">
+        <% } %>
       <% }) %>
       <% if (itemImages.length > 3) { %>
         <span class="images-count">+<%= itemImages.length - 3 %> еще</span>
@@ -109,7 +114,17 @@
     </div>
   <% } else if (itemImageUrl) { %>
     <div class="item-images">
-      <img src="<%= itemImageUrl %>" alt="<%= itemName %>" loading="lazy">
+      <% if (itemImageUrl && itemImageUrl.startsWith('https://res.cloudinary.com')) { %>
+        <!-- Используем безопасный URL для Cloudinary изображений -->
+        <img src="<%= itemImageUrl %>?f_auto,q_auto,c_limit,w_800,h_600" alt="<%= itemName %>" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.png';" referrerpolicy="no-referrer">
+      <% } else { %>
+        <img src="<%= itemImageUrl %>" alt="<%= itemName %>" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.png';" referrerpolicy="no-referrer">
+      <% } %>
+    </div>
+  <% } else { %>
+    <!-- Показываем placeholder, если изображения отсутствуют -->
+    <div class="item-images">
+      <img src="/images/placeholder.png" alt="Изображение отсутствует" loading="lazy" referrerpolicy="no-referrer">
     </div>
   <% } %>
 

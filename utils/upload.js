@@ -35,18 +35,39 @@ function createImageUpload(options = {}) {
 
   return async (req, res, next) => {
     try {
-      const hasCloudinary =
+      // Проверяем наличие Cloudinary конфигурации
+      const hasCloudinaryConfig =
         (process.env.CLOUDINARY_CLOUD_NAME &&
           process.env.CLOUDINARY_API_KEY &&
           process.env.CLOUDINARY_API_SECRET) ||
         process.env.CLOUDINARY_URL;
 
-      console.log(`📤 Upload request: device=${req.isMobile ? 'mobile' : 'desktop'}, cloudinary=${hasCloudinary ? 'available' : 'unavailable'}`);
-
       let storage;
       let useCloudinary = false;
+      let cloudinaryAvailable = false;
 
-      if (hasCloudinary) {
+      // Проверяем доступность Cloudinary
+      if (hasCloudinaryConfig) {
+        try {
+          const cloudinary = require("cloudinary").v2;
+          cloudinary.config({
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET,
+          });
+
+          // Проверяем доступность Cloudinary с помощью ping
+          await cloudinary.api.ping();
+          cloudinaryAvailable = true;
+        } catch (pingErr) {
+          console.warn("Cloudinary недоступен, используем локальное хранилище:", pingErr.message);
+        }
+      }
+
+      console.log(`📤 Upload request: device=${req.isMobile ? 'mobile' : 'desktop'}, cloudinary=${cloudinaryAvailable ? 'available' : 'unavailable'}`);
+
+      // Используем Cloudinary только если она доступна
+      if (cloudinaryAvailable) {
         try {
           const { CloudinaryStorage } = require("multer-storage-cloudinary");
           const cloudinary = require("cloudinary").v2;
@@ -63,7 +84,7 @@ function createImageUpload(options = {}) {
               folder: "products",
               allowed_formats: ["jpg", "png", "jpeg", "webp"],
               transformation: [
-                { width: 1200, height: 1200, crop: "limit" },
+                { width: 1200, height: 120, crop: "limit" },
                 { quality: "auto" },
                 { fetch_format: "auto" },
               ],
@@ -83,6 +104,7 @@ function createImageUpload(options = {}) {
           });
         }
       } else {
+        // Используем локальное хранилище как fallback
         const uploadDir = ensureUploadDir();
         storage = multer.diskStorage({
           destination: (req, file, cb) => cb(null, uploadDir),
@@ -91,6 +113,7 @@ function createImageUpload(options = {}) {
             cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
           },
         });
+        console.log(`💾 Local storage initialized for ${req.isMobile ? 'mobile' : 'desktop'} device`);
       }
 
       const multerInstance = multer({

@@ -15,7 +15,7 @@ function createSecurityMiddleware() {
         scriptSrcAttr: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", "https:"],
         fontSrc: ["'self'", "https:", "data:"],
-        imgSrc: ["'self'", "data:", "https:", "blob:", "https://res.cloudinary.com"], // Добавляем Cloudinary
+        imgSrc: ["'self'", "data:", "https:", "blob:", "https://res.cloudinary.com", "https://*.cloudinary.com"], // Добавляем Cloudinary и его поддомены
         // Разрешаем Instagram oEmbed API для единой логики видео-плееров и WebSocket для Socket.IO
         connectSrc: ["'self'", "https:", "wss:", "ws:", "https://api.instagram.com"],
         // Разрешаем все необходимые iframe источники для YouTube, VK, Instagram

@@ -54,9 +54,10 @@ function optimizeImageUrl(imageUrl, options = {}) {
   // f_auto = автоматический формат (WebP для поддерживающих браузеров)
   // q_auto = автоматическое качество
   // c_limit = ограничение размеров без обрезки
+  // fl_no_overflow = предотвращает увеличение изображения сверх исходных размеров
   return cloudinary.url(publicId, {
     transformation: [
-      { width, height, crop: 'limit' },
+      { width, height, crop: 'limit', flags: 'no_overflow' },
       { quality: quality },
       { fetch_format: format === 'auto' ? 'auto' : format }
     ]
@@ -88,7 +89,7 @@ function getThumbnailUrl(imageUrl, options = {}) {
   // Генерируем thumbnail с оптимизацией
   return cloudinary.url(publicId, {
     transformation: [
-      { width, height, crop, gravity: 'auto' },
+      { width, height, crop, gravity: 'auto', flags: 'no_overflow' },
       { quality: 'auto' },
       { fetch_format: 'auto' } // WebP для современных браузеров
     ]
