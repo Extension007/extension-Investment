@@ -49,41 +49,59 @@
           <div class="contact-info">
             <h3>📞 Контактная информация</h3>
             <div class="contact-cards">
-              <div class="contact-card">
-                <div class="contact-icon">📧</div>
-                <div class="contact-details">
-                  <h4>Email</h4>
-                  <p>info@albamount.kz</p>
-                  <span>Основной email для общих вопросов</span>
+              <% if (typeof contacts !== 'undefined' && contacts.length > 0) { %>
+                <% contacts.forEach(c => { %>
+                  <div class="contact-card">
+                    <div class="contact-icon">📧</div>
+                    <div class="contact-details">
+                      <h4><%= c.type.charAt(0).toUpperCase() + c.type.slice(1) %>:</h4> 
+                      <p><a href="mailto:<%= c.email %>"><%= c.email %></a></p>
+                      <% if (c.phone) { %>
+                        <span>Телефон: <%= c.phone %></span>
+                      <% } %>
+                      <% if (c.description) { %>
+                        <span><%= c.description %></span>
+                      <% } %>
+                    </div>
+                  </div>
+                <% }) %>
+              <% } else { %>
+                <div class="contact-card">
+                  <div class="contact-icon">📧</div>
+                  <div class="contact-details">
+                    <h4>Email</h4>
+                    <p>info@albamount.kz</p>
+                    <span>Основной email для общих вопросов</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div class="contact-card">
-                <div class="contact-icon">💬</div>
-                <div class="contact-details">
-                  <h4>Telegram</h4>
-                  <p>@albamount_support</p>
-                  <span>Быстрая связь через Telegram</span>
+                
+                <div class="contact-card">
+                  <div class="contact-icon">💬</div>
+                  <div class="contact-details">
+                    <h4>Telegram</h4>
+                    <p>@albamount_support</p>
+                    <span>Быстрая связь через Telegram</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div class="contact-card">
-                <div class="contact-icon">📱</div>
-                <div class="contact-details">
-                  <h4>WhatsApp</h4>
-                  <p>+7 (777) 123-45-67</p>
-                  <span>Звонки и сообщения</span>
+                
+                <div class="contact-card">
+                  <div class="contact-icon">📱</div>
+                  <div class="contact-details">
+                    <h4>WhatsApp</h4>
+                    <p>+7 (777) 123-45-67</p>
+                    <span>Звонки и сообщения</span>
+                  </div>
                 </div>
-              </div>
-              
-              <div class="contact-card">
-                <div class="contact-icon">🌐</div>
-                <div class="contact-details">
-                  <h4>Сайт</h4>
-                  <p>www.albamount.kz</p>
-                  <span>Официальный сайт проекта</span>
+                
+                <div class="contact-card">
+                  <div class="contact-icon">🌐</div>
+                  <div class="contact-details">
+                    <h4>Сайт</h4>
+                    <p>www.albamount.kz</p>
+                    <span>Официальный сайт проекта</span>
+                  </div>
                 </div>
-              </div>
+              <% } %>
             </div>
           </div>
 
@@ -237,7 +255,7 @@
 }
 
 .contact-card {
-  background: rgba(255, 51, 51, 0.05);
+  background: rgba(255, 51, 0.05);
   border: 1px solid rgba(255, 51, 51, 0.2);
   border-radius: 12px;
   padding: 20px;
@@ -248,7 +266,7 @@
 }
 
 .contact-card:hover {
-  background: rgba(255, 51, 51, 0.1);
+  background: rgba(255, 51, 0.1);
   transform: translateY(-2px);
 }
 
@@ -259,7 +277,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 51, 51, 0.1);
+  background: rgba(255, 51, 0.1);
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -283,8 +301,8 @@
 }
 
 .contact-form {
-  background: rgba(255, 51, 51, 0.05);
-  border: 1px solid rgba(255, 51, 51, 0.2);
+  background: rgba(255, 51, 0.05);
+  border: 1px solid rgba(255, 51, 0.2);
   border-radius: 12px;
   padding: 25px;
 }
@@ -306,7 +324,7 @@
   width: 100%;
   padding: 12px;
   background: #2a2a2a;
-  border: 1px solid rgba(255, 51, 51, 0.3);
+  border: 1px solid rgba(255, 51, 0.3);
   border-radius: 8px;
   color: #fff;
   font-family: 'Poppins', Arial, sans-serif;
@@ -318,7 +336,7 @@
 .form-group textarea:focus {
   outline: none;
   border-color: #ff3333;
-  box-shadow: 0 0 8px rgba(255, 51, 51, 0.3);
+  box-shadow: 0 0 8px rgba(255, 51, 0.3);
 }
 
 .contact-submit-btn {

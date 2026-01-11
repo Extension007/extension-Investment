@@ -76,6 +76,11 @@ if (!isVercel) {
   app.use(cookieParser());
   app.use(session(sessionOptions));
 
+  // Подключаем CSRF защиту
+  const csrf = require('csurf');
+  const csrfProtection = csrf({ cookie: true });
+  app.use(csrfProtection);
+
   const { csrfToken } = require("../middleware/csrf");
   app.use(csrfToken);
 

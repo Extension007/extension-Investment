@@ -101,3 +101,13 @@ if (require.main === module) {
     }
   })();
 }
+
+// Обработчик ошибок CSRF
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    console.error('❌ CSRF токен невалиден:', err.message);
+    return res.status(403).json({ success: false, message: 'CSRF токен невалиден. Пожалуйста, обновите страницу и попробуйте снова.' });
+  } else {
+    next(err);
+  }
+});

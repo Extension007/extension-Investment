@@ -45,6 +45,9 @@ if (hasCloudinary) {
 if (!hasCloudinary) {
   // В Vercel локальное хранилище недоступно
   console.warn("⚠️  Cloudinary не настроен, используется memory storage");
+  // ВНИМАНИЕ: Memory storage может вызывать SERVICE_UNAVAILABLE (503) при загрузке файлов с мобильных устройств
+  // из-за высокого потребления памяти, особенно в регионе fra1 с ограниченными ресурсами
+  // РЕКОМЕНДАЦИЯ: Настройте Cloudinary для избежания проблем с производительностью
   // Вместо локального хранилища используем memory storage для временного хранения
   storage = multer.memoryStorage();
   console.log("✅ Используется memory storage (для Vercel)");

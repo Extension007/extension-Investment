@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 const { HAS_MONGO } = require("../config/database");
 const { apiLimiter } = require("../middleware/rateLimiter");
 const { validateRating, validateProductId, validateServiceId, validateBannerId, validateInstagramUrl } = require("../middleware/validators");
-const { csrfProtection } = require("../middleware/csrf");
+const csrfProtection = require('csurf')({ cookie: true });
 const { deleteImage, deleteImages } = require("../utils/imageUtils");
 const { requireUser } = require("../middleware/auth");
 
@@ -56,7 +56,7 @@ router.post("/rating/:id", apiLimiter, csrfProtection, validateProductId, valida
     // Для гостей устанавливаем cookie
     if (!req.session.user) {
       res.cookie(`exto_vote_${req.params.id}`, '1', {
-        maxAge: 365 * 24 * 60 * 60 * 1000,
+        maxAge: 365 * 24 * 60 * 1000,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax'
@@ -538,7 +538,7 @@ router.put("/banners/:id", apiLimiter, requireUser, csrfProtection, async (req, 
     
     // Ограничиваем количество изображений до 5
     const bannerImages = Array.isArray(images) ? images.slice(0, 5) : (images ? [images] : banner.images);
-    
+
     const updateData = {
       title: title ? title.trim() : banner.title,
       description: description !== undefined ? description.trim() : banner.description,
@@ -975,5 +975,45 @@ router.post("/services/:id/vote", apiLimiter, csrfProtection, validateServiceId,
 // Подключаем роуты комментариев
 const commentRoutes = require('./comments');
 router.use('/comments', commentRoutes);
+
+// =======================
+// API для контактов
+// =======================
+
+// Получить все контакты
+const ContactInfo = require("../models/ContactInfo");
+
+router.get("/contacts", async (req, res) => {
+  try {
+    const contacts = await ContactInfo.find({})
+      .sort({ type: 1, updatedAt: -1 })
+      .lean();
+    
+    res.json({ success: true, contacts });
+  } catch (err) {
+    console.error("❌ Ошибка получения контактов:", err);
+    res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+});
+
+// Получить контакт по ID
+router.get("/contacts/:id", async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: "Неверный формат ID контакта" });
+    }
+    
+    const contact = await ContactInfo.findById(req.params.id).lean();
+    
+    if (!contact) {
+      return res.status(404).json({ success: false, message: "Контакт не найден" });
+    }
+    
+    res.json({ success: true, contact });
+  } catch (err) {
+    console.error("❌ Ошибка получения контакта:", err);
+    res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+});
 
 module.exports = router;

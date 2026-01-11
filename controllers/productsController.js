@@ -2,6 +2,7 @@
 const Product = require("../models/Product");
 const { deleteImages } = require("../utils/imageUtils");
 const { sanitizeProductDescription, sanitizeContacts, sanitizeText } = require("../utils/sanitize");
+const { notifyAdmin } = require("../services/adminNotificationService");
 
 // FIX: Получение всех товаров для отображения
 exports.getAllProducts = async (req, res, next) => {
@@ -109,6 +110,24 @@ exports.createProduct = async (req, res, next) => {
     };
 
     const product = await Product.create(productData);
+
+    // Отправляем уведомление администратору о новом товаре
+    try {
+      await notifyAdmin(
+        'Новый товар добавлен',
+        `Добавлен новый товар и отправлен на модерацию.`,
+        {
+          'Название': product.name,
+          'Категория': product.category,
+          'Цена': product.price,
+          'Статус': product.status,
+          'ID товара': product._id.toString(),
+          'Владелец': product.owner ? product.owner.toString() : 'Администратор'
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
 
     res.json({ success: true, product });
   } catch (err) {

@@ -7,7 +7,7 @@ const { hasMongo } = require("../config/database");
 const mongoose = require("mongoose");
 const { loginLimiter } = require("../middleware/rateLimiter");
 const { validateLogin, validateRegister } = require("../middleware/validators");
-const { csrfProtection } = require("../middleware/csrf");
+const csrfProtection = require('csurf')({ cookie: true });
 
 const isVercel = Boolean(process.env.VERCEL);
 

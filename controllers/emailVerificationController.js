@@ -1,10 +1,27 @@
 const { verifyEmail, resendVerificationEmail } = require('../services/emailVerificationService');
 const User = require('../models/User');
+const { notifyAdmin } = require('../services/adminNotificationService');
 
 exports.verifyEmail = async (req, res) => {
   try {
     const { token } = req.params;
     const user = await verifyEmail(token);
+
+    // Отправляем уведомление администратору о подтверждении email
+    try {
+      await notifyAdmin(
+        'Подтверждение email пользователя',
+        `Пользователь подтвердил свой email.`,
+        {
+          'Имя пользователя': user.username,
+          'Email': user.email,
+          'ID пользователя': user._id.toString(),
+          'Дата подтверждения': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
 
     // Рендерить шаблон успеха
     res.render('verification-success', {

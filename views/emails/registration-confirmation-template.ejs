@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Подтверждение регистрации</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f4f4f4;">
+        <tr>
+            <td style="padding: 20px 0;">
+                <!-- Внешняя рамка -->
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="margin: 0 auto; max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <tr>
+                        <td style="text-align: center; padding: 30px 20px 20px;">
+                            <!-- Логотип -->
+                            <% if (typeof logoPath !== 'undefined' && logoPath) { %>
+                                <img src="<%= logoPath %>" alt="Albamount" style="max-width: 200px; height: auto; margin: 0 auto;">
+                            <% } else { %>
+                                <div style="height: 60px; display: flex; align-items: center; justify-content: center;">
+                                    <strong style="color: #333;">Albamount</strong>
+                                </div>
+                            <% } %>
+                        </td>
+                    </tr>
+                    
+                    <tr>
+                        <td style="padding: 0 30px 20px;">
+                            <!-- Заголовок -->
+                            <h1 style="color: white; text-align: center; background: linear-gradient(135deg, #ff6b6b, #d63031); padding: 20px; border-radius: 6px; margin: 0 0 20px; font-size: 24px;">
+                                Подтвердите ваш email
+                            </h1>
+                            
+                            <!-- Приветствие -->
+                            <p style="color: #333; margin: 0 0 10px; font-size: 18px;">
+                                Привет, <%= username %>!
+                            </p>
+                            
+                            <!-- Основной текст -->
+                            <p style="color: #333; margin: 0 0 20px; line-height: 1.5;">
+                                Спасибо за регистрацию. Для завершения процесса подтвердите ваш email адрес, кликнув по кнопке ниже:
+                            </p>
+                            
+                            <!-- Кнопка подтверждения -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 20px;">
+                                <tr>
+                                    <td align="center" style="border-radius: 30px; background: linear-gradient(135deg, #ff6b6b, #d63031);">
+                                        <a href="<%= verificationLink %>" target="_blank" style="display: inline-block; padding: 15px 30px; color: white; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 16px;">
+                                            Подтвердить email
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Резервная ссылка -->
+                            <p style="color: #666; font-family: monospace; font-size: 14px; word-break: break-all; margin: 0 0 10px;">
+                                <%= verificationLink %>
+                            </p>
+                            
+                            <!-- Подпись -->
+                            <p style="color: #999; font-size: 12px; margin: 0;">
+                                Эта ссылка действительна в течение <%= validityPeriod || '24 часов' %>.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -9,18 +9,20 @@ const { HAS_MONGO } = require("../config/database");
 const { requireAdmin, requireAuth } = require("../middleware/auth");
 const { productLimiter } = require("../middleware/rateLimiter");
 const { validateProduct, validateProductId, validateService, validateServiceId, validateBanner, validateBannerId, validateModeration } = require("../middleware/validators");
-const { csrfProtection, csrfToken } = require("../middleware/csrf");
+const { csrfToken } = require("../middleware/csrf");
+const csrfProtection = require('csurf')({ cookie: true });
 const upload = require("../utils/upload");
 const { createProduct, updateProduct, deleteProduct } = require("../services/productService");
 const { deleteImages, deleteImage } = require("../utils/imageUtils");
 const { CATEGORY_LABELS } = require("../config/constants");
 const mongoose = require("mongoose");
+const { notifyAdmin } = require("../services/adminNotificationService");
 
 const isVercel = Boolean(process.env.VERCEL);
 
 // Условный CSRF middleware для Vercel
 const conditionalCsrfToken = isVercel ? (req, res, next) => next() : csrfToken;
-const conditionalCsrfProtection = isVercel ? (req, res, next) => next() : csrfProtection;
+const conditionalCsrfProtection = isVercel ? (req, res, next) => next() : require('csurf')({ cookie: true });
 
 // Middleware для обработки ошибок multer
 function handleMulterError(err, req, res, next) {
@@ -141,7 +143,7 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
     const userCount = users || 0;
 
     // Генерируем CSRF токен для формы и API запросов
-    const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : null);
+    const csrfTokenValue = res.locals.csrfToken || null;
 
     res.render("admin", {
       products: allProducts,
@@ -208,7 +210,29 @@ router.post("/products/:id/delete", requireAdmin, conditionalCsrfProtection, val
       if (wantsJson) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
       return res.status(503).send("Недоступно: отсутствует подключение к БД");
     }
+    
+    // Получаем информацию о товаре до удаления для уведомления
+    const product = await Product.findById(req.params.id);
+    
     await deleteProduct(req.params.id);
+    
+    // Отправляем уведомление администратору об удалении товара
+    try {
+      await notifyAdmin(
+        'Удаление товара',
+        `Администратор удалил товар.`,
+        {
+          'ID товара': req.params.id,
+          'Название': product ? product.name : 'Неизвестно',
+          'Тип': product ? product.type || 'product' : 'Неизвестно',
+          'Дата удаления': new Date().toLocaleString('ru-RU'),
+          'Удален администратором': req.user?.username || 'Неизвестно'
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+    
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.json({ success: true, message: "Товар удален" });
     res.redirect("/admin/products");
@@ -236,7 +260,7 @@ router.get("/products/:id/edit", requireAdmin, validateProductId, conditionalCsr
     }
     
     // Генерируем CSRF токен для формы и API запросов
-    const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : null);
+    const csrfTokenValue = res.locals.csrfToken || null;
     
     res.render("products/edit", { product, mode: "admin", csrfToken: csrfTokenValue });
   } catch (err) {
@@ -299,6 +323,25 @@ router.post("/products/:id/approve", requireAdmin, conditionalCsrfProtection, va
       { new: true }
     );
     if (!product) return res.status(404).json({ success: false, message: "Карточка не найдена" });
+    
+    // Отправляем уведомление администратору о модерации
+    try {
+      await notifyAdmin(
+        'Модерация товара - Одобрение',
+        `Администратор одобрил товар.`,
+        {
+          'ID товара': product._id.toString(),
+          'Название': product.name,
+          'Тип': product.type || 'product',
+          'Статус': 'approved',
+          'Одобрено администратором': req.user?.username || 'Неизвестно',
+          'Дата одобрения': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+    
     res.json({ success: true, status: product.status });
   } catch (err) {
     console.error("❌ Ошибка одобрения карточки:", err);
@@ -317,6 +360,26 @@ router.post("/products/:id/reject", requireAdmin, conditionalCsrfProtection, val
       { new: true }
     );
     if (!product) return res.status(404).json({ success: false, message: "Карточка не найдена" });
+    
+    // Отправляем уведомление администратору о модерации
+    try {
+      await notifyAdmin(
+        'Модерация товара - Отклонение',
+        `Администратор отклонил товар.`,
+        {
+          'ID товара': product._id.toString(),
+          'Название': product.name,
+          'Тип': product.type || 'product',
+          'Статус': 'rejected',
+          'Причина отклонения': reason || "Несоответствие правилам публикации",
+          'Отклонено администратором': req.user?.username || 'Неизвестно',
+          'Дата отклонения': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+    
     res.json({ success: true, status: product.status, rejection_reason: product.rejection_reason });
   } catch (err) {
     console.error("❌ Ошибка отклонения карточки:", err);
@@ -377,6 +440,24 @@ router.post("/banners/:id/approve", requireAdmin, conditionalCsrfProtection, val
       { new: true }
     );
     if (!banner) return res.status(404).json({ success: false, message: "Баннер не найден" });
+    
+    // Отправляем уведомление администратору о модерации
+    try {
+      await notifyAdmin(
+        'Модерация баннера - Одобрение',
+        `Администратор одобрил баннер.`,
+        {
+          'ID баннера': banner._id.toString(),
+          'Заголовок': banner.title,
+          'Статус': 'approved',
+          'Одобрен администратором': req.user?.username || 'Неизвестно',
+          'Дата одобрения': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+    
     res.json({ success: true, status: banner.status });
   } catch (err) {
     console.error("❌ Ошибка одобрения баннера:", err);
@@ -395,6 +476,25 @@ router.post("/banners/:id/reject", requireAdmin, conditionalCsrfProtection, vali
       { new: true }
     );
     if (!banner) return res.status(404).json({ success: false, message: "Баннер не найден" });
+    
+    // Отправляем уведомление администратору о модерации
+    try {
+      await notifyAdmin(
+        'Модерация баннера - Отклонение',
+        `Администратор отклонил баннер.`,
+        {
+          'ID баннера': banner._id.toString(),
+          'Заголовок': banner.title,
+          'Статус': 'rejected',
+          'Причина отклонения': reason || "Несоответствие правилам публикации",
+          'Отклонен администратором': req.user?.username || 'Неизвестно',
+          'Дата отклонения': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+    
     res.json({ success: true, status: banner.status, rejection_reason: banner.rejection_reason });
   } catch (err) {
     console.error("❌ Ошибка отклонения баннера:", err);
@@ -416,6 +516,25 @@ router.post("/services/:id/approve", requireAdmin, conditionalCsrfProtection, va
     if (service.type !== "service") {
       return res.status(400).json({ success: false, message: "Это не услуга" });
     }
+    
+    // Отправляем уведомление администратору о модерации
+    try {
+      await notifyAdmin(
+        'Модерация услуги - Одобрение',
+        `Администратор одобрил услугу.`,
+        {
+          'ID услуги': service._id.toString(),
+          'Название': service.name,
+          'Тип': service.type || 'service',
+          'Статус': 'approved',
+          'Одобрено администратором': req.user?.username || 'Неизвестно',
+          'Дата одобрения': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+    
     res.json({ success: true, status: service.status });
   } catch (err) {
     console.error("❌ Ошибка одобрения услуги:", err);
@@ -438,6 +557,26 @@ router.post("/services/:id/reject", requireAdmin, conditionalCsrfProtection, val
     if (service.type !== "service") {
       return res.status(400).json({ success: false, message: "Это не услуга" });
     }
+    
+    // Отправляем уведомление администратору о модерации
+    try {
+      await notifyAdmin(
+        'Модерация услуги - Отклонение',
+        `Администратор отклонил услугу.`,
+        {
+          'ID услуги': service._id.toString(),
+          'Название': service.name,
+          'Тип': service.type || 'service',
+          'Статус': 'rejected',
+          'Причина отклонения': reason || "Несоответствие правилам публикации",
+          'Отклонено администратором': req.user?.username || 'Неизвестно',
+          'Дата отклонения': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+    
     res.json({ success: true, status: service.status, rejection_reason: service.rejection_reason });
   } catch (err) {
     console.error("❌ Ошибка отклонения услуги:", err);
@@ -494,7 +633,7 @@ router.get("/services/:id/edit", requireAdmin, validateServiceId, conditionalCsr
     }
     
     // Генерируем CSRF токен для формы и API запросов
-    const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : null);
+    const csrfTokenValue = res.locals.csrfToken || null;
     
     res.render("products/edit", { service, mode: "admin", csrfToken: csrfTokenValue });
   } catch (err) {
@@ -580,6 +719,24 @@ router.post("/services/:id/delete", requireAdmin, conditionalCsrfProtection, val
     }
 
     await deleteProduct(req.params.id);
+    
+    // Отправляем уведомление администратору об удалении услуги
+    try {
+      await notifyAdmin(
+        'Удаление услуги',
+        `Администратор удалил услугу.`,
+        {
+          'ID услуги': req.params.id,
+          'Название': service.name,
+          'Тип': service.type || 'service',
+          'Дата удаления': new Date().toLocaleString('ru-RU'),
+          'Удалена администратором': req.user?.username || 'Неизвестно'
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.json({ success: true, message: "Услуга удалена" });
     res.redirect("/admin/services");
@@ -613,7 +770,7 @@ router.get("/products", requireAdmin, csrfToken, async (req, res) => {
       .populate("owner", "username email");
     
     // Генерируем CSRF токен для формы и API запросов
-    const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : '');
+    const csrfTokenValue = res.locals.csrfToken || '';
     
     res.render("admin-products", {
       products: products || [],
@@ -646,7 +803,7 @@ router.get("/services", requireAdmin, csrfToken, async (req, res) => {
       .populate("owner", "username email");
     
     // Генерируем CSRF токен для формы и API запросов
-    const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : '');
+    const csrfTokenValue = res.locals.csrfToken || '';
     
     res.render("admin-services", {
       services: services || [],
@@ -771,7 +928,7 @@ router.get("/banners/:id/edit", requireAdmin, validateBannerId, csrfToken, async
     }
     
     // Генерируем CSRF токен для формы и API запросов
-    const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : '');
+    const csrfTokenValue = res.locals.csrfToken || '';
     
     res.render("products/edit", { 
       product: {
@@ -902,6 +1059,22 @@ router.post("/banners/:id/delete", requireAdmin, conditionalCsrfProtection, vali
     // Удалить баннер из БД
     await Banner.findByIdAndDelete(bannerId);
 
+    // Отправляем уведомление администратору об удалении баннера
+    try {
+      await notifyAdmin(
+        'Удаление баннера',
+        `Администратор удалил баннер.`,
+        {
+          'ID баннера': bannerId,
+          'Заголовок': banner.title,
+          'Дата удаления': new Date().toLocaleString('ru-RU'),
+          'Удален администратором': req.user?.username || 'Неизвестно'
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+
     console.log("✅ Баннер удален:", { bannerId });
     const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) return res.json({ success: true, message: "Баннер удален" });
@@ -964,5 +1137,9 @@ router.delete("/banners/:id", requireAdmin, conditionalCsrfProtection, async (re
     return res.status(500).json({ success: false, message: "Ошибка сервера" });
   }
 });
+
+// Подключаем маршруты для управления контактами
+const adminContactsRouter = require('./adminContacts');
+router.use('/contacts', adminContactsRouter);
 
 module.exports = router;

@@ -10,6 +10,7 @@ const { validateProduct, validateProductId } = require("../middleware/validators
 const { csrfProtection, csrfToken } = require("../middleware/csrf");
 const upload = require("../utils/upload");
 const { createProduct, updateProduct } = require("../services/productService");
+const { notifyAdmin } = require("../services/adminNotificationService");
 
 const isVercel = Boolean(process.env.VERCEL);
 
@@ -289,6 +290,26 @@ router.post("/banner", requireUser, productLimiter, upload.single("image"), hand
     
     const created = await Banner.create(bannerData);
     
+    // Отправляем уведомление администратору о новом баннере
+    try {
+      await notifyAdmin(
+        'Новый баннер на модерацию',
+        `Загружен новый баннер пользователем и отправлен на модерацию.`,
+        {
+          'Заголовок': bannerData.title,
+          'Описание': bannerData.description,
+          'Ссылка': bannerData.link,
+          'Категория': bannerData.category,
+          'Цена': bannerData.price,
+          'ID баннера': created._id.toString(),
+          'Владелец': created.owner ? created.owner.toString() : 'Неизвестен',
+          'Дата создания': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+
     console.log("✅ Баннер создан:", {
       id: created._id.toString(),
       status: created.status,
@@ -438,6 +459,23 @@ router.delete("/product/:id", requireUser, conditionalCsrfProtection, async (req
     product.deleted = true;
     await product.save();
 
+    // Отправляем уведомление администратору об удалении товара/услуги
+    try {
+      await notifyAdmin(
+        'Удаление товара/услуги',
+        `Пользователь удалил товар или услугу.`,
+        {
+          'ID карточки': product._id.toString(),
+          'Название': product.name,
+          'Тип': product.type || 'product',
+          'Владелец': product.owner ? product.owner.toString() : 'Неизвестен',
+          'Дата удаления': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+
     res.json({ success: true, message: "Карточка удалена" });
   } catch (err) {
     console.error("❌ Ошибка удаления карточки:", err);
@@ -482,6 +520,22 @@ router.delete("/banner/:id", requireUser, conditionalCsrfProtection, async (req,
     } catch (imgErr) {
       console.warn("⚠️ Ошибка удаления изображений баннера (продолжаем удаление):", imgErr);
       // Продолжаем удаление даже если не удалось удалить изображения
+    }
+
+    // Отправляем уведомление администратору об удалении баннера
+    try {
+      await notifyAdmin(
+        'Удаление баннера',
+        `Пользователь удалил баннер.`,
+        {
+          'ID баннера': req.params.id,
+          'Заголовок': banner.title,
+          'Владелец': banner.owner ? banner.owner.toString() : 'Неизвестен',
+          'Дата удаления': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
     }
 
     // Полное удаление из БД

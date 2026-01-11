@@ -3,6 +3,7 @@ const bcrypt = require("bcryptjs");
 const { generateToken } = require("../config/jwt");
 const { hasMongo } = require("../config/database");
 const { sendVerificationEmail } = require("../services/emailVerificationService");
+const { notifyAdmin } = require("../services/adminNotificationService");
 
 exports.register = async (req, res) => {
   try {
@@ -27,6 +28,22 @@ exports.register = async (req, res) => {
       emailVerified: false // Новый пользователь не подтвержден
     });
     await user.save();
+
+    // Отправляем уведомление администратору о новой регистрации
+    try {
+      await notifyAdmin(
+        'Новый пользователь зарегистрирован',
+        `Зарегистрирован новый пользователь.`,
+        {
+          'Имя пользователя': user.username,
+          'Email': user.email,
+          'Дата регистрации': new Date().toLocaleString('ru-RU'),
+          'ID пользователя': user._id.toString()
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
 
     // Генерируем и отправляем токен подтверждения
     try {
