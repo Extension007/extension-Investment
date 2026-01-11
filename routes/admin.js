@@ -11,7 +11,8 @@ const { productLimiter } = require("../middleware/rateLimiter");
 const { validateProduct, validateProductId, validateService, validateServiceId, validateBanner, validateBannerId, validateModeration } = require("../middleware/validators");
 const { csrfToken } = require("../middleware/csrf");
 const csrfProtection = require('csurf')({ cookie: true });
-const upload = require("../utils/upload");
+const { createImageUpload } = require("../utils/upload");
+const upload = createImageUpload();
 const { createProduct, updateProduct, deleteProduct } = require("../services/productService");
 const { deleteImages, deleteImage } = require("../utils/imageUtils");
 const { CATEGORY_LABELS } = require("../config/constants");
@@ -165,7 +166,7 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
 
 // Добавление товара (админом - сразу approved)
 // ВАЖНО: multer должен быть ПЕРЕД csrfProtection, чтобы _csrf был доступен в req.body
-router.post("/products", requireAdmin, productLimiter, upload.array("images", 5), handleMulterError, csrfProtection, validateProduct, async (req, res) => {
+router.post("/products", requireAdmin, productLimiter, upload, csrfProtection, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
     const productData = {
@@ -272,8 +273,7 @@ router.get("/products/:id/edit", requireAdmin, validateProductId, conditionalCsr
 });
 
 // Редактирование товара (сохранение)
-// ВАЖНО: multer должен быть ПЕРЕД csrfProtection
-router.post("/products/:id/edit", requireAdmin, productLimiter, upload.array("images", 5), handleMulterError, csrfProtection, validateProductId, validateProduct, async (req, res) => {
+router.post("/products/:id/edit", requireAdmin, productLimiter, upload, csrfProtection, validateProductId, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
     const updateData = {
@@ -645,8 +645,7 @@ router.get("/services/:id/edit", requireAdmin, validateServiceId, conditionalCsr
 });
 
 // Редактирование услуги (сохранение)
-// ВАЖНО: multer должен быть ПЕРЕД csrfProtection
-router.post("/services/:id/edit", requireAdmin, productLimiter, upload.array("images", 5), handleMulterError, csrfProtection, validateServiceId, validateService, async (req, res) => {
+router.post("/services/:id/edit", requireAdmin, productLimiter, upload, csrfProtection, validateServiceId, validateService, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
     const service = await Product.findById(req.params.id);
@@ -847,8 +846,7 @@ router.get("/banners", requireAdmin, csrfToken, async (req, res) => {
 });
 
 // Добавление баннера (админом)
-// ВАЖНО: multer должен быть ПЕРЕД csrfProtection
-router.post("/banners", requireAdmin, productLimiter, upload.array("images", 5), handleMulterError, csrfProtection, validateBanner, async (req, res) => {
+router.post("/banners", requireAdmin, productLimiter, upload, csrfProtection, validateBanner, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
     const { title, description, price, link, video_url, category, status } = req.body;
@@ -957,8 +955,7 @@ router.get("/banners/:id/edit", requireAdmin, validateBannerId, csrfToken, async
 });
 
 // Редактирование баннера (сохранение)
-// ВАЖНО: multer должен быть ПЕРЕД csrfProtection
-router.post("/banners/:id/edit", requireAdmin, productLimiter, upload.array("images", 5), handleMulterError, csrfProtection, validateBannerId, validateBanner, async (req, res) => {
+router.post("/banners/:id/edit", requireAdmin, productLimiter, upload, csrfProtection, validateBannerId, validateBanner, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
   try {
     const banner = await Banner.findById(req.params.id);
