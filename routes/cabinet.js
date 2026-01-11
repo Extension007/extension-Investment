@@ -113,6 +113,8 @@ router.post("/product", requireUser, productLimiter, mobileOptimization, upload,
       status: "pending"
     };
 
+    console.log(`📋 Creating product: device=${req.isMobile ? 'mobile' : 'desktop'}, skipUpload=${req.skipImageUpload}, filesCount=${req.files ? req.files.length : 0}`);
+
     const created = await createProduct(productData, req.files || []);
 
     const imagesCount = created.images?.length || 0;
