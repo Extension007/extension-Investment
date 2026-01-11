@@ -96,7 +96,14 @@ function createImageUpload(options = {}) {
           console.warn("Cloudinary init failed, falling back to local storage:", cloudinaryErr.message);
           const uploadDir = ensureUploadDir();
           storage = multer.diskStorage({
-            destination: (req, file, cb) => cb(null, uploadDir),
+            destination: (req, file, cb) => {
+              try {
+                cb(null, uploadDir);
+              } catch (dirErr) {
+                console.error("Ошибка доступа к директории uploads:", dirErr);
+                cb(dirErr);
+              }
+            },
             filename: (req, file, cb) => {
               const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
               cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
@@ -105,15 +112,27 @@ function createImageUpload(options = {}) {
         }
       } else {
         // Используем локальное хранилище как fallback
-        const uploadDir = ensureUploadDir();
-        storage = multer.diskStorage({
-          destination: (req, file, cb) => cb(null, uploadDir),
-          filename: (req, file, cb) => {
-            const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-            cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
-          },
-        });
-        console.log(`💾 Local storage initialized for ${req.isMobile ? 'mobile' : 'desktop'} device`);
+        try {
+          const uploadDir = ensureUploadDir();
+          storage = multer.diskStorage({
+            destination: (req, file, cb) => {
+              try {
+                cb(null, uploadDir);
+              } catch (dirErr) {
+                console.error("Ошибка доступа к директории uploads:", dirErr);
+                cb(dirErr);
+              }
+            },
+            filename: (req, file, cb) => {
+              const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+              cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+            },
+          });
+          console.log(`💾 Local storage initialized for ${req.isMobile ? 'mobile' : 'desktop'} device`);
+        } catch (storageErr) {
+          console.error("Ошибка инициализации локального хранилища:", storageErr);
+          return res.status(500).json({ success: false, message: "Ошибка инициализации хранилища" });
+        }
       }
 
       const multerInstance = multer({
@@ -167,6 +186,11 @@ function createImageUpload(options = {}) {
       next();
     } catch (initErr) {
       console.error("❌ createImageUpload error:", initErr);
+      // Проверяем, не был ли уже отправлен ответ
+      if (res.headersSent) {
+        console.error("❌ Заголовки уже отправлены, невозможно отправить ошибку");
+        return;
+      }
       return res.status(500).json({ success: false, message: "Ошибка инициализации загрузки" });
     }
   };
