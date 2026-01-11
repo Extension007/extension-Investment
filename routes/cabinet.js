@@ -8,8 +8,7 @@ const { requireUser } = require("../middleware/auth");
 const { productLimiter } = require("../middleware/rateLimiter");
 const { validateProduct, validateProductId } = require("../middleware/validators");
 const { csrfProtection, csrfToken } = require("../middleware/csrf");
-const upload = require("../utils/upload");
-const { bannerUpload } = require("../utils/upload");
+const { upload, bannerUpload, mobileOptimization } = require("../utils/upload");
 const { createProduct, updateProduct } = require("../services/productService");
 const { notifyAdmin } = require("../services/adminNotificationService");
 
@@ -90,7 +89,7 @@ router.get("/", requireUser, conditionalCsrfToken, async (req, res) => {
 });
 
 // Пользователь создаёт карточку
-router.post("/product", requireUser, productLimiter, upload, conditionalCsrfProtection, validateProduct, async (req, res) => {
+router.post("/product", requireUser, productLimiter, mobileOptimization, upload, conditionalCsrfProtection, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     if (!req.user || !req.user._id) {
@@ -182,7 +181,7 @@ router.get("/product/:id/edit", requireUser, validateProductId, conditionalCsrfT
 });
 
 // Редактирование товара пользователем
-router.post("/product/:id/edit", requireUser, productLimiter, upload, conditionalCsrfProtection, validateProductId, validateProduct, async (req, res) => {
+router.post("/product/:id/edit", requireUser, productLimiter, mobileOptimization, upload, conditionalCsrfProtection, validateProductId, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     const updateData = {
