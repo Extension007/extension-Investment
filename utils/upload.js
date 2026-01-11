@@ -2,11 +2,19 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-// Проверяем наличие Cloudinary переменных
-let hasCloudinary = 
-  Boolean(process.env.CLOUDINARY_CLOUD_NAME && 
-          process.env.CLOUDINARY_API_KEY && 
-          process.env.CLOUDINARY_API_SECRET);
+// Проверяем наличие Cloudinary переменных (расширенная проверка)
+let hasCloudinary =
+  Boolean(process.env.CLOUDINARY_CLOUD_NAME &&
+          process.env.CLOUDINARY_API_KEY &&
+          process.env.CLOUDINARY_API_SECRET) ||
+  Boolean(process.env.CLOUDINARY_URL); // Альтернативная проверка через CLOUDINARY_URL
+
+console.log("🔍 Cloudinary переменные окружения:");
+console.log("  CLOUDINARY_CLOUD_NAME:", Boolean(process.env.CLOUDINARY_CLOUD_NAME));
+console.log("  CLOUDINARY_API_KEY:", Boolean(process.env.CLOUDINARY_API_KEY));
+console.log("  CLOUDINARY_API_SECRET:", Boolean(process.env.CLOUDINARY_API_SECRET));
+console.log("  CLOUDINARY_URL:", Boolean(process.env.CLOUDINARY_URL));
+console.log("  hasCloudinary:", hasCloudinary);
 
 let storage;
 
@@ -71,12 +79,21 @@ const mobileOptimization = (req, res, next) => {
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
 
   if (isMobile && !hasCloudinary) {
-    console.log("📱 Мобильное устройство обнаружено, оптимизируем лимиты загрузки");
-    // Для мобильных устройств без Cloudinary уменьшаем лимиты
-    req.mobileLimits = {
-      fileSize: 2 * 1024 * 1024, // 2MB на файл для мобильных
-      files: 2 // максимум 2 файла для мобильных
-    };
+    console.log("📱 Мобильное устройство обнаружено без Cloudinary - отключаем загрузку файлов для предотвращения SERVICE_UNAVAILABLE");
+    // Для мобильных устройств без Cloudinary полностью отключаем загрузку файлов
+    // Это гарантированно предотвратит проблемы с памятью в Vercel
+    req.mobileDisabled = true;
+    return res.status(400).json({
+      success: false,
+      message: "Загрузка изображений с мобильных устройств временно недоступна. Пожалуйста, используйте компьютер для создания карточек с изображениями, или обратитесь к администратору для настройки Cloudinary.",
+      mobileDisabled: true,
+      recommendation: "Настройте переменные окружения CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY и CLOUDINARY_API_SECRET для включения загрузки с мобильных устройств."
+    });
+  }
+
+  // Если Cloudinary настроен, мобильные устройства работают нормально
+  if (isMobile && hasCloudinary) {
+    console.log("📱 Мобильное устройство обнаружено с Cloudinary - загрузка разрешена");
   }
 
   next();
