@@ -9,6 +9,7 @@ const { productLimiter } = require("../middleware/rateLimiter");
 const { validateProduct, validateProductId } = require("../middleware/validators");
 const { csrfProtection, csrfToken } = require("../middleware/csrf");
 const upload = require("../utils/upload");
+const { mobileOptimization } = require("../utils/upload");
 const { createProduct, updateProduct } = require("../services/productService");
 const { notifyAdmin } = require("../services/adminNotificationService");
 
@@ -90,7 +91,8 @@ router.get("/", requireUser, conditionalCsrfToken, async (req, res) => {
 
 // Пользователь создаёт карточку
 // ВАЖНО: multer должен быть ПЕРЕД csrfProtection, чтобы _csrf был доступен в req.body
-router.post("/product", requireUser, productLimiter, upload.array("images", 5), handleMulterError, conditionalCsrfProtection, validateProduct, async (req, res) => {
+// ВАЖНО: mobileOptimization должен быть ПЕРЕД upload для оптимизации лимитов на мобильных
+router.post("/product", requireUser, productLimiter, mobileOptimization, upload.array("images", 5), handleMulterError, conditionalCsrfProtection, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     if (!req.user || !req.user._id) {
@@ -183,7 +185,7 @@ router.get("/product/:id/edit", requireUser, validateProductId, conditionalCsrfT
 
 // Редактирование товара пользователем
 // ВАЖНО: multer должен быть ПЕРЕД csrfProtection
-router.post("/product/:id/edit", requireUser, productLimiter, upload.array("images", 5), handleMulterError, conditionalCsrfProtection, validateProductId, validateProduct, async (req, res) => {
+router.post("/product/:id/edit", requireUser, productLimiter, mobileOptimization, upload.array("images", 5), handleMulterError, conditionalCsrfProtection, validateProductId, validateProduct, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     const updateData = {
@@ -388,7 +390,7 @@ router.get("/banner/:id/edit", requireUser, conditionalCsrfToken, async (req, re
 
 // Редактирование баннера пользователем
 // ВАЖНО: multer должен быть ПЕРЕД csrfProtection
-router.post("/banner/:id/edit", requireUser, productLimiter, upload.array("images", 5), handleMulterError, conditionalCsrfProtection, async (req, res) => {
+router.post("/banner/:id/edit", requireUser, productLimiter, mobileOptimization, upload.array("images", 5), handleMulterError, conditionalCsrfProtection, async (req, res) => {
   if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
     const banner = await Banner.findOne({ 
