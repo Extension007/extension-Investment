@@ -105,6 +105,7 @@ app.use((req, res, next) => {
 // Статика
 app.use(express.static(path.join(__dirname, "../public")));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use("/utils", express.static(path.join(__dirname, "../utils")));
 
 // Инициализация Redis кэша при старте приложения
 // Redis удален из проекта

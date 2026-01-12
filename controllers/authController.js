@@ -45,20 +45,27 @@ exports.register = async (req, res) => {
       console.error('Ошибка при отправке уведомления администратору:', notificationError);
     }
 
-    // Генерируем и отправляем токен подтверждения
-    try {
-      await sendVerificationEmail(user);
-    } catch (emailError) {
-      // Если не удалось отправить email, удаляем только что созданного пользователя
-      // Дополнительно проверяем, что пользователь имеет роль "user", а не "admin"
-      if (user.role === 'user') {
-        await User.findByIdAndDelete(user._id);
+    // Генерируем и отправляем токен подтверждения (если email включен)
+    const emailConfig = require("../config/email");
+    if (emailConfig.enabled) {
+      try {
+        await sendVerificationEmail(user);
+      } catch (emailError) {
+        // Если не удалось отправить email, удаляем только что созданного пользователя
+        // Дополнительно проверяем, что пользователь имеет роль "user", а не "admin"
+        if (user.role === 'user') {
+          await User.findByIdAndDelete(user._id);
+        }
+        console.error("Ошибка отправки письма подтверждения:", emailError);
+        return res.status(500).json({
+          success: false,
+          message: "Ошибка регистрации: не удалось отправить письмо подтверждения"
+        });
       }
-      console.error("Ошибка отправки письма подтверждения:", emailError);
-      return res.status(500).json({
-        success: false,
-        message: "Ошибка регистрации: не удалось отправить письмо подтверждения"
-      });
+    } else {
+      // Если email отключен, сразу подтверждаем пользователя
+      user.emailVerified = true;
+      await user.save();
     }
 
     // Возвращаем информацию о пользователе без полного токена
