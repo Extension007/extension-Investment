@@ -7,7 +7,13 @@ const bannerSchema = new mongoose.Schema({
   link: { type: String, trim: true, default: "" },
   video_url: { type: String, trim: true, default: "" },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-  category: { type: String, trim: true, default: "" }, // Категория (реклама, промо и т.д.)
+  categoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    default: null
+  },
+  // Обратная совместимость - старое поле category
+  category: { type: String, trim: true, default: "", maxlength: 200 },
   price: { type: String, default: "" },
   
   // Массив изображений (до 5 штук)

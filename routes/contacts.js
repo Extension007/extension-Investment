@@ -7,6 +7,9 @@ const { requireAdmin } = require("../middleware/auth");
 // Страница контактов
 router.get("/", contactController.getContacts);
 
+// Отправка сообщения из формы контактов (доступно всем)
+router.post("/send-message", contactController.sendContactMessage);
+
 // CRUD операции для контактов (только для администраторов)
 router.post("/create", requireAdmin, contactController.createContact);
 router.post("/:id/update", requireAdmin, contactController.updateContact);

@@ -4,6 +4,7 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const Banner = require("../models/Banner");
+const Category = require("../models/Category");
 const User = require("../models/User");
 const Statistics = require("../models/Statistics");
 const { HAS_MONGO, hasMongo } = require("../config/database");
@@ -54,9 +55,19 @@ router.get("/", async (req, res) => {
       ]
     };
 
-    if (selected && categoryKeys.includes(selected)) {
-      productsFilter.$and.push({ category: selected });
+    if (selected && selected !== 'all') {
+      // Если выбранная категория - это ObjectId (новая система), используем categoryId
+      if (mongoose.Types.ObjectId.isValid(selected)) {
+        productsFilter.$and.push({ categoryId: selected });
+      } else {
+        // Для обратной совместимости - старые строковые категории
+        productsFilter.$and.push({ category: selected });
+      }
     }
+
+    // Получаем дерево категорий для товаров
+    const categoryTree = await Category.getTree('product');
+    const categoryFlat = await Category.getFlatList('product');
 
     // Запросы
     const [products, services, banners, visitors, users] = await Promise.all([
@@ -96,7 +107,8 @@ router.get("/", async (req, res) => {
       userRole,
       user: req.user,
       votedMap,
-      categories,
+      categories: categoryFlat, // Новая система категорий
+      hierarchicalCategories: categoryTree, // Дерево категорий
       selectedCategory: selected || "all",
       csrfToken: req.csrfToken ? req.csrfToken() : '',
       activeTab: 'products' // Указываем активную вкладку

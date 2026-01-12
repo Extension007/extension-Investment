@@ -1163,22 +1163,64 @@ document.addEventListener("DOMContentLoaded", () => {
     if (openCat && dropdown) {
       const opened = dropdown.classList.toggle("open");
       dropdown.setAttribute("aria-hidden", opened ? "false" : "true");
+
+      // Загружаем категории при первом открытии
+      if (opened && !dropdown.hasAttribute('data-loaded')) {
+        await loadCategoriesForCurrentPage();
+        dropdown.setAttribute('data-loaded', 'true');
+      }
+
+      e.stopPropagation();
       return;
     }
 
+    // Клик по категории
     const catItem = e.target.closest(".dropdown-item");
     if (catItem && dropdown) {
       const cat = catItem.getAttribute("data-category");
-      const url = new URL(window.location.href);
-      if (cat === "all") url.searchParams.delete("category");
-      else url.searchParams.set("category", cat);
-      window.location.href = url.toString();
+      const blockId = catItem.getAttribute("data-block-id");
+      const categoryId = catItem.getAttribute("data-category-id");
+
+      if (blockId) {
+        // Это блок - загружаем подкатегории
+        e.stopPropagation();
+        await loadSubcategories(blockId, catItem.textContent.trim());
+        return;
+      } else if (categoryId) {
+        // Это подкатегория - обновляем текст кнопки и переходим
+        e.stopPropagation();
+        console.log('🖱️ Клик по подкатегории в меню:', { categoryId, text: catItem.textContent.trim() });
+
+        // Извлекаем название категории из текста кнопки (убираем иконку)
+        const categoryText = catItem.textContent.trim();
+        const categoryName = categoryText.replace(/^[^a-zA-Zа-яА-Я]*/, '').trim(); // Убираем иконку в начале
+
+        console.log('📝 Извлеченное название категории:', categoryName);
+        selectCategory(categoryId, categoryName);
+        return;
+      } else if (cat) {
+        // Обычная категория
+        const url = new URL(window.location.href);
+        if (cat === "all") url.searchParams.delete("category");
+        else url.searchParams.set("category", cat);
+        window.location.href = url.toString();
+        return;
+      }
+    }
+
+    // Клик по кнопке "Назад к блокам"
+    const backBtn = e.target.closest("#backToBlocks");
+    if (backBtn && dropdown) {
+      showCategoryBlocks();
+      e.stopPropagation();
       return;
     }
 
-    if (dropdown && !e.target.closest(".category-dropdown")) {
+    // Закрытие меню при клике вне
+    if (dropdown && !e.target.closest(".category-selector-container")) {
       dropdown.classList.remove("open");
       dropdown.setAttribute("aria-hidden", "true");
+      showCategoryBlocks();
     }
 
     // Рейтинг
@@ -1271,6 +1313,173 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+// =======================
+// Функции для работы с категориями
+// =======================
+
+async function loadCategoriesForCurrentPage() {
+  try {
+    // Определяем тип страницы по URL или по наличию элементов
+    let endpoint = '/api/categories/tree/product'; // по умолчанию для товаров
+
+    if (window.location.pathname.includes('/services')) {
+      endpoint = '/api/categories/tree/service';
+    } else if (window.location.pathname.includes('/products')) {
+      endpoint = '/api/categories/tree/product';
+    }
+
+    console.log('📂 Загружаем категории для:', endpoint);
+
+    const response = await fetch(endpoint);
+    const data = await response.json();
+
+    if (data.success && data.categories) {
+      renderCategoryBlocks(data.categories);
+    } else {
+      console.error('Ошибка загрузки блоков категорий:', data.message);
+    }
+  } catch (error) {
+    console.error('Ошибка сети при загрузке блоков:', error);
+  }
+}
+
+function renderCategoryBlocks(blocks) {
+  const categoriesBlocks = document.getElementById('categoriesBlocks');
+  if (!categoriesBlocks) return;
+
+  categoriesBlocks.innerHTML = '';
+
+  blocks.forEach(block => {
+    const blockBtn = document.createElement('button');
+    blockBtn.className = 'dropdown-item category-block';
+    blockBtn.setAttribute('data-block-id', block._id);
+    blockBtn.innerHTML = `${block.icon || ''} ${block.name}`;
+    blockBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      loadSubcategories(block._id, block.name);
+    });
+    categoriesBlocks.appendChild(blockBtn);
+  });
+}
+
+async function loadSubcategories(blockId, blockName) {
+  try {
+    const response = await fetch(`/api/categories/children/${blockId}`);
+    const data = await response.json();
+
+    if (data.success && data.categories) {
+      renderSubcategories(data.categories, blockName);
+    } else {
+      console.error('Ошибка загрузки подкатегорий:', data.message);
+    }
+  } catch (error) {
+    console.error('Ошибка сети при загрузке подкатегорий:', error);
+  }
+}
+
+function renderSubcategories(subcategories, blockName) {
+  const subcategoriesContainer = document.getElementById('subcategoriesContainer');
+  const subcategoriesList = document.getElementById('subcategoriesList');
+
+  if (!subcategoriesContainer || !subcategoriesList) return;
+
+  console.log('🔄 renderSubcategories:', { subcategories, blockName });
+
+  subcategoriesList.innerHTML = `<h4>${blockName}</h4>`;
+
+  subcategories.forEach(sub => {
+    console.log('📂 Обрабатываем подкатегорию:', sub);
+
+    const subBtn = document.createElement('button');
+    subBtn.className = 'dropdown-item subcategory-item';
+    subBtn.setAttribute('data-category-id', sub._id);
+    subBtn.setAttribute('data-category-name', sub.name || 'Категория'); // Сохраняем название в data-атрибуте
+    subBtn.innerHTML = `${sub.icon || ''} ${sub.name || 'Без названия'}`;
+    subBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      const categoryName = this.getAttribute('data-category-name') || 'Категория';
+      console.log('🖱️ Клик по подкатегории:', { id: sub._id, name: categoryName });
+      selectCategory(sub._id, categoryName);
+    });
+    subcategoriesList.appendChild(subBtn);
+  });
+
+  // Показываем контейнер подкатегорий
+  showSubcategories();
+}
+
+function showCategoryBlocks() {
+  const categoriesBlocks = document.getElementById('categoriesBlocks');
+  const subcategoriesContainer = document.getElementById('subcategoriesContainer');
+
+  if (categoriesBlocks) categoriesBlocks.style.display = 'block';
+  if (subcategoriesContainer) subcategoriesContainer.style.display = 'none';
+}
+
+function showSubcategories() {
+  const categoriesBlocks = document.getElementById('categoriesBlocks');
+  const subcategoriesContainer = document.getElementById('subcategoriesContainer');
+
+  if (categoriesBlocks) categoriesBlocks.style.display = 'none';
+  if (subcategoriesContainer) subcategoriesContainer.style.display = 'block';
+}
+
+function selectCategory(categoryId, categoryName) {
+  // Обновляем текст кнопки селектора категорий
+  updateCategorySelectorText(categoryId, categoryName);
+
+  // Небольшая задержка, чтобы пользователь увидел обновление текста
+  setTimeout(() => {
+    // Обновляем URL с названием категории вместо ID
+    const url = new URL(window.location.href);
+    url.searchParams.set('category', categoryName);
+    window.location.href = url.toString();
+  }, 150);
+}
+
+function updateCategorySelectorText(categoryId, categoryName) {
+  const categoryButton = document.getElementById('openCategories');
+  if (!categoryButton) {
+    console.error('❌ Кнопка openCategories не найдена');
+    return;
+  }
+
+  const span = categoryButton.querySelector('span');
+  if (!span) {
+    console.error('❌ Span элемент внутри кнопки openCategories не найден');
+    console.log('HTML кнопки:', categoryButton.innerHTML);
+    return;
+  }
+
+  // Отладка
+  console.log('🔄 updateCategorySelectorText:', { categoryId, categoryName, spanExists: !!span });
+
+  // Обновляем текст в span элементе
+  if (categoryId === 'all') {
+    span.textContent = '(все)';
+    console.log('✅ Установлен текст "(все)"');
+  } else {
+    // Используем название категории, если оно есть и не пустое
+    let displayName = 'Категория'; // fallback по умолчанию
+
+    if (categoryName && typeof categoryName === 'string' && categoryName.trim()) {
+      displayName = categoryName.trim();
+    } else if (categoryName && typeof categoryName === 'object' && categoryName.name) {
+      // На случай если передается объект с полем name
+      displayName = categoryName.name;
+    } else {
+      // Если название не найдено, используем "Категория" вместо ID
+      console.warn('⚠️ Название категории не найдено для ID:', categoryId, 'используем fallback:', displayName);
+    }
+
+    span.textContent = `(${displayName})`;
+    console.log('✅ Установлен текст:', span.textContent);
+  }
+
+  // Проверяем результат
+  console.log('📝 Финальный HTML кнопки:', categoryButton.innerHTML);
+}
 
 // =======================
 // Универсальные функции для работы с карточками
@@ -2391,4 +2600,3 @@ function createCommentsContent() {
 
   commentsSection.style.display = 'block';
 }
-

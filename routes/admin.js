@@ -14,7 +14,7 @@ const csrfProtection = require('csurf')({ cookie: true });
 const { upload, mobileOptimization } = require("../utils/upload");
 const { createProduct, updateProduct, deleteProduct } = require("../services/productService");
 const { deleteImages, deleteImage } = require("../utils/imageUtils");
-const { CATEGORY_LABELS } = require("../config/constants");
+const { CATEGORY_LABELS } = require("../config/categories");
 const mongoose = require("mongoose");
 const { notifyAdmin } = require("../services/adminNotificationService");
 
@@ -154,7 +154,7 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
       pendingBanners: pendingBanners || [],
       visitorCount,
       userCount,
-      categories: CATEGORY_LABELS,
+      categories: require("../config/categories").FLAT_CATEGORIES,
       csrfToken: csrfTokenValue
     });
   } catch (err) {
@@ -1136,6 +1136,22 @@ router.delete("/banners/:id", requireAdmin, conditionalCsrfProtection, async (re
     }
     console.error('❌ Ошибка удаления баннера:', err);
     return res.status(500).json({ success: false, message: "Ошибка сервера" });
+  }
+});
+
+// Управление категориями
+router.get("/categories", requireAdmin, conditionalCsrfToken, async (req, res) => {
+  try {
+    if (!HAS_MONGO) {
+      return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
+    }
+
+    res.render("admin-categories", {
+      csrfToken: res.locals.csrfToken || null
+    });
+  } catch (err) {
+    console.error("❌ Ошибка загрузки админки категорий:", err);
+    res.status(500).send("Ошибка сервера");
   }
 });
 

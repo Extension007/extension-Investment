@@ -61,10 +61,16 @@ const productSchema = new mongoose.Schema({
   
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
   voters: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  categoryId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    default: null
+  },
+  // Обратная совместимость - старое поле category
   category: {
     type: String,
-    enum: ["home", "beauty", "auto", "electric", "electronics", "plumbing"],
-    default: "home"
+    default: "",
+    maxlength: 200
   },
   
   // Тип публикации: товар или услуга

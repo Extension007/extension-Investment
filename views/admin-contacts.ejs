@@ -146,8 +146,16 @@
  </footer>
 
   <!-- Передаем информацию о доступности Socket.IO на клиент -->
+  <!-- Bootstrap script for safe EJS → JS data transfer -->
+  <script src="/utils/bootstrap.js"></script>
   <script>
-    window.SOCKET_IO_AVAILABLE = <%= typeof socket_io_available !== 'undefined' ? (Boolean(socket_io_available) ? 'true' : 'false') : 'false' %>;
+    // Safe initialization of global variables
+    window.AppBootstrap.init(<%- JSON.stringify({
+      isAuth: true,
+      isAdmin: true,
+      socketIoAvailable: typeof socket_io_available !== 'undefined' ? socket_io_available : false,
+      userRole: typeof userRole !== 'undefined' ? userRole : 'admin'
+    }) %>);
   </script>
 
   <script>

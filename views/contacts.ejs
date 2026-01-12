@@ -70,35 +70,16 @@
                   <div class="contact-icon">📧</div>
                   <div class="contact-details">
                     <h4>Email</h4>
-                    <p>info@albamount.kz</p>
+                    <p>admin@albamount.xyz</p>
                     <span>Основной email для общих вопросов</span>
                   </div>
                 </div>
-                
+
                 <div class="contact-card">
                   <div class="contact-icon">💬</div>
                   <div class="contact-details">
                     <h4>Telegram</h4>
                     <p>@albamount_support</p>
-                    <span>Быстрая связь через Telegram</span>
-                  </div>
-                </div>
-                
-                <div class="contact-card">
-                  <div class="contact-icon">📱</div>
-                  <div class="contact-details">
-                    <h4>WhatsApp</h4>
-                    <p>+7 (777) 123-45-67</p>
-                    <span>Звонки и сообщения</span>
-                  </div>
-                </div>
-                
-                <div class="contact-card">
-                  <div class="contact-icon">🌐</div>
-                  <div class="contact-details">
-                    <h4>Сайт</h4>
-                    <p>www.albamount.kz</p>
-                    <span>Официальный сайт проекта</span>
                   </div>
                 </div>
               <% } %>
@@ -191,26 +172,16 @@
   </div>
 </div>
 
-<% let isAuthValue = typeof isAuth !== 'undefined' ? isAuth : false; %>
-<% if (isAuthValue) { %>
-<script>window.IS_AUTH = true;</script>
-<% } else { %>
-<script>window.IS_AUTH = false;</script>
-<% } %>
-
-<% let isAdminValue = typeof isAdmin !== 'undefined' ? isAdmin : false; %>
-<% if (isAdminValue) { %>
-<script>window.IS_ADMIN = true;</script>
-<% } else { %>
-<script>window.IS_ADMIN = false;</script>
-<% } %>
-
-<% let userRoleValue = typeof userRole !== 'undefined' ? userRole : null; %>
-<script>window.USER_ROLE = '<%= userRoleValue %>';</script>
-
-<!-- Передаем информацию о доступности Socket.IO на клиент -->
+<!-- Bootstrap script for safe EJS → JS data transfer -->
+<script src="/utils/bootstrap.js"></script>
 <script>
-  window.SOCKET_IO_AVAILABLE = <%= typeof socket_io_available !== 'undefined' ? (Boolean(socket_io_available) ? 'true' : 'false') : 'false' %>;
+  window.AppBootstrap.init({
+    isAuth: <%- JSON.stringify(typeof isAuth !== 'undefined' ? isAuth : false) %>,
+    isAdmin: <%- JSON.stringify(typeof isAdmin !== 'undefined' ? isAdmin : false) %>,
+    socketIoAvailable: <%- JSON.stringify(typeof socket_io_available !== 'undefined' ? socket_io_available : false) %>,
+    userRole: <%- JSON.stringify(typeof userRole !== 'undefined' ? userRole : null) %>,
+    csrfToken: <%- JSON.stringify(typeof csrfToken !== 'undefined' ? csrfToken : '') %>
+  });
 </script>
 
 <script src="/script.js"></script>
@@ -218,172 +189,7 @@
 <!-- Подключаем скрипт для предотвращения перекрытия контента футером -->
 <script src="/fix-footer-overlap.js"></script>
 
-<style>
-/* Дополнительные стили для страницы контактов */
-.contacts-section {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-}
 
-.contacts-description {
-  text-align: center;
-  color: #ccc;
-  font-size: 1.1rem;
-  margin-bottom: 30px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.contacts-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 40px;
-  margin-bottom: 40px;
-}
-
-.contact-info h3,
-.contact-form-section h3 {
-  color: #ff9999;
-  margin-bottom: 20px;
-  font-size: 1.3rem;
-}
-
-.contact-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.contact-card {
-  background: rgba(255, 51, 0.05);
-  border: 1px solid rgba(255, 51, 51, 0.2);
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  transition: all 0.3s ease;
-}
-
-.contact-card:hover {
-  background: rgba(255, 51, 0.1);
-  transform: translateY(-2px);
-}
-
-.contact-icon {
-  font-size: 2rem;
-  width: 60px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 51, 0.1);
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.contact-details h4 {
-  color: #ff3333;
-  margin-bottom: 5px;
-  font-size: 1.1rem;
-}
-
-.contact-details p {
-  color: #fff;
-  font-weight: 600;
-  margin-bottom: 5px;
-  font-size: 1rem;
-}
-
-.contact-details span {
-  color: #999;
-  font-size: 0.9rem;
-}
-
-.contact-form {
-  background: rgba(255, 51, 0.05);
-  border: 1px solid rgba(255, 51, 0.2);
-  border-radius: 12px;
-  padding: 25px;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  color: #ff9999;
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 12px;
-  background: #2a2a2a;
-  border: 1px solid rgba(255, 51, 0.3);
-  border-radius: 8px;
-  color: #fff;
-  font-family: 'Poppins', Arial, sans-serif;
-  font-size: 0.95rem;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: #ff3333;
-  box-shadow: 0 0 8px rgba(255, 51, 0.3);
-}
-
-.contact-submit-btn {
-  width: 100%;
-  padding: 15px;
-  font-size: 1.1rem;
-  justify-content: center;
-}
-
-.contact-message {
-  margin-top: 15px;
-  padding: 15px;
-  border-radius: 8px;
-  text-align: center;
-  font-weight: 600;
-}
-
-.contact-message.success {
-  background: rgba(76, 175, 80, 0.2);
-  color: #4caf50;
-  border: 1px solid rgba(76, 175, 80, 0.5);
-}
-
-.contact-message.error {
-  background: rgba(244, 67, 54, 0.2);
-  color: #f44336;
-  border: 1px solid rgba(244, 67, 54, 0.5);
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-  .contacts-grid {
-    grid-template-columns: 1fr;
-    gap: 30px;
-  }
-  
-  .contact-card {
-    padding: 15px;
-  }
-  
-  .contact-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-  }
-}
-</style>
 
 <script>
 // Обработка формы контактов
@@ -391,39 +197,57 @@ document.addEventListener('DOMContentLoaded', function() {
   const contactForm = document.getElementById('contactForm');
   const successMessage = document.getElementById('contact-success');
   const errorMessage = document.getElementById('contact-error');
-  
+
   if (contactForm) {
-    contactForm.addEventListener('submit', function(e) {
+    contactForm.addEventListener('submit', async function(e) {
       e.preventDefault();
-      
+
       // Показываем индикатор загрузки
       const submitBtn = contactForm.querySelector('.contact-submit-btn');
       const originalText = submitBtn.innerHTML;
       submitBtn.innerHTML = '<span>⏳</span> Отправка...';
       submitBtn.disabled = true;
-      
+
       // Скрываем предыдущие сообщения
       successMessage.style.display = 'none';
       errorMessage.style.display = 'none';
-      
+
       // Собираем данные формы
       const formData = new FormData(contactForm);
       const data = Object.fromEntries(formData.entries());
-      
-      // Здесь можно добавить отправку на сервер
-      // Пока что имитируем успешную отправку
-      setTimeout(() => {
-        // Показываем успешное сообщение
-        successMessage.style.display = 'block';
-        contactForm.reset();
-        
+
+      try {
+        // Отправляем данные на сервер
+        const response = await fetch('/contacts/send-message', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': '<%= csrfToken %>'
+          },
+          body: JSON.stringify(data),
+          credentials: 'same-origin'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          // Показываем успешное сообщение
+          successMessage.style.display = 'block';
+          contactForm.reset();
+        } else {
+          // Показываем сообщение об ошибке
+          errorMessage.textContent = result.message || 'Ошибка отправки. Попробуйте позже.';
+          errorMessage.style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Ошибка отправки:', error);
+        errorMessage.textContent = 'Ошибка сети. Проверьте подключение к интернету.';
+        errorMessage.style.display = 'block';
+      } finally {
         // Возвращаем кнопку в исходное состояние
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
-        
-        // Прокручиваем к сообщению
-        successMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 2000);
+      }
     });
   }
 });

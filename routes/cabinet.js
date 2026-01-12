@@ -3,6 +3,7 @@ const router = express.Router();
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const Banner = require("../models/Banner");
+const Category = require("../models/Category");
 const { HAS_MONGO } = require("../config/database");
 const { requireUser } = require("../middleware/auth");
 const { productLimiter } = require("../middleware/rateLimiter");
@@ -69,6 +70,10 @@ router.get("/", requireUser, conditionalCsrfToken, async (req, res) => {
       owner: req.user._id
     }).sort({ _id: -1 });
 
+    // Получаем дерево категорий для всех типов
+    const categoryTree = await Category.getTree('all');
+    const categoryFlat = await Category.getFlatList('all');
+
     // Генерируем CSRF токен
     const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : '');
 
@@ -78,7 +83,9 @@ router.get("/", requireUser, conditionalCsrfToken, async (req, res) => {
       services: myServices || [],
       banners: myBanners || [],
       csrfToken: csrfTokenValue,
-      socket_io_available: res.locals.socket_io_available
+      socket_io_available: res.locals.socket_io_available,
+      categories: categoryFlat, // Новая система категорий
+      hierarchicalCategories: categoryTree // Дерево категорий
     });
   } catch (err) {
     console.error("❌ Ошибка загрузки кабинета:", err);

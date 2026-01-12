@@ -1,5 +1,7 @@
 // FIX: Контроллер для обработки товаров - С САНИТИЗАЦИЕЙ
+const mongoose = require("mongoose");
 const Product = require("../models/Product");
+const Category = require("../models/Category");
 const { deleteImages } = require("../utils/imageUtils");
 const { sanitizeProductDescription, sanitizeContacts, sanitizeText } = require("../utils/sanitize");
 const { notifyAdmin } = require("../services/adminNotificationService");
@@ -9,20 +11,19 @@ exports.getAllProducts = async (req, res, next) => {
   try {
     const products = await Product.find({ status: "approved" })
       .populate('owner', 'username')
+      .populate('categoryId', 'name icon')
       .sort({ createdAt: -1 });
-    
+
+    // Получаем дерево категорий для товаров
+    const categoryTree = await Category.getTree('product');
+    const categoryFlat = await Category.getFlatList('product');
+
     res.render('index', {
       products,
       isAuth: !!req.user,
       isAdmin: req.user?.role === 'admin',
-      categories: {
-        home: "Для дома",
-        beauty: "Красота и здоровье",
-        auto: "Авто мото",
-        electric: "Электрика",
-        electronics: "Электроника",
-        plumbing: "Сантехника"
-      },
+      categories: categoryFlat, // Новая система категорий
+      hierarchicalCategories: categoryTree, // Дерево категорий
       selectedCategory: req.query.category || 'all',
       votedMap: {}
     });
@@ -44,6 +45,23 @@ exports.createProduct = async (req, res, next) => {
   try {
     // FIX: Валидация и санитизация данных
     const { name, title, description, phone, email, telegram, whatsapp, price, link, video_url, category } = req.body;
+    
+    // Валидация категории
+    if (category) {
+      // Проверяем, является ли категория ObjectId (новая система)
+      if (mongoose.Types.ObjectId.isValid(category)) {
+        const categoryExists = await Category.findById(category);
+        if (!categoryExists) {
+          return res.status(400).json({ success: false, message: "Категория не найдена" });
+        }
+      } else {
+        // Для обратной совместимости - проверяем старые строковые категории
+        const validCategories = require("../config/categories").CATEGORY_KEYS;
+        if (!validCategories.includes(category)) {
+          return res.status(400).json({ success: false, message: "Некорректная категория" });
+        }
+      }
+    }
     
     // FIX: Поддержка старого формата с title для обратной совместимости
     const productName = name || title;
@@ -168,6 +186,14 @@ exports.getEditForm = async (req, res, next) => {
 exports.updateProduct = async (req, res, next) => {
   try {
     const { name, title, description, phone, email, telegram, whatsapp, price, link, video_url, category, current_images } = req.body;
+    
+    // Валидация категории, если она передана
+    if (category) {
+      const validCategories = require("../config/categories").CATEGORY_KEYS;
+      if (!validCategories.includes(category)) {
+        return res.status(400).json({ success: false, message: "Некорректная категория" });
+      }
+    }
     
     // FIX: Поддержка старого формата с title для обратной совместимости
     const productName = name || title;

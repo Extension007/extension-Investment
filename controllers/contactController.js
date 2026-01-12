@@ -1,5 +1,7 @@
 const ContactInfo = require("../models/ContactInfo");
 const { notifyAdmin } = require("../services/adminNotificationService");
+const { transporter } = require("../services/emailService");
+const emailConfig = require("../config/email");
 
 /**
  * Получить список контактов и отрендерить страницу контактов
@@ -188,18 +190,18 @@ exports.deleteContact = async (req, res) => {
 
     // Валидация ID
     if (!id) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "ID контакта обязателен" 
+      return res.status(400).json({
+        success: false,
+        message: "ID контакта обязателен"
       });
     }
 
     const contact = await ContactInfo.findById(id);
 
     if (!contact) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Контакт не найден" 
+      return res.status(404).json({
+        success: false,
+        message: "Контакт не найден"
       });
     }
 
@@ -224,15 +226,90 @@ exports.deleteContact = async (req, res) => {
       console.error('Ошибка при отправке уведомления администратору:', notificationError);
     }
 
-    res.json({ 
-      success: true, 
-      message: "Контакт успешно удален" 
+    res.json({
+      success: true,
+      message: "Контакт успешно удален"
     });
   } catch (err) {
     console.error("❌ Ошибка удаления контакта:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: "Ошибка удаления контакта: " + err.message 
+    res.status(500).json({
+      success: false,
+      message: "Ошибка удаления контакта: " + err.message
+    });
+  }
+};
+
+/**
+ * Отправить сообщение из формы контактов на email администратора
+ */
+exports.sendContactMessage = async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+
+    // Валидация обязательных полей
+    if (!name || !email || !message) {
+      return res.status(400).json({
+        success: false,
+        message: "Имя, email и сообщение обязательны для заполнения"
+      });
+    }
+
+    // Проверка email формата
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "Неверный формат email"
+      });
+    }
+
+    // Получаем email администратора
+    const adminContact = await ContactInfo.findOne({ type: 'admin' });
+    const adminEmail = adminContact?.email || 'admin@albamount.xyz'; // Fallback email
+
+    // Формируем тему письма
+    const emailSubject = subject ? `[Albamount] ${subject}` : '[Albamount] Новое сообщение из формы контактов';
+
+    // Формируем текст письма
+    const emailText = `
+Новое сообщение из формы контактов Albamount.kz
+
+От: ${name} <${email}>
+Тема: ${subject || 'Без темы'}
+Дата: ${new Date().toLocaleString('ru-RU')}
+
+Сообщение:
+${message}
+
+---
+Это автоматическое уведомление. Не отвечайте на него.
+    `.trim();
+
+    // Отправляем email администратору
+    if (emailConfig.enabled) {
+      await transporter.sendMail({
+        from: emailConfig.from,
+        to: adminEmail,
+        subject: emailSubject,
+        text: emailText,
+        replyTo: email // Чтобы администратор мог ответить отправителю
+      });
+
+      console.log(`✅ Email отправлен администратору ${adminEmail} от ${email}`);
+    } else {
+      console.warn('⚠️ Email сервис отключен, сообщение не отправлено');
+    }
+
+    res.json({
+      success: true,
+      message: "Сообщение успешно отправлено"
+    });
+
+  } catch (err) {
+    console.error("❌ Ошибка отправки сообщения:", err);
+    res.status(500).json({
+      success: false,
+      message: "Ошибка отправки сообщения. Попробуйте позже."
     });
   }
 };

@@ -36,19 +36,25 @@
     <section id="services" class="section">
       <div class="section-header">
         <h2>Каталог услуг</h2>
-        <% if (categories) { %>
-          <div class="category-dropdown">
-            <button id="openCategories" type="button" class="btn small outline">
-              Категории <span style="opacity:.8">(<%= selectedCategory === 'all' ? 'все' : categories[selectedCategory] %>)</span>
-            </button>
-            <div id="categoriesMenu" class="dropdown-menu" aria-hidden="true">
-              <button class="dropdown-item" data-category="all">Все</button>
-              <% Object.keys(categories).forEach(key => { %>
-                <button class="dropdown-item" data-category="<%= key %>"><%= categories[key] %></button>
-              <% }) %>
+        <div class="category-selector-container">
+          <button id="openCategories" type="button" class="btn small outline">
+            Категории <span style="opacity:.8">(<%= selectedCategory === 'all' ? 'все' : selectedCategory %>)</span>
+          </button>
+          <div id="categoriesMenu" class="dropdown-menu hierarchical-categories" aria-hidden="true">
+            <button class="dropdown-item" data-category="all">Все</button>
+            <!-- Блоки категорий будут загружены динамически -->
+            <div id="categoriesBlocks" class="categories-blocks">
+              <!-- Здесь будут отображаться блоки (корневые категории) -->
+            </div>
+            <!-- Контейнер для подкатегорий -->
+            <div id="subcategoriesContainer" class="subcategories-container" style="display: none;">
+              <button class="back-to-blocks-btn" id="backToBlocks">← Назад к блокам</button>
+              <div id="subcategoriesList">
+                <!-- Подкатегории будут загружены динамически -->
+              </div>
             </div>
           </div>
-        <% } %>
+        </div>
       </div>
 
       <div id="services-grid" class="product-grid">
@@ -332,26 +338,16 @@
     </div>
   </div>
 
-  <% let isAuthValue = typeof isAuth !== 'undefined' ? isAuth : false; %>
-  <% if (isAuthValue) { %>
-  <script>window.IS_AUTH = true;</script>
-  <% } else { %>
-  <script>window.IS_AUTH = false;</script>
-  <% } %>
-
-  <% let isAdminValue = typeof isAdmin !== 'undefined' ? isAdmin : false; %>
-  <% if (isAdminValue) { %>
-  <script>window.IS_ADMIN = true;</script>
-  <% } else { %>
-  <script>window.IS_ADMIN = false;</script>
-  <% } %>
-
-  <% let userRoleValue = typeof userRole !== 'undefined' ? userRole : null; %>
-  <script>window.USER_ROLE = '<%= userRoleValue %>';</script>
-
-  <!-- Передаем информацию о доступности Socket.IO на клиент -->
+  <!-- Bootstrap script for safe EJS → JS data transfer -->
+  <script src="/utils/bootstrap.js"></script>
   <script>
-    window.SOCKET_IO_AVAILABLE = <%= typeof socket_io_available !== 'undefined' ? (Boolean(socket_io_available) ? 'true' : 'false') : 'false' %>;
+    window.AppBootstrap.init({
+      isAuth: <%- JSON.stringify(typeof isAuth !== 'undefined' ? isAuth : false) %>,
+      isAdmin: <%- JSON.stringify(typeof isAdmin !== 'undefined' ? isAdmin : false) %>,
+      socketIoAvailable: <%- JSON.stringify(typeof socket_io_available !== 'undefined' ? socket_io_available : false) %>,
+      userRole: <%- JSON.stringify(typeof userRole !== 'undefined' ? userRole : null) %>,
+      csrfToken: <%- JSON.stringify(typeof csrfToken !== 'undefined' ? csrfToken : '') %>
+    });
   </script>
 
   <!-- Загружаем YouTube IFrame API перед основным скриптом -->
@@ -368,9 +364,11 @@
   <script src="/socket.io/socket.io.js"></script>
   <% } %>
   
+
+
   <!-- Подключаем основной скрипт (включает весь JS: youtube init, модалки, рейтинг, категории, регистрация) -->
   <script src="/script.js"></script>
-  
+
   <!-- Подключаем скрипт для предотвращения перекрытия контента футером -->
   <script src="/fix-footer-overlap.js"></script>
   </body>

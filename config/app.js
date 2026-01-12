@@ -43,15 +43,7 @@ app.use(createSecurityMiddleware());
 app.use(morgan("dev"));
 
 // Категории
-const CATEGORY_LABELS = {
-  home: "Для дома",
-  beauty: "Красота и здоровье",
-  auto: "Авто мото",
-  electric: "Электрика",
-  electronics: "Электроника",
-  plumbing: "Сантехника"
-};
-const CATEGORY_KEYS = Object.keys(CATEGORY_LABELS);
+const { CATEGORY_LABELS, CATEGORY_KEYS, HIERARCHICAL_CATEGORIES } = require("./categories");
 
 // Сессии
 if (!isVercel) {
@@ -125,5 +117,6 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 module.exports = {
   app,
   CATEGORY_LABELS,
-  CATEGORY_KEYS
+  CATEGORY_KEYS,
+  HIERARCHICAL_CATEGORIES
 };

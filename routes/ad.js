@@ -7,7 +7,6 @@ const Banner = require("../models/Banner");
 const User = require("../models/User");
 const Statistics = require("../models/Statistics");
 const { HAS_MONGO, hasMongo } = require("../config/database");
-const { CATEGORY_LABELS, CATEGORY_KEYS } = require("../config/app");
 
 // Страница рекламы
 router.get("/", async (req, res) => {
@@ -16,16 +15,12 @@ router.get("/", async (req, res) => {
     const userRole = req.user?.role || null;
     const isAdmin = userRole === "admin";
     const isUser = userRole === "user";
-    const selected = req.query.category;
-
-    const categories = CATEGORY_LABELS || {};
-    const categoryKeys = CATEGORY_KEYS || [];
 
     const isVercel = Boolean(process.env.VERCEL);
     const hasDbAccess = isVercel ? req.dbConnected : HAS_MONGO;
 
     if (!hasDbAccess) {
-      return res.render("index", {
+      return res.render("ad", {
         products: [],
         services: [],
         banners: [],
@@ -39,8 +34,6 @@ router.get("/", async (req, res) => {
         userRole,
         user: req.user,
         votedMap: {},
-        categories,
-        selectedCategory: selected || "all",
         csrfToken: req.csrfToken ? req.csrfToken() : '',
         activeTab: 'ad' // Указываем активную вкладку
       });
@@ -84,8 +77,6 @@ router.get("/", async (req, res) => {
       userRole,
       user: req.user,
       votedMap,
-      categories,
-      selectedCategory: selected || "all",
       csrfToken: req.csrfToken ? req.csrfToken() : '',
       activeTab: 'ad' // Указываем активную вкладку
     });

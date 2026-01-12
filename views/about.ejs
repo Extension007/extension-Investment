@@ -127,26 +127,16 @@
   </div>
 </div>
 
-<% let isAuthValue = typeof isAuth !== 'undefined' ? isAuth : false; %>
-<% if (isAuthValue) { %>
-<script>window.IS_AUTH = true;</script>
-<% } else { %>
-<script>window.IS_AUTH = false;</script>
-<% } %>
-
-<% let isAdminValue = typeof isAdmin !== 'undefined' ? isAdmin : false; %>
-<% if (isAdminValue) { %>
-<script>window.IS_ADMIN = true;</script>
-<% } else { %>
-<script>window.IS_ADMIN = false;</script>
-<% } %>
-
-<% let userRoleValue = typeof userRole !== 'undefined' ? userRole : null; %>
-<script>window.USER_ROLE = '<%= userRoleValue %>';</script>
-
-<!-- Передаем информацию о доступности Socket.IO на клиент -->
+<!-- Bootstrap script for safe EJS → JS data transfer -->
+<script src="/utils/bootstrap.js"></script>
 <script>
-  window.SOCKET_IO_AVAILABLE = <%= typeof socket_io_available !== 'undefined' ? (Boolean(socket_io_available) ? 'true' : 'false') : 'false' %>;
+  // Safe initialization of global variables
+  window.AppBootstrap.init(<%- JSON.stringify({
+    isAuth: typeof isAuth !== 'undefined' ? isAuth : false,
+    isAdmin: typeof isAdmin !== 'undefined' ? isAdmin : false,
+    socketIoAvailable: typeof socket_io_available !== 'undefined' ? socket_io_available : false,
+    userRole: typeof userRole !== 'undefined' ? userRole : null
+  }) %>);
 </script>
 
 <script src="/script.js"></script>

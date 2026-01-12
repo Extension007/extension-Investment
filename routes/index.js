@@ -6,9 +6,10 @@ const Product = require("../models/Product");
 const Banner = require("../models/Banner");
 const User = require("../models/User");
 const Statistics = require("../models/Statistics");
+const Category = require("../models/Category");
 const cloudinary = require("cloudinary").v2;
 const { HAS_MONGO, hasMongo } = require("../config/database");
-const { CATEGORY_LABELS, CATEGORY_KEYS } = require("../config/app");
+const { CATEGORY_LABELS, CATEGORY_KEYS, HIERARCHICAL_CATEGORIES } = require("../config/app");
 
 // Авторизация
 router.use("/", require("./auth"));
@@ -21,6 +22,9 @@ router.use("/cabinet", require("./cabinet"));
 
 // Админ-панель
 router.use("/admin", require("./admin"));
+
+// API для категорий
+router.use("/api/categories", require("./categories"));
 
 // Страницы с вкладками
 router.use("/products", require("./products"));
@@ -44,6 +48,45 @@ router.get("/", async (req, res) => {
     const isVercel = Boolean(process.env.VERCEL);
     const hasDbAccess = isVercel ? req.dbConnected : HAS_MONGO;
 
+    console.log('🔧 Отладка категории:', {
+      selected,
+      isVercel,
+      hasDbAccess,
+      isValidObjectId: selected ? mongoose.Types.ObjectId.isValid(selected) : false
+    });
+
+    // Определяем отображаемое название выбранной категории
+    let selectedCategoryDisplay = selected || "all";
+    if (selected && selected !== 'all') {
+      // Проверяем, является ли selected названием категории (не ID)
+      // Если да, то используем его напрямую
+      if (!mongoose.Types.ObjectId.isValid(selected)) {
+        console.log('📝 Selected является названием категории:', selected);
+        selectedCategoryDisplay = selected;
+      } else if (hasDbAccess) {
+        try {
+          console.log('🔍 Ищем категорию по ID:', selected);
+          // Ищем категорию по ID и получаем ее название
+          const category = await Category.findById(selected).select('name').lean();
+          console.log('📋 Найденная категория:', category);
+          if (category && category.name) {
+            selectedCategoryDisplay = category.name;
+            console.log('✅ Используем название категории:', selectedCategoryDisplay);
+          } else {
+            console.warn('⚠️ Категория не найдена или без названия');
+            selectedCategoryDisplay = "Неизвестная категория";
+          }
+        } catch (err) {
+          console.warn('❌ Ошибка поиска категории:', selected, err.message);
+          selectedCategoryDisplay = "Ошибка загрузки категории";
+        }
+      } else {
+        console.log('⏭️ Нет доступа к БД, оставляем ID');
+        selectedCategoryDisplay = "Категория"; // Fallback когда нет доступа к БД
+      }
+    }
+    console.log('📝 Финальное selectedCategoryDisplay:', selectedCategoryDisplay);
+
     if (!hasDbAccess) {
       return res.render("index", {
         products: [],
@@ -60,7 +103,8 @@ router.get("/", async (req, res) => {
         user: req.user,
         votedMap: {},
         categories,
-        selectedCategory: selected || "all",
+        hierarchicalCategories: HIERARCHICAL_CATEGORIES,
+        selectedCategory: selectedCategoryDisplay,
         csrfToken: req.csrfToken ? req.csrfToken() : ''
       });
     }
@@ -79,9 +123,29 @@ router.get("/", async (req, res) => {
       ]
     };
 
-    if (selected && categoryKeys.includes(selected)) {
-      productsFilter.$and.push({ category: selected });
-      servicesFilter.$and.push({ category: selected });
+    if (selected && selected !== 'all') {
+      // Если выбранная категория - это ObjectId, используем categoryId напрямую
+      if (mongoose.Types.ObjectId.isValid(selected)) {
+        productsFilter.$and.push({ categoryId: selected });
+        servicesFilter.$and.push({ categoryId: selected });
+      } else {
+        // Если это название категории, найдем ее ID
+        try {
+          console.log('🔍 Ищем ID категории по названию:', selected);
+          const category = await Category.findOne({ name: selected }).select('_id').lean();
+          if (category) {
+            console.log('✅ Найден ID категории:', category._id);
+            productsFilter.$and.push({ categoryId: category._id });
+            servicesFilter.$and.push({ categoryId: category._id });
+          } else {
+            console.warn('⚠️ Категория с названием не найдена:', selected);
+            // Не применяем фильтр, показываем все товары
+          }
+        } catch (err) {
+          console.warn('❌ Ошибка поиска категории по названию:', selected, err.message);
+          // Не применяем фильтр, показываем все товары
+        }
+      }
     }
 
     // Запросы
@@ -123,7 +187,7 @@ router.get("/", async (req, res) => {
       user: req.user,
       votedMap,
       categories,
-      selectedCategory: selected || "all",
+      selectedCategory: selectedCategoryDisplay,
       csrfToken: req.csrfToken ? req.csrfToken() : ''
     });
   } catch (err) {
