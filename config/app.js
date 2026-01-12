@@ -84,17 +84,12 @@ if (!isVercel) {
 
 // Глобальные переменные для шаблонов
 app.use((req, res, next) => {
-  res.locals.user = isVercel
-    ? (() => {
-        try {
-          return req.cookies.exto_user ? JSON.parse(req.cookies.exto_user) : null;
-        } catch {
-          res.clearCookie("exto_user");
-          return null;
-        }
-      })()
-    : req.session?.user || null;
-  req.user = res.locals.user; // Для удобства в контроллерах и middleware
+  // Используем вспомогательную функцию из middleware/auth для получения пользователя
+  const { getUserFromRequest } = require("../middleware/auth");
+  const user = getUserFromRequest(req);
+  
+  res.locals.user = user;
+  req.user = user; // Для удобства в контроллерах и middleware
   
   // Передаем информацию о доступности Socket.IO в шаблоны
   res.locals.socket_io_available = !isVercel; // Socket.IO доступен только не на Vercel

@@ -1,7 +1,8 @@
 // Middleware для авторизации
 const { verifyToken } = require("../config/jwt");
 
-function requireAdmin(req, res, next) {
+// Функция для получения пользователя из различных источников
+function getUserFromRequest(req) {
   // Сначала пробуем получить данные из JWT токена
   let user = null;
   const token = req.cookies.exto_token || req.headers.authorization?.split(' ')[1]; // Bearer token
@@ -25,7 +26,7 @@ function requireAdmin(req, res, next) {
           user = JSON.parse(userCookie);
         } catch (err) {
           // Если cookie повреждена, удаляем её
-          res.clearCookie('exto_user');
+          req.app?.res?.clearCookie('exto_user'); // безопасно пытаемся очистить cookie
         }
       }
     } else {
@@ -34,59 +35,45 @@ function requireAdmin(req, res, next) {
     }
   }
 
+  return user;
+}
+
+// Функция для определения типа ответа (JSON или HTML)
+function wantsJsonResponse(req) {
+  return req.xhr || req.get("accept")?.includes("application/json");
+}
+
+function requireAdmin(req, res, next) {
+  const user = getUserFromRequest(req);
+
   if (!user) {
-    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-    if (wantsJson) return res.status(401).json({ success: false, error: "Unauthorized", message: "Требуется авторизация" });
+    if (wantsJsonResponse(req)) {
+      return res.status(401).json({ success: false, error: "Unauthorized", message: "Требуется авторизация" });
+    }
     return res.redirect("/admin/login");
   }
   
   // Проверяем роль админа
   if (user.role !== "admin") {
-    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-    if (wantsJson) return res.status(403).json({ success: false, error: "Forbidden", message: "Доступ запрещен: требуется роль администратора" });
+    if (wantsJsonResponse(req)) {
+      return res.status(403).json({ success: false, error: "Forbidden", message: "Доступ запрещен: требуется роль администратора" });
+    }
     return res.status(403).send("Доступ запрещен: требуется роль администратора");
   }
+  req.currentUser = user; // Сохраняем пользователя в запросе для дальнейшего использования
   next();
 }
 
 function requireUser(req, res, next) {
-  // Сначала пробуем получить данные из JWT токена
-  let user = null;
-  const token = req.cookies.exto_token || req.headers.authorization?.split(' ')[1]; // Bearer token
-  
-  if (token) {
-    const decoded = verifyToken(token);
-    if (decoded) {
-      user = decoded;
-    }
-  }
-  
-  // Если JWT токен не действителен, пробуем старую систему (cookie или сессия)
-  if (!user) {
-    const isVercel = Boolean(process.env.VERCEL);
-    
-    if (isVercel) {
-      // В Vercel serverless получаем данные из cookie
-      const userCookie = req.cookies.exto_user;
-      if (userCookie) {
-        try {
-          user = JSON.parse(userCookie);
-        } catch (err) {
-          // Если cookie повреждена, удаляем её
-          res.clearCookie('exto_user');
-        }
-      }
-    } else {
-      // В обычной среде используем сессии
-      user = req.session?.user;
-    }
-  }
+  const user = getUserFromRequest(req);
 
   if (!user) {
-    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-    if (wantsJson) return res.status(401).json({ success: false, error: "Unauthorized", message: "Требуется авторизация" });
+    if (wantsJsonResponse(req)) {
+      return res.status(401).json({ success: false, error: "Unauthorized", message: "Требуется авторизация" });
+    }
     return res.redirect("/user/login");
   }
+  req.currentUser = user; // Сохраняем пользователя в запросе для дальнейшего использования
   next();
 }
 
@@ -107,8 +94,7 @@ function requireOwnerOrAdmin(modelName = 'Product', paramName = 'id') {
       const itemId = req.params[paramName];
       
       if (!mongoose.Types.ObjectId.isValid(itemId)) {
-        const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-        if (wantsJson) {
+        if (wantsJsonResponse(req)) {
           return res.status(400).json({ success: false, error: "Bad Request", message: "Неверный формат ID" });
         }
         return res.status(400).send("Неверный формат ID");
@@ -116,47 +102,17 @@ function requireOwnerOrAdmin(modelName = 'Product', paramName = 'id') {
 
       const item = await Model.findById(itemId);
       if (!item) {
-        const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-        if (wantsJson) {
+        if (wantsJsonResponse(req)) {
           return res.status(404).json({ success: false, error: "Not Found", message: "Карточка не найдена" });
         }
         return res.status(404).send("Карточка не найдена");
       }
 
-      // Сначала пробуем получить данные из JWT токена
-      let user = null;
-      const token = req.cookies.exto_token || req.headers.authorization?.split(' ')[1]; // Bearer token
-      
-      if (token) {
-        const decoded = verifyToken(token);
-        if (decoded) {
-          user = decoded;
-        }
-      }
-      
-      // Если JWT токен не действителен, пробуем старую систему (cookie или сессия)
-      if (!user) {
-        const isVercel = Boolean(process.env.VERCEL);
-        
-        if (isVercel) {
-          // В Vercel serverless получаем данные из cookie
-          const userCookie = req.cookies.exto_user;
-          if (userCookie) {
-            try {
-              user = JSON.parse(userCookie);
-            } catch (err) {
-              // Если cookie повреждена, удаляем её
-              res.clearCookie('exto_user');
-            }
-          }
-        } else {
-          // В обычной среде используем сессии
-          user = req.session?.user;
-        }
-      }
+      const user = getUserFromRequest(req);
 
       // Админ имеет полный доступ
       if (user && user.role === "admin") {
+        req.currentUser = user; // Сохраняем пользователя в запросе
         return next();
       }
 
@@ -165,8 +121,7 @@ function requireOwnerOrAdmin(modelName = 'Product', paramName = 'id') {
       const ownerId = item.owner?.toString();
 
       if (!userId || userId !== ownerId) {
-        const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-        if (wantsJson) {
+        if (wantsJsonResponse(req)) {
           return res.status(403).json({ success: false, error: "Forbidden", message: "Доступ запрещен: вы не являетесь владельцем этой карточки" });
         }
         return res.status(403).send("Доступ запрещен: вы не являетесь владельцем этой карточки");
@@ -174,11 +129,11 @@ function requireOwnerOrAdmin(modelName = 'Product', paramName = 'id') {
 
       // Сохраняем карточку в req для использования в роутах
       req.item = item;
+      req.currentUser = user; // Сохраняем пользователя в запросе
       next();
     } catch (err) {
       console.error("❌ Ошибка проверки владельца:", err);
-      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-      if (wantsJson) {
+      if (wantsJsonResponse(req)) {
         return res.status(500).json({ success: false, error: "Server Error", message: "Ошибка проверки прав доступа" });
       }
       return res.status(500).send("Ошибка проверки прав доступа");
@@ -193,5 +148,7 @@ module.exports = {
   requireAdmin,
   requireUser,
   requireAuth,
-  requireOwnerOrAdmin
+  requireOwnerOrAdmin,
+  getUserFromRequest, // Экспортируем вспомогательную функцию для использования в других местах
+  wantsJsonResponse
 };

@@ -56,7 +56,7 @@
                             
                             <!-- Подпись -->
                             <p style="color: #ffffff; font-size: 12px; text-align: center; margin: 0;">
-                                Эта ссылка действительна в течение <%= validityPeriod || '24 часов' %>.
+                                Эта ссылка действительна в течение <%= typeof validityPeriod !== 'undefined' && validityPeriod ? validityPeriod : '24 часов' %>.
                             </p>
                         </td>
                     </tr>

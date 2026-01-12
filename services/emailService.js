@@ -1,6 +1,14 @@
 const nodemailer = require('nodemailer');
 const emailConfig = require('../config/email');
 
+// Проверяем, что все необходимые параметры SMTP настроены
+if (emailConfig.enabled) {
+  if (!emailConfig.smtp.host || !emailConfig.smtp.auth.user || !emailConfig.smtp.auth.pass) {
+    console.warn('⚠️ Email service is enabled but SMTP configuration is incomplete.');
+    console.warn('Please check your environment variables for SMTP settings.');
+  }
+}
+
 const transporter = nodemailer.createTransport(emailConfig.smtp);
 
 function checkConfiguration() {
@@ -11,9 +19,9 @@ function checkConfiguration() {
 
   transporter.verify((error, success) => {
     if (error) {
-      console.log('SMTP Error:', error.message);
+      console.error('❌ SMTP Configuration Error:', error.message);
     } else {
-      console.log('SMTP OK');
+      console.log('✅ SMTP Configuration OK');
     }
   });
 }

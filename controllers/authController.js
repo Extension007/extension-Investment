@@ -12,10 +12,15 @@ exports.register = async (req, res) => {
       return res.status(400).json({ success: false, message: "Email and password required" });
     }
 
-    // Проверяем, не существует ли уже пользователь с таким email
-    const existingUser = await User.findOne({ email });
+    // Проверяем, не существует ли уже пользователь с таким email или username
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
-      return res.status(400).json({ success: false, message: "Пользователь с таким email уже существует" });
+      // Определяем, что именно повторяется - email или username
+      if (existingUser.email === email) {
+        return res.status(400).json({ success: false, message: "Пользователь с таким email уже существует" });
+      } else {
+        return res.status(400).json({ success: false, message: "Пользователь с таким именем уже существует" });
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -27,7 +32,23 @@ exports.register = async (req, res) => {
       role: "user",
       emailVerified: false // Новый пользователь не подтвержден
     });
-    await user.save();
+
+    try {
+      await user.save();
+    } catch (saveErr) {
+      if (saveErr.code === 11000) {
+        // Проверяем, что именно вызвало дубликат
+        if (saveErr.keyPattern && saveErr.keyPattern.username) {
+          return res.status(400).json({ success: false, message: "Пользователь с таким именем уже существует" });
+        } else if (saveErr.keyPattern && saveErr.keyPattern.email) {
+          return res.status(400).json({ success: false, message: "Пользователь с таким email уже существует" });
+        } else {
+          return res.status(400).json({ success: false, message: "Пользователь с такими данными уже существует" });
+        }
+      } else {
+        throw saveErr; // Если это другая ошибка, пробрасываем дальше
+      }
+    }
 
     // Отправляем уведомление администратору о новой регистрации
     try {
@@ -81,6 +102,16 @@ exports.register = async (req, res) => {
     });
   } catch (err) {
     console.error("Ошибка регистрации:", err);
+    // Обработка специфических ошибок MongoDB
+    if (err.code === 11000) {
+      if (err.keyPattern && err.keyPattern.username) {
+        return res.status(400).json({ success: false, message: "Пользователь с таким именем уже существует" });
+      } else if (err.keyPattern && err.keyPattern.email) {
+        return res.status(400).json({ success: false, message: "Пользователь с таким email уже существует" });
+      } else {
+        return res.status(400).json({ success: false, message: "Пользователь с такими данными уже существует" });
+      }
+    }
     res.status(500).json({ success: false, message: "Registration failed", error: err.message });
   }
 };
