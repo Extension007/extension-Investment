@@ -98,7 +98,7 @@ async function verifyEmail(token) {
 
   const baseUrl = resolveBaseUrl();
   const supportEmail = resolveSupportEmail();
-  const loginLink = `${baseUrl}/user/login`;
+  const loginLink = `${baseUrl}/auth/user/login`;
   const logoUrl = `${baseUrl}/albamount.png`;
   const subject = 'Email подтвержден';
   const preheader = 'Email подтвержден. Добро пожаловать в ALBAMOUNT.';

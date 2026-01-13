@@ -32,7 +32,7 @@ function canWriteComments(req, res, next) {
     if (wantsJson) {
       return res.status(401).json({ success: false, message: 'Требуется авторизация для добавления комментариев' });
     }
-    return res.redirect('/user/login');
+    return res.redirect('/auth/user/login');
   }
   
   console.log('✅ Пользователь авторизован, разрешаем создание комментария');

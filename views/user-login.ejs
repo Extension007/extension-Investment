@@ -87,7 +87,7 @@
   <div class="login-container">
     <h2>Вход для пользователей</h2>
 
-    <form method="POST" action="/user/login">
+    <form method="POST" action="/auth/user/login">
       <input type="text" name="username" placeholder="Логин" required>
       <input type="password" name="password" placeholder="Пароль" required>
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
