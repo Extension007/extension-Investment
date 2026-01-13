@@ -334,13 +334,39 @@
           
           // Получаем CSRF токен для голосования
           const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-          const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
+          const csrfInput = document.querySelector('input[name="_csrf"]');
+          let csrfToken = '';
+          
+          if (csrfMeta) {
+            csrfToken = csrfMeta.getAttribute('content');
+          } else if (csrfInput) {
+            csrfToken = csrfInput.value;
+          }
+          
+          // Проверяем, что токен не пустой
+          if (!csrfToken) {
+            console.error('❌ CSRF токен не найден');
+            if (typeof showToast === 'function') {
+              showToast('Ошибка: отсутствует токен безопасности. Обновите страницу.', 'error');
+            }
+            
+            // Включаем кнопки обратно
+            const buttons = ratingBlock.querySelectorAll('button');
+            if (buttons && buttons.length > 0) {
+              buttons.forEach(btn => {
+                if (btn && btn.disabled !== undefined) {
+                  btn.disabled = false;
+                }
+              });
+            }
+            return;
+          }
           
           const res = await fetch(voteEndpoint, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken || ''
+              'X-CSRF-Token': csrfToken
             },
             body: voteBody,
             credentials: 'same-origin'

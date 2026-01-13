@@ -1013,7 +1013,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
 
-        const res = await fetch("/auth/register", {
+        const res = await fetch(window.location.origin + "/auth/register", {
           method: "POST",
           headers: headers,
           body: JSON.stringify(formData),
@@ -1265,7 +1265,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : null;
+        const csrfInput = document.querySelector('input[name="_csrf"]');
+        let csrfToken = '';
+        
+        if (csrfMeta) {
+          csrfToken = csrfMeta.getAttribute('content');
+        } else if (csrfInput) {
+          csrfToken = csrfInput.value;
+        }
+        
+        // Проверяем, что токен не пустой
+        if (!csrfToken) {
+          console.error('❌ CSRF токен не найден');
+          showToast('Ошибка: отсутствует токен безопасности. Обновите страницу.', 'error');
+          ratingBlock.querySelectorAll("button").forEach((b) => {
+            b.disabled = false;
+          });
+          return;
+        }
 
         const vote = value === 'like' ? 'up' : 'down';
 
@@ -1280,7 +1297,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRF-Token": csrfToken || ''
+            "X-CSRF-Token": csrfToken
           },
           body: JSON.stringify({ vote, type: itemType }),
           credentials: 'include'
@@ -1584,7 +1601,30 @@ async function voteItem(itemType, itemId, vote, ratingBlock) {
     });
   }
 
-  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+  let csrfToken = '';
+  const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+  const csrfInput = document.querySelector('input[name="_csrf"]');
+  
+  if (csrfMeta) {
+    csrfToken = csrfMeta.getAttribute('content');
+  } else if (csrfInput) {
+    csrfToken = csrfInput.value;
+  }
+  
+  // Проверяем, что токен не пустой
+  if (!csrfToken) {
+    console.error('❌ CSRF токен не найден');
+    showToast('Ошибка: отсутствует токен безопасности. Обновите страницу.', 'error');
+    const buttons = ratingBlock.querySelectorAll('button');
+    if (buttons && buttons.length > 0) {
+      buttons.forEach(btn => {
+        if (btn && btn.disabled !== undefined) {
+          btn.disabled = false;
+        }
+      });
+    }
+    return false;
+  }
 
   try {
     let endpoint;
@@ -1603,7 +1643,7 @@ async function voteItem(itemType, itemId, vote, ratingBlock) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-Token': csrfToken || ''
+        'X-CSRF-Token': csrfToken
       },
       body: body,
       credentials: 'same-origin'

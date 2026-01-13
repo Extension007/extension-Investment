@@ -41,6 +41,10 @@ router.post("/logout", (req, res) => {
 });
 
 // User auth routes
+
+// Регистрация пользователя
+router.post("/register", authController.register);
+
 router.get("/user/login", renderUserLogin);
 router.post("/user/login", authController.userLogin);
 router.get("/login", (req, res) => res.redirect("/user/login"));
