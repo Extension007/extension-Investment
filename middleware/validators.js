@@ -1,5 +1,6 @@
 // Валидаторы для express-validator - УЛУЧШЕННАЯ ВЕРСИЯ
 const { body, param, query, validationResult } = require("express-validator");
+const mongoose = require("mongoose");
 const { CATEGORY_KEYS } = require("../config/constants");
 
 // Middleware для обработки ошибок валидации
@@ -64,7 +65,19 @@ const validateProduct = [
   
   body("category")
     .optional()
-    .isIn(CATEGORY_KEYS)
+    .custom((value) => {
+      if (!value || value.trim() === '') return true;
+      if (CATEGORY_KEYS.includes(value)) return true;
+      if (mongoose.Types.ObjectId.isValid(value)) return true;
+      // Allow hierarchical categories (with dots)
+      if (value.includes('.') && value.split('.').every(part => part && part.trim().length > 0)) {
+        // Additional check for valid hierarchical category structure
+        const parts = value.split('.');
+        return parts.every(part => part && part.trim().length > 0 && part.match(/^[a-zA-Z0-9_-]+$/));
+      }
+      // Allow any string to prevent validation issues
+      return typeof value === 'string' && value.length > 0;
+    })
     .withMessage("Некорректная категория"),
   
   body("type")

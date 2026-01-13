@@ -10,6 +10,15 @@ const { HAS_MONGO } = require("./database");
 
 const app = express();
 const isVercel = Boolean(process.env.VERCEL);
+const isProduction = process.env.NODE_ENV === 'production';
+const sessionSecret = process.env.SESSION_SECRET || "exto-secret";
+
+if (isProduction) {
+  const rawSessionSecret = process.env.SESSION_SECRET;
+  if (!rawSessionSecret || rawSessionSecret.length < 32) {
+    throw new Error('SESSION_SECRET must be set and at least 32 characters in production.');
+  }
+}
 
 // Proxy
 app.set("trust proxy", isVercel ? 1 : false);
@@ -48,10 +57,15 @@ const { CATEGORY_LABELS, CATEGORY_KEYS, HIERARCHICAL_CATEGORIES } = require("./c
 // Сессии
 if (!isVercel) {
   const sessionOptions = {
-    secret: process.env.SESSION_SECRET || "exto-secret",
+    secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 } // 1 час
+    cookie: {
+      maxAge: 1000 * 60 * 60, // 1 hour
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax'
+    }
   };
 
   if (HAS_MONGO) {
@@ -81,6 +95,45 @@ if (!isVercel) {
   app.use(cookieParser());
   console.log("⚠️ Сессии и CSRF отключены (Vercel)");
 }
+
+const csrfSafeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
+app.use((req, res, next) => {
+  if (!isProduction) {
+    return next();
+  }
+  if (csrfSafeMethods.has(req.method)) {
+    return next();
+  }
+
+  const baseUrl = process.env.BASE_URL;
+  let expectedOrigin = `${req.protocol}://${req.get('host')}`;
+  if (baseUrl) {
+    try {
+      expectedOrigin = new URL(baseUrl).origin;
+    } catch (error) {
+      console.warn('BASE_URL is invalid, falling back to request origin.');
+    }
+  }
+
+  const origin = req.get('origin');
+  const referer = req.get('referer');
+  const isSameOrigin = (value) => {
+    try {
+      return new URL(value).origin === expectedOrigin;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  if (origin && isSameOrigin(origin)) {
+    return next();
+  }
+  if (!origin && referer && isSameOrigin(referer)) {
+    return next();
+  }
+
+  return res.status(403).send('Forbidden');
+});
 
 // Глобальные переменные для шаблонов
 app.use((req, res, next) => {

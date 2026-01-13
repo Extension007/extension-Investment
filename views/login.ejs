@@ -23,13 +23,19 @@
     }
     button {
       padding: 10px;
-      background: #333;
+      background: linear-gradient(#3a0e0e, #3a0e0e) padding-box,
+                  linear-gradient(45deg, #ff0000, #ff4d4d) border-box;
       color: #fff;
-      border: none;
+      border: 2px solid transparent;
+      border-radius: 12px;
       cursor: pointer;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.35), 0 0 22px rgba(255, 0, 0, 0.2);
+      transition: box-shadow .2s ease, transform .15s ease, filter .2s ease;
     }
     button:hover {
-      background: #555;
+      box-shadow: 0 0 14px rgba(255, 0, 0, 0.55), 0 0 28px rgba(255, 0, 0, 0.28);
+      transform: translateY(-1px);
+      filter: brightness(1.03);
     }
     .error {
       color: red;
@@ -48,6 +54,7 @@
   </style>
 </head>
 <body>
+  <div id="bg-animated" aria-hidden="true"></div>
   <h2>Вход администратора</h2>
 
   <form method="POST" action="/admin/login">

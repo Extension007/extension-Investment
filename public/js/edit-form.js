@@ -126,7 +126,8 @@
       deleteBtn.textContent = 'Удаление...';
 
       try {
-        const res = await fetch(`/api/products/${productId}`, {
+        const apiUrl = window.location.origin + `/api/products/${productId}`;
+        const res = await fetch(apiUrl, {
           method: 'DELETE',
           headers: {
             'X-CSRF-Token': csrfToken,
@@ -257,7 +258,8 @@
     wrapper.style.pointerEvents = 'none';
 
     try {
-      const res = await fetch(`/api/images/${productId}/${index}`, {
+      const apiUrl = window.location.origin + `/api/images/${productId}/${index}`;
+      const res = await fetch(apiUrl, {
         method: 'DELETE',
         headers: { 'X-CSRF-Token': csrfToken },
         credentials: 'same-origin'
@@ -396,10 +398,21 @@
       }
       
       try {
-        const action = form.getAttribute('action');
+        let action = form.getAttribute('action');
+        // Убедимся, что используем правильный протокол (соответствующий текущей странице)
+        if (action.startsWith('//')) {
+          action = window.location.protocol + action;
+        } else if (action.startsWith('/')) {
+          action = window.location.origin + action;
+        }
+        
         const res = await fetch(action, {
           method: 'POST',
-          body: formData
+          body: formData,
+          headers: {
+            'X-CSRF-Token': getCsrfToken()
+          },
+          credentials: 'same-origin'
         });
         
         const contentType = res.headers.get("content-type");

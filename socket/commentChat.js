@@ -76,22 +76,6 @@ module.exports = (io) => {
           }
         }
         
-        // 3. Пробуем cookie в Vercel
-        const userCookie = cookies?.match(/exto_user=([^;]+)/);
-        if (userCookie) {
-          try {
-            const userData = JSON.parse(decodeURIComponent(userCookie[1]));
-            if (userData && userData._id) {
-              const user = await User.findById(userData._id);
-              if (user) {
-                return user;
-              }
-            }
-          } catch (err) {
-            console.warn('⚠️ Ошибка парсинга cookie пользователя:', err);
-          }
-        }
-        
         return null;
       } catch (error) {
         console.error('❌ Ошибка аутентификации пользователя:', error);

@@ -1,6 +1,7 @@
 const { verifyEmail, resendVerificationEmail } = require('../services/emailVerificationService');
 const User = require('../models/User');
 const { notifyAdmin } = require('../services/adminNotificationService');
+const { getUserFromRequest } = require('../middleware/auth');
 
 exports.verifyEmail = async (req, res) => {
   try {
@@ -57,12 +58,12 @@ exports.resendVerification = async (req, res) => {
 
 exports.verificationStatus = async (req, res) => {
   try {
-    if (!req.session.user && !req.cookies.exto_user) {
+    const authUser = getUserFromRequest(req);
+    if (!authUser) {
       return res.status(401).redirect('/user/login');
     }
 
-    const userId = req.session.user?._id || JSON.parse(req.cookies.exto_user)._id;
-    const user = await User.findById(userId);
+    const user = await User.findById(authUser._id);
 
     if (!user) {
       return res.status(404).redirect('/user/login');

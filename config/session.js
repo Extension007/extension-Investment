@@ -6,12 +6,20 @@ const { HAS_MONGO } = require("./database");
 const { redisClient } = require("./redis");
 
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+const sessionSecret = process.env.SESSION_SECRET || "exto-secret-change-in-production";
+
+if (isProduction) {
+  const rawSessionSecret = process.env.SESSION_SECRET;
+  if (!rawSessionSecret || rawSessionSecret.length < 32) {
+    throw new Error('SESSION_SECRET must be set and at least 32 characters in production.');
+  }
+}
 
 // Проверяем, доступен ли Redis
 const hasRedis = Boolean(process.env.REDIS_HOST || process.env.REDIS_PORT);
 
 const sessionOptions = {
-  secret: process.env.SESSION_SECRET || "exto-secret-change-in-production",
+  secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
   cookie: {

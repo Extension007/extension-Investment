@@ -1,8 +1,30 @@
 // Сервис для работы с товарами
 const Product = require("../models/Product");
+const Category = require("../models/Category");
 const { CATEGORY_KEYS } = require("../config/constants");
 const { processUploadedFiles, deleteProductImages } = require("./imageService");
 const mongoose = require("mongoose");
+
+async function resolveCategoryData(category) {
+  if (!category) return { categoryId: null, categoryValue: "" };
+  if (CATEGORY_KEYS.includes(category)) {
+    return { categoryId: null, categoryValue: category };
+  }
+  if (mongoose.Types.ObjectId.isValid(category)) {
+    const categoryId = new mongoose.Types.ObjectId(category);
+    let categoryValue = "";
+    try {
+      const categoryDoc = await Category.findById(categoryId).select("name").lean();
+      if (categoryDoc && categoryDoc.name) {
+        categoryValue = categoryDoc.name;
+      }
+    } catch (err) {
+      console.warn("⚠️ Не удалось загрузить категорию по ID:", category);
+    }
+    return { categoryId, categoryValue };
+  }
+  return { categoryId: null, categoryValue: "" };
+}
 
 /**
  * Создание товара
@@ -29,7 +51,11 @@ async function createProduct(data, files = []) {
   } = data;
 
   // Валидация категории
-  const categoryValue = CATEGORY_KEYS.includes(category) ? category : "home";
+  const { categoryId, categoryValue: resolvedCategoryValue } = await resolveCategoryData(category);
+  let categoryValue = resolvedCategoryValue;
+  if (!categoryValue) {
+    categoryValue = categoryId ? "Категория" : "home";
+  }
   const typeValue = (type === "service" || type === "product") ? type : "product";
 
   // Обработка изображений
@@ -67,6 +93,8 @@ async function createProduct(data, files = []) {
     image_url,
     contacts,
     category: categoryValue,
+    categoryId,
+    categoryId,
     type: typeValue,
     owner,
     status,
@@ -199,7 +227,24 @@ async function updateProduct(productId, data, files = [], options = {}) {
   };
 
   // Валидация категории
-  const categoryValue = CATEGORY_KEYS.includes(category) ? category : (product.category || "home");
+  const hasCategory = typeof category !== "undefined" && category !== "";
+  let categoryId = product.categoryId || null;
+  let categoryValue = product.category || "home";
+  if (hasCategory) {
+    const { categoryId: resolvedCategoryId, categoryValue: resolvedCategoryValue } = await resolveCategoryData(category);
+    if (resolvedCategoryId) {
+      categoryId = resolvedCategoryId;
+    } else if (CATEGORY_KEYS.includes(category)) {
+      categoryId = null;
+    }
+    if (resolvedCategoryValue) {
+      categoryValue = resolvedCategoryValue;
+    } else if (resolvedCategoryId) {
+      categoryValue = "Категория";
+    } else if (CATEGORY_KEYS.includes(category)) {
+      categoryValue = category;
+    }
+  }
   const typeValue = (type === "service" || type === "product") ? type : (product.type || "product");
 
   // Обновляем товар

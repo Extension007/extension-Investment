@@ -1,32 +1,20 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Подтверждение email успешно</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { text-align: center; color: #333; }
-        .content { margin: 20px 0; line-height: 1.6; }
-        .button { display: inline-block; padding: 10px 20px; background-color: #28a745; color: #ffffff; text-decoration: none; border-radius: 5px; }
-        .footer { margin-top: 20px; font-size: 12px; color: #666; text-align: center; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="header">Email подтвержден!</h1>
-        <div class="content">
-            <p>Привет, <strong><%= username %></strong>!</p>
-            <p>Поздравляем! Ваш email адрес успешно подтвержден. Теперь вы можете полноценно использовать все функции нашего сервиса.</p>
-            <p style="text-align: center;">
-                <a href="<%= loginLink %>" class="button">Войти в аккаунт</a>
-            </p>
-            <p>Спасибо за регистрацию!</p>
-        </div>
-        <div class="footer">
-            <p>&copy; 2024 Albamount. Все права защищены.</p>
-        </div>
-    </div>
-</body>
-</html>
+<%- include('partials/email-start', { subject, preheader, logoUrl }) %>
+<h1 style="margin: 0 0 16px; font-size: 24px; color: #111827; text-align: center;">
+  Email подтвержден
+</h1>
+<p style="margin: 0 0 12px; font-size: 16px; line-height: 1.6;">
+  Здравствуйте, <strong><%= username %></strong>!
+</p>
+<p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6;">
+  Ваш email успешно подтвержден. Теперь вы можете войти в личный кабинет и продолжить работу.
+</p>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 12px;">
+  <tr>
+    <td align="center" style="border-radius: 10px; background-color: #ff3333;">
+      <a href="<%= loginLink %>" target="_blank" style="display: inline-block; padding: 12px 26px; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 15px;">
+        Войти в кабинет
+      </a>
+    </td>
+  </tr>
+</table>
+<%- include('partials/email-end', { baseUrl, supportEmail }) %>

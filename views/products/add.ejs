@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/styles.css?v=1.0.1">
 </head>
 <body>
+  <div id="bg-animated" aria-hidden="true"></div>
   <header class="main-header">
     <div class="container header-inner">
       <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
@@ -65,13 +66,13 @@
           <div id="imagePreview" class="image-preview-container"></div>
         </div>
 
-        <!-- Выбор категории с иерархией -->
+        <!-- Выбор категории -->
         <div class="form-section">
           <label>Категория:</label>
           <div id="categorySelectorContainer">
             <select name="category" id="categorySelect" required>
               <option value="">Выберите категорию</option>
-              <!-- Блоки категорий будут загружены динамически -->
+              <!-- Категории будут загружены динамически -->
             </select>
             <div id="subcategorySelector" style="margin-top: 10px; display: none;">
               <button class="btn small outline" id="backToBlocks" style="margin-bottom: 10px;">← Назад к блокам</button>
@@ -163,272 +164,12 @@
       }
     });
 
-    // Иерархическая структура категорий
-    const hierarchicalCategories = {
-      "home": {
-        label: "🏠 Недвижимость и дом",
-        children: {
-          "apartments": {
-            label: "Квартиры",
-            children: {
-              "sale": { label: "Продажа" },
-              "rent": { label: "Аренда" },
-              "new_buildings": { label: "Новостройки" }
-            }
-          },
-          "houses": { label: "Дома и коттеджи" },
-          "commercial": { label: "Коммерческая недвижимость" },
-          "land": { label: "Земельные участки" },
-          "renovation": { label: "Ремонт и дизайн интерьера" },
-          "smart_home": { label: "Умный дом и автоматизация" },
-          "garden": { label: "Сад и огород" },
-          "furniture": { label: "Мебель и интерьер" }
-        }
-      },
-      "auto": {
-        label: "🚗 Автомобили и транспорт",
-        children: {
-          "cars": {
-            label: "Автомобили",
-            children: {
-              "new": { label: "Новые" },
-              "used": { label: "Б/у" },
-              "electric": { label: "Электромобили и зарядные станции" }
-            }
-          },
-          "motorcycles": { label: "Мотоциклы и скутеры" },
-          "bicycles": { label: "Велосипеды и электросамокаты" },
-          "parts": { label: "Запчасти и аксессуары" },
-          "electronics": {
-            label: "Автоэлектроника",
-            children: {
-              "navigators": { label: "Навигаторы" },
-              "recorders": { label: "Видеорегистраторы" },
-              "multimedia": { label: "Мультимедиа" }
-            }
-          },
-          "service": { label: "Сервис и ремонт" },
-          "carsharing": { label: "Аренда и каршеринг" },
-          "tuning": { label: "Тюнинг и кастомизация" }
-        }
-      },
-      "electronics": {
-        label: "⚡ Электроника и техника",
-        children: {
-          "phones": { label: "Смартфоны и аксессуары" },
-          "computers": { label: "Компьютеры и периферия" },
-          "appliances": {
-            label: "Бытовая техника",
-            children: {
-              "large": { label: "Крупная" },
-              "small": { label: "Мелкая" }
-            }
-          },
-          "audio_video": { label: "Аудио и видео техника" },
-          "gaming": {
-            label: "Игровая электроника",
-            children: {
-              "consoles": { label: "Консоли" },
-              "vr_ar": { label: "VR/AR устройства" },
-              "gaming_peripherals": { label: "Геймерская периферия" }
-            }
-          },
-          "robotics": { label: "Робототехника и автоматизация быта" },
-          "drones": { label: "Дроны и квадрокоптеры" }
-        }
-      },
-      "beauty": {
-        label: "💄 Красота и здоровье",
-        children: {
-          "cosmetics": { label: "Косметика и уход" },
-          "medical": { label: "Медицинские товары" },
-          "fitness_trackers": { label: "Фитнес‑гаджеты и трекеры" },
-          "biohacking": { label: "Биохакинг и функциональное питание" },
-          "nutrition": { label: "Спортивное питание и добавки" },
-          "services": { label: "Услуги (салоны, телемедицина, консультации)" }
-        }
-      },
-      "household": {
-        label: "🛒 Для дома и быта",
-        children: {
-          "textiles": { label: "Текстиль и декор" },
-          "kitchen": { label: "Кухонные принадлежности" },
-          "household_items": { label: "Бытовые мелочи" },
-          "lighting": { label: "Освещение и электрика" },
-          "plumbing": {
-            label: "Сантехника",
-            children: {
-              "mixers": { label: "Смесители" },
-              "showers": { label: "Душевые" },
-              "pipes_fittings": { label: "Трубы и фитинги" },
-              "water_supply": { label: "Системы водоснабжения" }
-            }
-          }
-        }
-      },
-      "pets": {
-        label: "🐾 Питомцы",
-        children: {
-          "food": { label: "Корма и лакомства" },
-          "accessories": { label: "Аксессуары и игрушки" },
-          "smart_devices": { label: "Умные устройства для животных" },
-          "veterinary": { label: "Ветеринарные товары и услуги" }
-        }
-      },
-      "hobbies": {
-        label: "🎨 Хобби, досуг и DIY",
-        children: {
-          "crafts": { label: "Материалы для творчества" },
-          "electronics_diy": { label: "3D‑печать и электроника для сборки" },
-          "stem": { label: "STEM‑наборы и развивающие игрушки" },
-          "instruments": { label: "Музыкальные инструменты" },
-          "tourism": { label: "Туризм и активный отдых" }
-        }
-      },
-      "eco": {
-        label: "🌍 Эко‑товары и устойчивость",
-        children: {
-          "solar": { label: "Солнечные панели и альтернативная энергия" },
-          "efficient": { label: "Энергоэффективные устройства" },
-          "materials": { label: "Перерабатываемые и биоразлагаемые материалы" },
-          "transport": { label: "Электротранспорт" }
-        }
-      },
-      "digital": {
-        label: "💻 Цифровые товары и услуги",
-        children: {
-          "licenses": { label: "Лицензии и подписки" },
-          "courses": { label: "Онлайн‑курсы и обучение" },
-          "microservices": { label: "Микро‑услуги и фриланс" },
-          "content": { label: "Цифровой контент (шаблоны, медиа, NFT)" }
-        }
-      },
-      "additional": {
-        label: "🛍️ Дополнительные блоки",
-        children: {
-          "finance": { label: "Финансы и инвестиции" },
-          "education": { label: "Образование и карьера" },
-          "food_delivery": { label: "Продукты питания и доставка" },
-          "sports": { label: "Спорт и активный образ жизни" },
-          "ar_vr": { label: "AR/VR‑категории" },
-          "remote_work": { label: "Удалённая работа и офис" }
-        }
-      }
-    };
 
-    // Функция для генерации иерархического выбора категорий
-    function buildHierarchicalSelector(parentElement, categories, prefix = '', level = 0) {
-      parentElement.innerHTML = '';
-      
-      const container = document.createElement('div');
-      container.style.marginLeft = level * 20 + 'px';
-      container.style.marginTop = '10px';
-      
-      const select = document.createElement('select');
-      select.className = 'category-select';
-      select.setAttribute('data-level', level);
-      select.innerHTML = '<option value="">Выберите ' + (level === 0 ? 'основную категорию' : 'подкатегорию') + '</option>';
-      
-      for (const [key, value] of Object.entries(categories)) {
-        const option = document.createElement('option');
-        const fullKey = prefix ? `${prefix}.${key}` : key;
-        option.value = fullKey;
-        option.textContent = value.label;
-        select.appendChild(option);
-      }
-      
-      container.appendChild(select);
-      parentElement.appendChild(container);
-      
-      select.addEventListener('change', function() {
-        const selectedValue = this.value;
-        if (selectedValue) {
-          // Обновляем скрытое поле категории
-          document.querySelector('input[name="category"], select[name="category"]').value = selectedValue;
-          
-          // Удаляем все дочерние селекторы
-          const childSelectors = parentElement.querySelectorAll(`.category-select[data-level]:not([data-level="${level}"])`);
-          childSelectors.forEach(child => {
-            if (parseInt(child.getAttribute('data-level')) > level) {
-              child.closest('div').remove();
-            }
-          });
-          
-          // Если у выбранной категории есть подкатегории, создаем новый селектор
-          const categoryPath = selectedValue.split('.');
-          let currentCategory = hierarchicalCategories;
-          
-          for (const path of categoryPath) {
-            if (currentCategory && currentCategory[path]) {
-              currentCategory = currentCategory[path].children;
-            } else {
-              currentCategory = null;
-              break;
-            }
-          }
-          
-          if (currentCategory) {
-            buildHierarchicalSelector(parentElement, currentCategory, level + 1, selectedValue);
-          }
-        }
-      });
-    }
 
-    // Инициализация иерархического выбора категорий
+    // Инициализация выбора категорий
     document.addEventListener('DOMContentLoaded', function() {
-      const categorySelectorContainer = document.getElementById('categorySelectorContainer');
-      const hierarchicalDiv = document.getElementById('hierarchicalCategorySelector');
-      const categorySelect = document.getElementById('categorySelect');
-      
-      // Создаем кнопку для переключения в иерархический режим
-      const hierarchicalToggleBtn = document.createElement('button');
-      hierarchicalToggleBtn.type = 'button';
-      hierarchicalToggleBtn.textContent = 'Использовать иерархический выбор';
-      hierarchicalToggleBtn.className = 'btn small outline';
-      hierarchicalToggleBtn.style.marginTop = '10px';
-      hierarchicalToggleBtn.style.display = 'block';
-      
-      hierarchicalToggleBtn.addEventListener('click', function() {
-        categorySelect.value = ''; // Сбрасываем выбор обычной категории
-        categorySelect.style.display = 'none'; // Скрываем обычный селектор
-        hierarchicalDiv.style.display = 'block'; // Показываем иерархический селектор
-        hierarchicalToggleBtn.style.display = 'none'; // Скрываем кнопку переключения
-        
-        // Создаем скрытое поле для отправки выбранной иерархической категории
-        if (!document.querySelector('input[name="hierarchical_category"]')) {
-          const hiddenInput = document.createElement('input');
-          hiddenInput.type = 'hidden';
-          hiddenInput.name = 'category'; // Используем то же имя, что и обычный селектор
-          hiddenInput.id = 'hierarchicalCategoryValue';
-          document.getElementById('addProductForm').appendChild(hiddenInput);
-        }
-        
-        // Инициализируем иерархический селектор
-        buildHierarchicalSelector(hierarchicalDiv, hierarchicalCategories, 0, '');
-      });
-      
-      categorySelect.addEventListener('change', function() {
-        if (this.value) {
-          // Если выбрана старая категория, скрываем иерархический выбор и кнопку переключения
-          hierarchicalDiv.style.display = 'none';
-          const toggleBtn = document.querySelector('#hierarchicalToggleBtn');
-          if (toggleBtn) toggleBtn.style.display = 'none';
-        } else {
-          // Если выбрана пустая опция, показываем кнопку переключения
-          hierarchicalToggleBtn.style.display = 'block';
-        }
-      });
-      
-      // Добавляем кнопку переключения после селектора
-      categorySelectorContainer.appendChild(hierarchicalToggleBtn);
-      
-      // Показываем кнопку переключения, если выбрана пустая опция
-      if (!categorySelect.value) {
-        hierarchicalToggleBtn.style.display = 'block';
-      }
-
       // Инициализация динамической загрузки категорий
-      const categorySelectNew = document.getElementById('categorySelect');
+      const categorySelect = document.getElementById('categorySelect');
       const subcategorySelector = document.getElementById('subcategorySelector');
       const subcategorySelect = document.getElementById('subcategorySelect');
       const backToBlocksBtn = document.getElementById('backToBlocks');
@@ -455,16 +196,16 @@
       }
 
       function renderCategoryBlocks(blocks) {
-        if (!categorySelectNew) return;
+        if (!categorySelect) return;
 
         // Очищаем селект, оставляем только первую опцию
-        categorySelectNew.innerHTML = '<option value="">Выберите категорию</option>';
+        categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
 
         blocks.forEach(block => {
           const option = document.createElement('option');
           option.value = block._id;
           option.textContent = `${block.icon || ''} ${block.name}`;
-          categorySelectNew.appendChild(option);
+          categorySelect.appendChild(option);
         });
       }
 
@@ -506,8 +247,8 @@
       }
 
       // Обработчик выбора блока
-      if (categorySelectNew) {
-        categorySelectNew.addEventListener('change', function() {
+      if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
           const selectedBlockId = this.value;
           if (selectedBlockId) {
             // Находим выбранный блок
@@ -525,9 +266,27 @@
       if (subcategorySelect) {
         subcategorySelect.addEventListener('change', function() {
           const selectedCategoryId = this.value;
-          // Обновляем скрытое поле основной формы
+          const selectedCategoryName = this.options[this.selectedIndex].text;
+
           if (selectedCategoryId) {
-            categorySelectNew.value = selectedCategoryId;
+            // Добавляем выбранную подкатегорию в основной селектор, если её там нет
+            let optionExists = false;
+            for (let i = 0; i < categorySelect.options.length; i++) {
+              if (categorySelect.options[i].value === selectedCategoryId) {
+                optionExists = true;
+                break;
+              }
+            }
+
+            if (!optionExists) {
+              const newOption = document.createElement('option');
+              newOption.value = selectedCategoryId;
+              newOption.textContent = selectedCategoryName;
+              categorySelect.appendChild(newOption);
+            }
+
+            // Выбираем подкатегорию в основном селекторе
+            categorySelect.value = selectedCategoryId;
           }
         });
       }
@@ -537,7 +296,7 @@
         backToBlocksBtn.addEventListener('click', function(e) {
           e.stopPropagation();
           hideSubcategories();
-          categorySelectNew.value = '';
+          categorySelect.value = '';
         });
       }
     });

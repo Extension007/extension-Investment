@@ -157,18 +157,12 @@ exports.userLogin = async (req, res) => {
 
     if (isVercel) {
       // В Vercel serverless используем cookie для хранения данных пользователя
-      res.cookie('exto_user', JSON.stringify(userData), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 // 1 час
-      });
       // Также возвращаем JWT токен для API вызовов
       res.cookie('exto_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 1000 * 60 * 24 // 24 часа
+        maxAge: 1000 * 60 * 60 * 24 // 24 часа
       });
     } else {
       // В обычной среде используем сессии
@@ -178,7 +172,7 @@ exports.userLogin = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 1000 * 60 * 24 // 24 часа
+        maxAge: 1000 * 60 * 60 * 24 // 24 часа
       });
     }
 
@@ -222,18 +216,12 @@ exports.adminLogin = async (req, res) => {
 
     if (isVercel) {
       // В Vercel serverless используем cookie для хранения данных пользователя
-      res.cookie('exto_user', JSON.stringify(userData), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 1000 * 60 // 1 час
-      });
       // Также возвращаем JWT токен для API вызовов
       res.cookie('exto_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 1000 * 60 * 24 // 24 часа
+        maxAge: 1000 * 60 * 60 * 24 // 24 часа
       });
     } else {
       // В обычной среде используем сессии
@@ -243,7 +231,7 @@ exports.adminLogin = async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 1000 * 60 * 24 // 24 часа
+        maxAge: 1000 * 60 * 60 * 24 // 24 часа
       });
     }
 

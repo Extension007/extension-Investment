@@ -189,9 +189,18 @@ exports.updateProduct = async (req, res, next) => {
     
     // Валидация категории, если она передана
     if (category) {
-      const validCategories = require("../config/categories").CATEGORY_KEYS;
-      if (!validCategories.includes(category)) {
-        return res.status(400).json({ success: false, message: "Некорректная категория" });
+      // Проверяем, является ли категория ObjectId (новая система)
+      if (mongoose.Types.ObjectId.isValid(category)) {
+        const categoryExists = await Category.findById(category);
+        if (!categoryExists) {
+          return res.status(400).json({ success: false, message: "Категория не найдена" });
+        }
+      } else {
+        // Для обратной совместимости - проверяем старые строковые категории
+        const validCategories = require("../config/categories").CATEGORY_KEYS;
+        if (!validCategories.includes(category)) {
+          return res.status(400).json({ success: false, message: "Некорректная категория" });
+        }
       }
     }
     
@@ -277,7 +286,7 @@ exports.updateProduct = async (req, res, next) => {
 
     // FIX: Находим изображения для удаления
     const imagesToDelete = oldImages.filter(oldImg => {
-      const existsInNew = newImages.some(newImg => 
+      const existsInNew = newImages.some(newImg =>
         String(oldImg).trim() === String(newImg).trim()
       );
       return !existsInNew;

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Comment = require('../models/Comment');
+const { notifyAdmin } = require('../services/adminNotificationService');
 const { body, param, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const { csrfProtection } = require('../middleware/csrf');
@@ -45,6 +46,7 @@ router.get('/:cardId', [
 
     // Определяем тип карточки (проверяем в Product и Service)
     const Product = require('../models/Product');
+    const Banner = require('../models/Banner');
     let cardType = null;
     let card = null;
 

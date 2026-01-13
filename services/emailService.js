@@ -26,4 +26,12 @@ function checkConfiguration() {
   });
 }
 
-module.exports = { transporter, checkConfiguration };
+function sendMail(options) {
+  const mailOptions = {
+    from: emailConfig.from,
+    ...options
+  };
+  return transporter.sendMail(mailOptions);
+}
+
+module.exports = { transporter, checkConfiguration, sendMail };

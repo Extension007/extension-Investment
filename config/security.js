@@ -10,7 +10,7 @@ function createSecurityMiddleware() {
       directives: {
         defaultSrc: ["'self'"],
         // Разрешаем YouTube IFrame API для единой логики видео-плееров и inline скрипты для передачи данных
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://www.youtube.com", "https://youtube.com", "https://*.youtube.com"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://www.youtube.com", "https://youtube.com", "https://*.youtube.com", "https://cdnjs.cloudflare.com"],
         // Разрешаем inline event handlers для атрибутов
         scriptSrcAttr: ["'self'", "'unsafe-inline'"],
         styleSrc: ["'self'", "'unsafe-inline'", "https:"],

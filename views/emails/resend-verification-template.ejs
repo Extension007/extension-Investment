@@ -1,35 +1,29 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Повторная отправка подтверждения email</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { text-align: center; color: #333; }
-        .content { margin: 20px 0; line-height: 1.6; }
-        .button { display: inline-block; padding: 10px 20px; background-color: #007bff; color: #ffffff; text-decoration: none; border-radius: 5px; }
-        .footer { margin-top: 20px; font-size: 12px; color: #666; text-align: center; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="header">Повторное подтверждение email</h1>
-        <div class="content">
-            <p>Привет, <strong><%= username %></strong>!</p>
-            <p>Вы запросили повторную отправку ссылки для подтверждения email. Кликните по кнопке ниже для подтверждения:</p>
-            <p style="text-align: center;">
-                <a href="<%= verificationLink %>" class="button">Подтвердить email</a>
-            </p>
-            <p>Если кнопка не работает, скопируйте и вставьте эту ссылку в ваш браузер:</p>
-            <p><a href="<%= verificationLink %>"><%= verificationLink %></a></p>
-            <p>Эта ссылка действительна в течение 24 часов.</p>
-        </div>
-        <div class="footer">
-            <p>Если вы не запрашивали это письмо, просто игнорируйте его.</p>
-            <p>&copy; 2024 Albamount. Все права защищены.</p>
-        </div>
-    </div>
-</body>
-</html>
+<%- include('partials/email-start', { subject, preheader, logoUrl }) %>
+<h1 style="margin: 0 0 16px; font-size: 24px; color: #111827; text-align: center;">
+  Повторное подтверждение email
+</h1>
+<p style="margin: 0 0 12px; font-size: 16px; line-height: 1.6;">
+  Здравствуйте, <strong><%= username %></strong>!
+</p>
+<p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6;">
+  Вы запросили повторную отправку ссылки для подтверждения email. Нажмите кнопку ниже, чтобы завершить подтверждение.
+</p>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 24px;">
+  <tr>
+    <td align="center" style="border-radius: 10px; background-color: #ff3333;">
+      <a href="<%= verificationLink %>" target="_blank" style="display: inline-block; padding: 14px 28px; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 15px;">
+        Подтвердить email
+      </a>
+    </td>
+  </tr>
+</table>
+<p style="margin: 0 0 8px; font-size: 13px; color: #6b7280;">
+  Если кнопка не работает, откройте ссылку в браузере:
+</p>
+<p style="margin: 0 0 16px; font-size: 12px; word-break: break-all;">
+  <a href="<%= verificationLink %>" style="color: #ff3333; text-decoration: none;"><%= verificationLink %></a>
+</p>
+<p style="margin: 0; font-size: 12px; color: #6b7280;">
+  Ссылка действует <%= validityPeriod %>.
+</p>
+<%- include('partials/email-end', { baseUrl, supportEmail }) %>

@@ -3,40 +3,23 @@ const { verifyToken } = require("../config/jwt");
 
 // Функция для получения пользователя из различных источников
 function getUserFromRequest(req) {
-  // Сначала пробуем получить данные из JWT токена
   let user = null;
   const token = req.cookies.exto_token || req.headers.authorization?.split(' ')[1]; // Bearer token
-  
+
   if (token) {
     const decoded = verifyToken(token);
     if (decoded) {
       user = decoded;
     }
   }
-  
-  // Если JWT токен не действителен, пробуем старую систему (cookie или сессия)
+
   if (!user) {
-    const isVercel = Boolean(process.env.VERCEL);
-    
-    if (isVercel) {
-      // В Vercel serverless получаем данные из cookie
-      const userCookie = req.cookies.exto_user;
-      if (userCookie) {
-        try {
-          user = JSON.parse(userCookie);
-        } catch (err) {
-          // Если cookie повреждена, удаляем её
-          req.app?.res?.clearCookie('exto_user'); // безопасно пытаемся очистить cookie
-        }
-      }
-    } else {
-      // В обычной среде используем сессии
-      user = req.session?.user;
-    }
+    user = req.session?.user;
   }
 
   return user;
 }
+
 
 // Функция для определения типа ответа (JSON или HTML)
 function wantsJsonResponse(req) {

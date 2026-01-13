@@ -1,5 +1,5 @@
 const ContactInfo = require("../models/ContactInfo");
-const { notifyAdmin } = require("../services/adminNotificationService");
+const { notifyAdmin, resolveAdminEmail } = require("../services/adminNotificationService");
 const { transporter } = require("../services/emailService");
 const emailConfig = require("../config/email");
 
@@ -265,7 +265,7 @@ exports.sendContactMessage = async (req, res) => {
 
     // Получаем email администратора
     const adminContact = await ContactInfo.findOne({ type: 'admin' });
-    const adminEmail = adminContact?.email || 'admin@albamount.xyz'; // Fallback email
+    const adminEmail = resolveAdminEmail(adminContact?.email);
 
     // Формируем тему письма
     const emailSubject = subject ? `[Albamount] ${subject}` : '[Albamount] Новое сообщение из формы контактов';

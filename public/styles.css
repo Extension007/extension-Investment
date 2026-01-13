@@ -1,16 +1,134 @@
-/* Базовые стили */
+/* === GLOBAL FIX === */
+:root {
+  --color-bg: #07080a;
+  --color-surface: #1a1a1a;
+  --color-surface-alt: #2a2a2a;
+  --color-text: #ffffff;
+  --color-muted: #999999;
+  --color-accent: #ff3333;
+  --color-accent-strong: #ff0000;
+  --color-accent-soft: rgba(255, 51, 51, 0.2);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 15px;
+  --shadow-accent: 0 0 10px rgba(255, 0, 0, 0.35), 0 0 22px rgba(255, 0, 0, 0.2);
+  --shadow-card: 0 0 8px rgba(255, 0, 0, 0.4);
+  --border-accent: 1px solid rgba(255, 0, 0, 0.25);
+  --btn-bg: linear-gradient(#3a0e0e, #3a0e0e) padding-box,
+    linear-gradient(45deg, var(--color-accent-strong), #ff4d4d) border-box;
+  --btn-bg-outline: linear-gradient(#2e0b0b, #2e0b0b) padding-box,
+    linear-gradient(45deg, var(--color-accent-strong), #ff4d4d) border-box;
+  --btn-radius: var(--radius-md);
+  --btn-shadow: var(--shadow-accent);
+  --btn-shadow-hover: 0 0 14px rgba(255, 0, 0, 0.55), 0 0 28px rgba(255, 0, 0, 0.28);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html, body { height: 100%; }
-body {
+html, body { height: 100%; margin: 0; }
+
+body{
+  min-height:100vh;
+  background:var(--color-bg);
+  color:var(--color-text);
+  position:relative;
+  overflow-x:hidden;
   font-family: 'Poppins', Arial, sans-serif;
-  background-color: #2b2b2b;
-  background-image: url('/wav.jpeg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  color: #fff;
   line-height: 1.45;
+}
+
+/* === ULTRA NEON GLASS WAVES === */
+#bg-animated{
+  position:fixed;
+  inset:-35%;
+  pointer-events:none;
+  z-index:-1;
+
+  background:
+    /* Глубина + виньетка */
+    radial-gradient(1400px 1000px at 50% 120%, rgba(0,0,0,.90), rgba(0,0,0,1) 60%),
+
+    /* Холодный верхний свет */
+    radial-gradient(1200px 800px at 50% -10%, rgba(80,140,255,.18), transparent 62%),
+
+    /* Тёплый нижний свет */
+    radial-gradient(1200px 900px at 60% 110%, rgba(255,60,60,.18), transparent 65%),
+
+    /* Каустика (внутренние "световые ленты" стекла) */
+    conic-gradient(
+      from 230deg at 55% 45%,
+      transparent 0 18%,
+      rgba(255,255,255,.10) 20%,
+      rgba(160,200,255,.16) 24%,
+      transparent 28% 55%,
+      rgba(255,120,90,.12) 58%,
+      transparent 62% 100%
+    ),
+
+    /* Волны (SVG) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900'%3E%3Cdefs%3E%3Cfilter id='g' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='7' result='b'/%3E%3CfeMerge%3E%3CfeMergeNode in='b'/%3E%3CfeMergeNode in='SourceGraphic'/%3E%3C/feMerge%3E%3C/filter%3E%3ClinearGradient id='blue' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%236ec0ff' stop-opacity='0'/%3E%3Cstop offset='0.25' stop-color='%236ec0ff' stop-opacity='1'/%3E%3Cstop offset='0.55' stop-color='%232f6bff' stop-opacity='.92'/%3E%3Cstop offset='1' stop-color='%232f6bff' stop-opacity='0'/%3E%3C/linearGradient%3E%3ClinearGradient id='red' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23ff3b3b' stop-opacity='0'/%3E%3Cstop offset='0.28' stop-color='%23ff3b3b' stop-opacity='1'/%3E%3Cstop offset='0.62' stop-color='%23ff7a18' stop-opacity='.92'/%3E%3Cstop offset='1' stop-color='%23ff7a18' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg filter='url(%23g)' stroke-linecap='round' fill='none'%3E%3Cpath d='M-60 250 C 260 120 520 430 820 290 C 1030 200 1200 230 1700 130' stroke='url(%23blue)' stroke-width='5.5'/%3E%3Cpath d='M-60 380 C 280 250 560 540 860 385 C 1100 260 1240 300 1700 240' stroke='url(%23blue)' stroke-opacity='.75' stroke-width='4.5'/%3E%3Cpath d='M-60 520 C 240 440 560 720 900 530 C 1140 410 1340 450 1700 390' stroke='url(%23blue)' stroke-opacity='.55' stroke-width='3.5'/%3E%3Cpath d='M-60 600 C 300 520 560 770 900 620 C 1160 520 1360 560 1700 500' stroke='url(%23red)' stroke-width='5.5'/%3E%3Cpath d='M-60 710 C 280 640 600 900 980 730 C 1240 620 1380 660 1700 610' stroke='url(%23red)' stroke-opacity='.78' stroke-width='4.5'/%3E%3Cpath d='M-60 820 C 260 760 640 990 1040 830 C 1300 730 1440 780 1700 740' stroke='url(%23red)' stroke-opacity='.55' stroke-width='3.5'/%3E%3C/g%3E%3C/svg%3E"),
+
+    /* Микрозерно */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E");
+
+  background-repeat: no-repeat;
+  background-size: 100% 100%, 140% 140%, 140% 140%, 140% 140%, 125% 125%, 220px 220px;
+  background-position: center, 50% 0%, 60% 100%, 50% 45%, 50% 50%, 0 0;
+
+  background-blend-mode: normal, screen, screen, screen, screen, overlay;
+
+  opacity: .92;
+  filter: saturate(1.08) contrast(1.08);
+
+  transform: translate3d(0,0,0) scale(1.07);
+  animation: NEON_DRIFT 16s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* движение только transform — как у твоего рабочего теста */
+@keyframes NEON_DRIFT{
+  from { transform: translate3d(-2.6%, -1.4%, 0) scale(1.07); }
+  to   { transform: translate3d( 2.6%,  1.4%, 0) scale(1.07); }
+}
+
+/* мягкое "дыхание" без мерцания */
+
+/* Контент выше фона */
+main {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce){
+  #bg-animated{ animation:none; }
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="url"],
+input[type="number"],
+select,
+textarea {
+  background: var(--color-surface-alt);
+  border: 1px solid rgba(255, 51, 51, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-family: inherit;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="tel"]:focus,
+input[type="url"]:focus,
+input[type="number"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 8px rgba(255, 51, 51, 0.3);
 }
 
 /* Максимально яркий белый цвет для всех текстов */
@@ -167,7 +285,6 @@ body {
   }
  
  /* Дополнительные стили для формы создания карточки на маленьких экранах */
- @media (max-width: 768px) {
    .form-grid {
      width: 100%;
      max-width: 100%;
@@ -221,7 +338,6 @@ body {
      padding: 12px 16px;
      min-width: 80px;
    }
- }
 
   /* Дополнительный отступ для последней секции на мобильных */
  .section:last-child {
@@ -711,11 +827,11 @@ body {
   background:
     linear-gradient(#3a0e0e, #3a0e0e) padding-box,
     /* Снаружи — градиентная обводка/свечение */
-    linear-gradient(45deg, #ff0000, #ff4d4d) border-box;
-  color: #fff;
+    linear-gradient(45deg, var(--color-accent-strong), #ff4d4d) border-box;
+  color: var(--color-text);
   border: 2px solid transparent;
   padding: 8px 14px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   text-decoration: none;
   display: inline-flex;
@@ -725,7 +841,7 @@ body {
   height: 36px;
   line-height: 1;
   /* Мягкое внешнее свечение по контуру */
-  box-shadow: 0 0 10px rgba(255, 0, 0, 0.35), 0 0 22px rgba(255, 0, 0, 0.2);
+  box-shadow: var(--shadow-accent);
   transition: box-shadow .2s ease, transform .15s ease, filter .2s ease, background .2s ease;
 }
 .btn:hover {
@@ -737,14 +853,14 @@ body {
   /* Тот же стиль — единый визуал для всех кнопок */
   background:
     linear-gradient(#3a0e0e, #3a0e0e) padding-box,
-    linear-gradient(45deg, #ff0000, #ff4d4d) border-box;
+    linear-gradient(45deg, var(--color-accent-strong), #ff4d4d) border-box;
 }
 .btn.outline {
   /* Outline теперь также имеет градиентный контур и тусклый красный внутри */
   background:
     linear-gradient(#2e0b0b, #2e0b0b) padding-box,
-    linear-gradient(45deg, #ff0000, #ff4d4d) border-box;
-  color: #fff;
+    linear-gradient(45deg, var(--color-accent-strong), #ff4d4d) border-box;
+  color: var(--color-text);
 }
 .btn.small { padding: 6px 10px; font-size: 0.9rem; }
 .btn.icon { padding: 6px 10px; font-size: 1.2rem; }
@@ -786,11 +902,11 @@ button {
  background:
    linear-gradient(#3a0e0e, #3a0e0e) padding-box,
    /* Снаружи — градиентная обводка/свечение */
-   linear-gradient(45deg, #ff0000, #ff4d4d) border-box;
- color: #fff;
+   linear-gradient(45deg, var(--color-accent-strong), #ff4d4d) border-box;
+ color: var(--color-text);
  border: 2px solid transparent;
  padding: 8px 14px;
- border-radius: 10px;
+ border-radius: var(--radius-md);
  cursor: pointer;
  text-decoration: none;
  display: inline-flex;
@@ -800,7 +916,7 @@ button {
  height: 36px;
  line-height: 1;
  /* Мягкое внешнее свечение по контуру */
- box-shadow: 0 0 10px rgba(255, 0, 0, 0.35), 0 22px rgba(255, 0, 0, 0.2);
+ box-shadow: var(--shadow-accent);
  transition: box-shadow .2s ease, transform .15s ease, filter .2s ease, background .2s ease;
 }
 
@@ -1026,11 +1142,11 @@ button:disabled {
 .product-card {
   display: flex;
   flex-direction: column;
-  background: #1a1a1a;
-  border-radius: 12px;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
   padding: 15px;
   text-align: center;
-  box-shadow: 0 0 8px rgba(255,0,0,0.4);
+  box-shadow: var(--shadow-card);
   transition: box-shadow 0.25s ease, transform 0.2s ease;
   min-height: 380px;
   min-width: 0; /* важно для грид-детей, чтобы текст не распирал карточку */
@@ -2795,7 +2911,7 @@ body::after {
 .contact-card {
   background: rgba(255, 51, 51, 0.05);
   border: 1px solid rgba(255, 51, 51, 0.2);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 20px;
   display: flex;
   align-items: center;
@@ -2915,6 +3031,39 @@ body::after {
   border: 1px solid rgba(244, 67, 54, 0.5);
 }
 
+/* Стили для иерархического выбора категорий */
+.hierarchical-category-selector {
+  position: relative;
+  margin-top: 10px;
+}
+
+.hierarchical-category-selector select {
+  width: 100%;
+  padding: 10px;
+  background: #3a3a3a;
+  border: 1px solid rgba(255, 51, 0.3);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.95rem;
+  margin-bottom: 10px;
+}
+
+.back-to-main-btn, .back-to-blocks-btn {
+  width: 100%;
+  text-align: left;
+  background:
+    linear-gradient(#2e0b0b, #2e0b0b) padding-box,
+    linear-gradient(45deg, #ff0000, #ff4d4d) border-box;
+  color: #fff;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
 /* Адаптивность страницы контактов */
 @media (max-width: 768px) {
   .contacts-grid {
@@ -2931,4 +3080,91 @@ body::after {
     height: 50px;
     font-size: 1.5rem;
   }
+}
+
+/* === Unified Button Style === */
+.btn,
+button,
+input[type="button"],
+input[type="submit"],
+.btn-edit,
+.btn-delete,
+.btn-publish,
+.btn-block,
+.btn-link,
+.btn-outline,
+.product-actions button,
+.item-actions button,
+.btn-rating,
+.product-like-btn,
+.product-dislike-btn,
+.chat-btn,
+.chat-send-btn,
+.contact-submit-btn,
+.tab,
+.tab-button,
+.mobile-tab-button,
+.dropdown-item,
+.back-to-main-btn,
+.back-to-blocks-btn {
+  background: var(--btn-bg);
+  border: 2px solid transparent;
+  border-radius: var(--btn-radius);
+  box-shadow: var(--btn-shadow);
+  color: var(--color-text);
+}
+
+.btn.primary {
+  background: var(--btn-bg);
+}
+
+.btn.outline,
+.btn-outline,
+.dropdown-item,
+.back-to-main-btn,
+.back-to-blocks-btn {
+  background: var(--btn-bg-outline);
+}
+
+.btn:hover,
+button:hover,
+input[type="button"]:hover,
+input[type="submit"]:hover,
+.btn-edit:hover,
+.btn-delete:hover,
+.btn-publish:hover,
+.btn-block:hover,
+.btn-link:hover,
+.btn-outline:hover,
+.product-actions button:hover,
+.item-actions button:hover,
+.btn-rating:hover,
+.product-like-btn:hover,
+.product-dislike-btn:hover,
+.chat-btn:hover,
+.chat-send-btn:hover,
+.contact-submit-btn:hover,
+.tab:hover,
+.tab-button:hover,
+.mobile-tab-button:hover,
+.dropdown-item:hover,
+.back-to-main-btn:hover,
+.back-to-blocks-btn:hover {
+  box-shadow: var(--btn-shadow-hover);
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+  color: var(--color-text);
+}
+
+.tab.active,
+.tab-button.active,
+.mobile-tab-button.active {
+  box-shadow: var(--btn-shadow-hover);
+  filter: brightness(1.05);
+  color: var(--color-text);
+}
+
+.mobile-tab-button,
+.btn-link {
+  text-decoration: none;
 }

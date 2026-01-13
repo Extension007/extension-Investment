@@ -88,20 +88,9 @@
       gap: 10px;
     }
     .item-rating button {
-      background: #4caf50;
-      color: #fff;
-      border: none;
       padding: 5px 10px;
-      border-radius: 4px;
       cursor: pointer;
       font-size: 0.9rem;
-    }
-    .item-rating .dislike-btn, .item-rating .product-dislike-btn {
-      background: #f44336;
-    }
-    .item-rating button:disabled {
-      background: #ccc;
-      cursor: not-allowed;
     }
     .item-actions {
       margin-top: 15px;
@@ -111,32 +100,8 @@
     }
     .item-actions button {
       padding: 8px 16px;
-      border-radius: 4px;
-      border: none;
       cursor: pointer;
       font-size: 0.9rem;
-      transition: background 0.2s;
-    }
-    .btn-block {
-      background: #f44336;
-      color: #fff;
-    }
-    .btn-publish {
-      background: #4caf50;
-      color: #fff;
-    }
-    .btn-edit {
-      background: #2196f3;
-      color: #fff;
-    }
-    .btn-delete {
-      background: #f44336;
-      color: #fff;
-    }
-    .btn-outline {
-      background: transparent;
-      border: 1px solid #ddd;
-      color: #333;
     }
     .empty-state {
       text-align: center;
@@ -155,6 +120,7 @@
   </style>
 </head>
 <body>
+  <div id="bg-animated" aria-hidden="true"></div>
   <header class="main-header">
     <div class="container header-inner">
       <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>

@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/styles.css?v=1.0.1">
 </head>
 <body>
+  <div id="bg-animated" aria-hidden="true"></div>
   <header class="main-header">
     <div class="container header-inner">
       <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
@@ -102,12 +103,16 @@
             <select name="category" id="categorySelect" required aria-label="Категория товара">
               <option value="">Выберите категорию</option>
               <!-- Старые категории для обратной совместимости -->
-              <option value="home" <%= product.category === 'home' ? 'selected' : '' %>>🏠 Недвижимость и дом</option>
-              <option value="beauty" <%= product.category === 'beauty' ? 'selected' : '' %>>💄 Красота и здоровье</option>
-              <option value="auto" <%= product.category === 'auto' ? 'selected' : '' %>>🚗 Автомобили и транспорт</option>
-              <option value="electric" <%= product.category === 'electric' ? 'selected' : '' %>>⚡ Электроника и техника</option>
-              <option value="electronics" <%= product.category === 'electronics' ? 'selected' : '' %>>⚡ Электроника и техника</option>
-              <option value="plumbing" <%= product.category === 'plumbing' ? 'selected' : '' %>>🛒 Для дома и быта</option>
+              <option value="home" <%= (product.category === 'home' || product.category === 'home.apartments' || product.category === 'home.houses' || product.category === 'home.commercial' || product.category === 'home.land' || product.category === 'home.renovation' || product.category === 'home.smart_home' || product.category === 'home.garden' || product.category === 'home.furniture') ? 'selected' : '' %>>🏠 Недвижимость и дом</option>
+              <option value="beauty" <%= (product.category === 'beauty' || product.category === 'beauty.cosmetics' || product.category === 'beauty.medical' || product.category === 'beauty.fitness_trackers' || product.category === 'beauty.biohacking' || product.category === 'beauty.nutrition' || product.category === 'beauty.services') ? 'selected' : '' %>>💄 Красота и здоровье</option>
+              <option value="auto" <%= (product.category === 'auto' || product.category === 'auto.cars' || product.category === 'auto.motorcycles' || product.category === 'auto.bicycles' || product.category === 'auto.parts' || product.category === 'auto.electronics' || product.category === 'auto.service' || product.category === 'auto.carsharing' || product.category === 'auto.tuning') ? 'selected' : '' %>>🚗 Автомобили и транспорт</option>
+              <option value="electronics" <%= (product.category === 'electronics' || product.category === 'electronics.phones' || product.category === 'electronics.computers' || product.category === 'electronics.appliances' || product.category === 'electronics.audio_video' || product.category === 'electronics.gaming' || product.category === 'electronics.robotics' || product.category === 'electronics.drones') ? 'selected' : '' %>>⚡ Электроника и техника</option>
+              <option value="household" <%= (product.category === 'household' || product.category === 'household.textiles' || product.category === 'household.kitchen' || product.category === 'household.household_items' || product.category === 'household.lighting' || product.category === 'household.plumbing') ? 'selected' : '' %>>🛒 Для дома и быта</option>
+              <option value="pets" <%= (product.category === 'pets' || product.category === 'pets.food' || product.category === 'pets.accessories' || product.category === 'pets.smart_devices' || product.category === 'pets.veterinary') ? 'selected' : '' %>>🐾 Питомцы</option>
+              <option value="hobbies" <%= (product.category === 'hobbies' || product.category === 'hobbies.crafts' || product.category === 'hobbies.electronics_diy' || product.category === 'hobbies.stem' || product.category === 'hobbies.instruments' || product.category === 'hobbies.tourism') ? 'selected' : '' %>>🎨 Хобби, досуг и DIY</option>
+              <option value="eco" <%= (product.category === 'eco' || product.category === 'eco.solar' || product.category === 'eco.efficient' || product.category === 'eco.materials' || product.category === 'eco.transport') ? 'selected' : '' %>>🌍 Эко‑товары и устойчивость</option>
+              <option value="digital" <%= (product.category === 'digital' || product.category === 'digital.licenses' || product.category === 'digital.courses' || product.category === 'digital.microservices' || product.category === 'digital.content') ? 'selected' : '' %>>💻 Цифровые товары и услуги</option>
+              <option value="additional" <%= (product.category === 'additional' || product.category === 'additional.finance' || product.category === 'additional.education' || product.category === 'additional.food_delivery' || product.category === 'additional.sports' || product.category === 'additional.ar_vr' || product.category === 'additional.remote_work') ? 'selected' : '' %>>🛍️ Дополнительные блоки</option>
               <!-- Новые категории будут добавлены через JavaScript -->
             </select>
             <div id="hierarchicalCategories" style="margin-top: 10px; display: none;">
@@ -412,9 +417,28 @@
       const hierarchicalDiv = document.getElementById('hierarchicalCategories');
       const categorySelect = document.getElementById('categorySelect');
       
+      // Функция для обновления отображения иерархического выбора
+      function updateHierarchicalDisplay() {
+        const currentCategory = '<%= product.category %>';
+        const hasHierarchicalPrefix = currentCategory.includes('.');
+        
+        // Проверяем, является ли выбранная категория частью иерархической структуры
+        const isHierarchicalCategory = Object.keys(hierarchicalCategories).some(key =>
+          currentCategory === key || currentCategory.startsWith(key + '.')
+        );
+        
+        if (categorySelect.value === '' || isHierarchicalCategory) {
+          hierarchicalDiv.style.display = 'block';
+          buildHierarchicalSelector(hierarchicalDiv, hierarchicalCategories, 0, '', currentCategory);
+        } else {
+          hierarchicalDiv.style.display = 'none';
+        }
+      }
+      
       categorySelect.addEventListener('change', function() {
-        if (this.value) {
-          // Если выбрана старая категория, скрываем иерархический выбор
+        const selectedValue = this.value;
+        if (selectedValue) {
+          // Если выбрана конкретная категория, скрываем иерархический выбор
           hierarchicalDiv.style.display = 'none';
         } else {
           // Если выбрана пустая опция, показываем иерархический выбор
@@ -423,14 +447,8 @@
         }
       });
       
-      // Показываем иерархический выбор, если выбрана пустая опция или если текущая категория иерархическая
-      const currentCategory = '<%= product.category %>';
-      const hasHierarchicalPrefix = currentCategory.includes('.');
-      
-      if (!categorySelect.value || hasHierarchicalPrefix) {
-        hierarchicalDiv.style.display = 'block';
-        buildHierarchicalSelector(hierarchicalDiv, hierarchicalCategories, 0, '', currentCategory);
-      }
+      // Инициализируем отображение
+      updateHierarchicalDisplay();
     });
   </script>
 </body>

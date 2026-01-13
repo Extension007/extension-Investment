@@ -56,7 +56,7 @@ router.post("/rating/:id", apiLimiter, csrfProtection, validateProductId, valida
     // Для гостей устанавливаем cookie
     if (!req.session.user) {
       res.cookie(`exto_vote_${req.params.id}`, '1', {
-        maxAge: 365 * 24 * 60 * 1000,
+        maxAge: 365 * 24 * 60 * 60 * 1000,
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax'

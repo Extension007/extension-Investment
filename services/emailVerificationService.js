@@ -2,43 +2,73 @@ const crypto = require('crypto');
 const ejs = require('ejs');
 const path = require('path');
 const User = require('../models/User');
-const { transporter } = require('./emailService');
-const emailConfig = require('../config/email');
+const { sendMail } = require('./emailService');
+
+const DEFAULT_BASE_URL = 'http://localhost:3000';
+
+function resolveBaseUrl() {
+  const baseUrl = process.env.BASE_URL;
+  if (baseUrl) {
+    return baseUrl.replace(/\/$/, '');
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('BASE_URL must be set in production for email links.');
+  }
+  return DEFAULT_BASE_URL;
+}
+
+function resolveSupportEmail() {
+  return process.env.SUPPORT_EMAIL || process.env.EMAIL_FROM || 'support@albamount.xyz';
+}
 
 async function sendVerificationEmail(user) {
   const token = crypto.randomBytes(32).toString('hex');
- const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 часа
+  const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
   user.verificationToken = token;
   user.verificationTokenExpires = expires;
-  user.lastVerificationSent = new Date(); // Добавляем время последней отправки
- await user.save();
+  user.lastVerificationSent = new Date();
+  await user.save();
 
-  const verificationLink = `${process.env.BASE_URL || 'http://localhost:3000'}/auth/verify-email/${token}`;
+  const baseUrl = resolveBaseUrl();
+  const supportEmail = resolveSupportEmail();
+  const verificationLink = `${baseUrl}/auth/verify-email/${token}`;
+  const logoUrl = `${baseUrl}/albamount.png`;
+  const subject = 'Подтвердите email';
+  const preheader = 'Подтвердите email, чтобы завершить регистрацию в ALBAMOUNT.';
 
   try {
     const html = await ejs.renderFile(path.join(__dirname, '../views/emails/verification-template.ejs'), {
+      subject,
+      preheader,
       username: user.username,
       verificationLink,
-      validityPeriod: '24 часов'
+      validityPeriod: '24 часа',
+      baseUrl,
+      logoUrl,
+      supportEmail
     });
 
-    await transporter.sendMail({
-      from: emailConfig.from,
+    const text = await ejs.renderFile(path.join(__dirname, '../views/emails/verification-template.txt.ejs'), {
+      username: user.username,
+      verificationLink,
+      validityPeriod: '24 часа'
+    });
+
+    await sendMail({
       to: user.email,
-      subject: 'Подтвердите ваш email',
-      html
+      subject,
+      html,
+      text
     });
   } catch (error) {
-    // Если произошла ошибка при отправке письма, удаляем токен и время истечения
     user.verificationToken = undefined;
     user.verificationTokenExpires = undefined;
     user.lastVerificationSent = undefined;
     await user.save().catch(saveError => {
-      console.error('Ошибка при очистке данных верификации:', saveError);
+      console.error('Failed to rollback verification token on send error:', saveError);
     });
-    
-    throw error; // Пробрасываем ошибку дальше для обработки в контроллере
+    throw error;
   }
 }
 
@@ -48,7 +78,7 @@ async function resendVerificationEmail(email) {
     throw new Error('User not found or already verified');
   }
 
- await sendVerificationEmail(user);
+  await sendVerificationEmail(user);
 }
 
 async function verifyEmail(token) {
@@ -61,28 +91,35 @@ async function verifyEmail(token) {
     throw new Error('Invalid or expired verification token');
   }
 
- user.emailVerified = true;
+  user.emailVerified = true;
   user.verificationToken = undefined;
   user.verificationTokenExpires = undefined;
   await user.save();
 
-  // Отправить письмо об успешном подтверждении
-  const loginLink = `${process.env.BASE_URL || 'http://localhost:3000'}/user/login`;
+  const baseUrl = resolveBaseUrl();
+  const supportEmail = resolveSupportEmail();
+  const loginLink = `${baseUrl}/user/login`;
+  const logoUrl = `${baseUrl}/albamount.png`;
+  const subject = 'Email подтвержден';
+  const preheader = 'Email подтвержден. Добро пожаловать в ALBAMOUNT.';
 
   const html = await ejs.renderFile(path.join(__dirname, '../views/emails/confirmation-success-template.ejs'), {
+    subject,
+    preheader,
     username: user.username,
-    loginLink
+    loginLink,
+    baseUrl,
+    logoUrl,
+    supportEmail
   });
 
-  await transporter.sendMail({
-    from: emailConfig.from,
+  await sendMail({
     to: user.email,
-    subject: 'Email подтвержден!',
+    subject,
     html
   }).catch(error => {
-    console.error('Ошибка при отправке письма подтверждения:', error);
-    // Не выбрасываем ошибку, так как пользователь уже подтвержден в системе
- });
+    console.error('Failed to send confirmation success email:', error);
+  });
 
   return user;
 }

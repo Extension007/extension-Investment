@@ -1,47 +1,30 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= subject %></title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f4; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { text-align: center; color: #333; }
-        .content { margin: 20px 0; line-height: 1.6; }
-        .event-type { background-color: #e7f3ff; color: #0066cc; padding: 8px 12px; border-radius: 4px; display: inline-block; margin-bottom: 15px; }
-        .details { background-color: #f9f9f9; padding: 15px; border-left: 4px solid #007bff; margin: 15px 0; }
-        .admin-panel-link { display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #28a745; color: #ffffff; text-decoration: none; border-radius: 5px; }
-        .footer { margin-top: 20px; font-size: 12px; color: #666; text-align: center; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1 class="header">Уведомление администратору</h1>
-        
-        <div class="event-type"><%= eventType %></div>
-        
-        <div class="content">
-            <div class="details">
-                <%= details %>
-            </div>
-            
-            <% if (data && Object.keys(data).length > 0) { %>
-            <h3>Дополнительная информация:</h3>
-            <ul>
-                <% Object.entries(data).forEach(([key, value]) => { %>
-                    <li><strong><%= key %>:</strong> <%= value %></li>
-                <% }); %>
-            </ul>
-            <% } %>
-        </div>
-        
-        <a href="<%= adminPanelLink %>" class="admin-panel-link">Перейти в админ-панель</a>
-        
-        <div class="footer">
-            <p>Это автоматическое уведомление от системы Albamount</p>
-            <p>&copy; 2024 Albamount. Все права защищены.</p>
-        </div>
-    </div>
-</body>
-</html>
+<%- include('partials/email-start', { subject, preheader, logoUrl }) %>
+<h1 style="margin: 0 0 16px; font-size: 24px; color: #111827; text-align: center;">
+  Уведомление администратору
+</h1>
+<p style="margin: 0 0 12px; font-size: 15px; line-height: 1.6;">
+  Тип события: <strong><%= eventType %></strong>
+</p>
+<p style="margin: 0 0 20px; font-size: 15px; line-height: 1.6;">
+  <%= details %>
+</p>
+<% if (data && Object.keys(data).length > 0) { %>
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 20px; border-collapse: collapse;">
+    <% Object.entries(data).forEach(([key, value]) => { %>
+      <tr>
+        <td style="padding: 6px 0; font-size: 13px; color: #6b7280; width: 40%;"><%= key %></td>
+        <td style="padding: 6px 0; font-size: 13px; color: #111827;"><%= value %></td>
+      </tr>
+    <% }); %>
+  </table>
+<% } %>
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 0 auto 12px;">
+  <tr>
+    <td align="center" style="border-radius: 10px; background-color: #ff3333;">
+      <a href="<%= adminPanelLink %>" target="_blank" style="display: inline-block; padding: 12px 26px; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 700; font-size: 14px;">
+        Перейти в админ-панель
+      </a>
+    </td>
+  </tr>
+</table>
+<%- include('partials/email-end', { baseUrl, supportEmail }) %>

@@ -48,6 +48,7 @@
   </style>
 </head>
 <body class="cabinet-page">
+  <div id="bg-animated" aria-hidden="true"></div>
   <header class="main-header">
     <div class="container header-inner">
       <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
@@ -200,7 +201,10 @@
               </div>
               <small class="form-hint">Максимальный размер файла: 5MB. Рекомендуемые размеры: 1200x400px</small>
             </div>
+            <input type="text" name="title" placeholder="Заголовок баннера">
+            <textarea name="description" placeholder="Описание баннера" rows="2"></textarea>
             <input type="url" name="link" placeholder="Ссылка для перехода (необязательно)">
+            <input type="text" name="price" placeholder="Цена (необязательно)">
             <button type="submit" class="btn primary">Отправить на модерацию</button>
           </form>
           <div id="createBannerMsg" class="note" style="margin-top:10px;"></div>
@@ -248,7 +252,14 @@
           e.preventDefault();
           if (!confirm("Вы уверены, что хотите выйти?")) return;
           try {
-            const res = await fetch("/logout", { method: "POST" });
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            const res = await fetch("/logout", {
+              method: "POST",
+              headers: {
+                'X-CSRF-Token': csrfToken || ''
+              },
+              credentials: 'same-origin'
+            });
             if (res.ok) {
               window.location.href = "/";
             }
@@ -472,237 +483,32 @@
         });
       }
       
-      // Иерархическая структура категорий
-      const hierarchicalCategories = {
-        "home": {
-          label: "🏠 Недвижимость и дом",
-          children: {
-            "apartments": {
-              label: "Квартиры",
-              children: {
-                "sale": { label: "Продажа" },
-                "rent": { label: "Аренда" },
-                "new_buildings": { label: "Новостройки" }
-              }
-            },
-            "houses": { label: "Дома и коттеджи" },
-            "commercial": { label: "Коммерческая недвижимость" },
-            "land": { label: "Земельные участки" },
-            "renovation": { label: "Ремонт и дизайн интерьера" },
-            "smart_home": { label: "Умный дом и автоматизация" },
-            "garden": { label: "Сад и огород" },
-            "furniture": { label: "Мебель и интерьер" }
-          }
-        },
-        "auto": {
-          label: "🚗 Автомобили и транспорт",
-          children: {
-            "cars": {
-              label: "Автомобили",
-              children: {
-                "new": { label: "Новые" },
-                "used": { label: "Б/у" },
-                "electric": { label: "Электромобили и зарядные станции" }
-              }
-            },
-            "motorcycles": { label: "Мотоциклы и скутеры" },
-            "bicycles": { label: "Велосипеды и электросамокаты" },
-            "parts": { label: "Запчасти и аксессуары" },
-            "electronics": {
-              label: "Автоэлектроника",
-              children: {
-                "navigators": { label: "Навигаторы" },
-                "recorders": { label: "Видеорегистраторы" },
-                "multimedia": { label: "Мультимедиа" }
-              }
-            },
-            "service": { label: "Сервис и ремонт" },
-            "carsharing": { label: "Аренда и каршеринг" },
-            "tuning": { label: "Тюнинг и кастомизация" }
-          }
-        },
-        "electronics": {
-          label: "⚡ Электроника и техника",
-          children: {
-            "phones": { label: "Смартфоны и аксессуары" },
-            "computers": { label: "Компьютеры и периферия" },
-            "appliances": {
-              label: "Бытовая техника",
-              children: {
-                "large": { label: "Крупная" },
-                "small": { label: "Мелкая" }
-              }
-            },
-            "audio_video": { label: "Аудио и видео техника" },
-            "gaming": {
-              label: "Игровая электроника",
-              children: {
-                "consoles": { label: "Консоли" },
-                "vr_ar": { label: "VR/AR устройства" },
-                "gaming_peripherals": { label: "Геймерская периферия" }
-              }
-            },
-            "robotics": { label: "Робототехника и автоматизация быта" },
-            "drones": { label: "Дроны и квадрокоптеры" }
-          }
-        },
-        "beauty": {
-          label: "💄 Красота и здоровье",
-          children: {
-            "cosmetics": { label: "Косметика и уход" },
-            "medical": { label: "Медицинские товары" },
-            "fitness_trackers": { label: "Фитнес‑гаджеты и трекеры" },
-            "biohacking": { label: "Биохакинг и функциональное питание" },
-            "nutrition": { label: "Спортивное питание и добавки" },
-            "services": { label: "Услуги (салоны, телемедицина, консультации)" }
-          }
-        },
-        "household": {
-          label: "🛒 Для дома и быта",
-          children: {
-            "textiles": { label: "Текстиль и декор" },
-            "kitchen": { label: "Кухонные принадлежности" },
-            "household_items": { label: "Бытовые мелочи" },
-            "lighting": { label: "Освещение и электрика" },
-            "plumbing": {
-              label: "Сантехника",
-              children: {
-                "mixers": { label: "Смесители" },
-                "showers": { label: "Душевые" },
-                "pipes_fittings": { label: "Трубы и фитинги" },
-                "water_supply": { label: "Системы водоснабжения" }
-              }
-            }
-          }
-        },
-        "pets": {
-          label: "🐾 Питомцы",
-          children: {
-            "food": { label: "Корма и лакомства" },
-            "accessories": { label: "Аксессуары и игрушки" },
-            "smart_devices": { label: "Умные устройства для животных" },
-            "veterinary": { label: "Ветеринарные товары и услуги" }
-          }
-        },
-        "hobbies": {
-          label: "🎨 Хобби, досуг и DIY",
-          children: {
-            "crafts": { label: "Материалы для творчества" },
-            "electronics_diy": { label: "3D‑печать и электроника для сборки" },
-            "stem": { label: "STEM‑наборы и развивающие игрушки" },
-            "instruments": { label: "Музыкальные инструменты" },
-            "tourism": { label: "Туризм и активный отдых" }
-          }
-        },
-        "eco": {
-          label: "🌍 Эко‑товары и устойчивость",
-          children: {
-            "solar": { label: "Солнечные панели и альтернативная энергия" },
-            "efficient": { label: "Энергоэффективные устройства" },
-            "materials": { label: "Перерабатываемые и биоразлагаемые материалы" },
-            "transport": { label: "Электротранспорт" }
-          }
-        },
-        "digital": {
-          label: "💻 Цифровые товары и услуги",
-          children: {
-            "licenses": { label: "Лицензии и подписки" },
-            "courses": { label: "Онлайн‑курсы и обучение" },
-            "microservices": { label: "Микро‑услуги и фриланс" },
-            "content": { label: "Цифровой контент (шаблоны, медиа, NFT)" }
-          }
-        },
-        "additional": {
-          label: "🛍️ Дополнительные блоки",
-          children: {
-            "finance": { label: "Финансы и инвестиции" },
-            "education": { label: "Образование и карьера" },
-            "food_delivery": { label: "Продукты питания и доставка" },
-            "sports": { label: "Спорт и активный образ жизни" },
-            "ar_vr": { label: "AR/VR‑категории" },
-            "remote_work": { label: "Удалённая работа и офис" }
-          }
-        }
-      };
+
       
-      // Функция для генерации иерархического выбора категорий
-      function buildHierarchicalSelector(parentElement, categories, level = 0, parentPath = '', currentValue = '') {
-        parentElement.innerHTML = '';
-        
-        const container = document.createElement('div');
-        container.style.marginLeft = level * 20 + 'px';
-        container.style.marginTop = '10px';
-        
-        const select = document.createElement('select');
-        select.className = 'category-select';
-        select.setAttribute('data-level', level);
-        select.innerHTML = '<option value="">Выберите ' + (level === 0 ? 'основную категорию' : 'подкатегорию') + '</option>';
-        
-        for (const [key, value] of Object.entries(categories)) {
-          const option = document.createElement('option');
-          const fullKey = parentPath ? `${parentPath}.${key}` : key;
-          option.value = fullKey;
-          option.textContent = value.label;
-          
-          // Если это текущее значение категории или его часть, делаем его выбранным
-          if (currentValue === fullKey || currentValue.startsWith(fullKey + '.')) {
-            option.selected = true;
-          }
-          
-          select.appendChild(option);
-        }
-        
-        container.appendChild(select);
-        parentElement.appendChild(container);
-        
-        select.addEventListener('change', function() {
-          const selectedValue = this.value;
-          if (selectedValue) {
-            // Обновляем скрытое поле категории
-            document.querySelector('input[name="category"], select[name="category"]').value = selectedValue;
-            
-            // Удаляем все дочерние селекторы
-            const childSelectors = parentElement.querySelectorAll(`.category-select[data-level]:not([data-level="${level}"])`);
-            childSelectors.forEach(child => {
-              if (parseInt(child.getAttribute('data-level')) > level) {
-                child.closest('div').remove();
-              }
-            });
-            
-            // Если у выбранной категории есть подкатегории, создаем новый селектор
-            const categoryPath = this.value.split('.');
-            let currentCategory = hierarchicalCategories;
-            
-            for (const path of categoryPath) {
-              if (currentCategory && currentCategory[path]) {
-                currentCategory = currentCategory[path].children;
-              } else {
-                currentCategory = null;
-                break;
-              }
-            }
-            
-            if (currentCategory) {
-              buildHierarchicalSelector(parentElement, currentCategory, level + 1, selectedValue, currentValue);
-            }
-          }
-        });
-      }
-      
-      // Инициализация динамической загрузки категорий
+      // Инициализация выбора категорий
       const categorySelect = document.getElementById('categorySelect');
       const subcategorySelector = document.getElementById('subcategorySelector');
       const subcategorySelect = document.getElementById('subcategorySelect');
       const backToBlocksBtn = document.getElementById('backToBlocks');
+      const typeSelect = document.getElementById('type');
 
       let currentCategories = [];
+      let currentType = 'product'; // По умолчанию товар
 
       // Загружаем блоки категорий при загрузке страницы
       loadCategoryBlocks();
 
+      // Обработчик изменения типа
+      if (typeSelect) {
+        typeSelect.addEventListener('change', function() {
+          currentType = this.value;
+          loadCategoryBlocks();
+        });
+      }
+
       async function loadCategoryBlocks() {
         try {
-          const response = await fetch('/api/categories/tree/all');
+          const response = await fetch(`/api/categories/tree/${currentType}`);
           const data = await response.json();
 
           if (data.success && data.categories) {
@@ -787,8 +593,26 @@
       if (subcategorySelect) {
         subcategorySelect.addEventListener('change', function() {
           const selectedCategoryId = this.value;
-          // Обновляем скрытое поле основной формы
+          const selectedCategoryName = this.options[this.selectedIndex].text;
+
           if (selectedCategoryId) {
+            // Добавляем выбранную подкатегорию в основной селектор, если её там нет
+            let optionExists = false;
+            for (let i = 0; i < categorySelect.options.length; i++) {
+              if (categorySelect.options[i].value === selectedCategoryId) {
+                optionExists = true;
+                break;
+              }
+            }
+
+            if (!optionExists) {
+              const newOption = document.createElement('option');
+              newOption.value = selectedCategoryId;
+              newOption.textContent = selectedCategoryName;
+              categorySelect.appendChild(newOption);
+            }
+
+            // Выбираем подкатегорию в основном селекторе
             categorySelect.value = selectedCategoryId;
           }
         });
@@ -801,6 +625,51 @@
           hideSubcategories();
           categorySelect.value = '';
         });
+      }
+    });
+
+    // Обработка кнопок редактирования и удаления карточек
+    document.addEventListener('click', (e) => {
+      // Редактирование
+      if (e.target.classList.contains('edit-product-btn') ||
+          e.target.classList.contains('edit-service-btn') ||
+          e.target.classList.contains('edit-banner-btn')) {
+        const id = e.target.getAttribute('data-id');
+        const isBanner = e.target.classList.contains('edit-banner-btn');
+        const url = isBanner ? `/cabinet/banner/${id}/edit` : `/cabinet/product/${id}/edit`;
+        window.location.href = url;
+      }
+
+      // Удаление
+      if (e.target.classList.contains('delete-product-btn') ||
+          e.target.classList.contains('delete-service-btn') ||
+          e.target.classList.contains('delete-banner-btn')) {
+        const id = e.target.getAttribute('data-id');
+        const isBanner = e.target.classList.contains('delete-banner-btn');
+        const type = isBanner ? 'баннер' : 'карточку';
+
+        if (confirm(`Вы уверены, что хотите удалить эту ${type}?`)) {
+          const url = isBanner ? `/cabinet/banner/${id}` : `/cabinet/product/${id}`;
+          fetch(url, {
+            method: 'DELETE',
+            headers: {
+              'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            credentials: 'same-origin'
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              location.reload();
+            } else {
+              alert('Ошибка удаления: ' + (data.message || 'Неизвестная ошибка'));
+            }
+          })
+          .catch(err => {
+            console.error('Ошибка:', err);
+            alert('Ошибка сети');
+          });
+        }
       }
     });
   </script>

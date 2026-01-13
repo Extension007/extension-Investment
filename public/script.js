@@ -1412,9 +1412,15 @@ function renderSubcategories(subcategories, blockName) {
 function showCategoryBlocks() {
   const categoriesBlocks = document.getElementById('categoriesBlocks');
   const subcategoriesContainer = document.getElementById('subcategoriesContainer');
+  const subcategoriesList = document.getElementById('subcategoriesList');
 
   if (categoriesBlocks) categoriesBlocks.style.display = 'block';
   if (subcategoriesContainer) subcategoriesContainer.style.display = 'none';
+
+  // Очищаем список подкатегорий при возврате к блокам
+  if (subcategoriesList) {
+    subcategoriesList.innerHTML = '';
+  }
 }
 
 function showSubcategories() {
@@ -1431,9 +1437,9 @@ function selectCategory(categoryId, categoryName) {
 
   // Небольшая задержка, чтобы пользователь увидел обновление текста
   setTimeout(() => {
-    // Обновляем URL с названием категории вместо ID
+    // Обновляем URL с ID категории вместо имени
     const url = new URL(window.location.href);
-    url.searchParams.set('category', categoryName);
+    url.searchParams.set('category', categoryId);
     window.location.href = url.toString();
   }, 150);
 }

@@ -10,6 +10,16 @@ const Statistics = require("../models/Statistics");
 const { HAS_MONGO, hasMongo } = require("../config/database");
 const { CATEGORY_LABELS, CATEGORY_KEYS } = require("../config/app");
 
+function resolveSelectedCategoryDisplay(selected, hasDbAccess, categoryFlat) {
+  if (!selected || selected === "all") return "all";
+  if (!mongoose.Types.ObjectId.isValid(selected)) return selected;
+  if (!hasDbAccess) return "Категория";
+  const match = Object.values(categoryFlat || {}).find(
+    (item) => item && item._id && item._id.toString() === selected
+  );
+  return match && match.name ? match.name : "Неизвестная категория";
+}
+
 // Страница услуг
 router.get("/", async (req, res) => {
   try {
@@ -26,6 +36,7 @@ router.get("/", async (req, res) => {
     const hasDbAccess = isVercel ? req.dbConnected : HAS_MONGO;
 
     if (!hasDbAccess) {
+      const selectedCategoryDisplay = resolveSelectedCategoryDisplay(selected, hasDbAccess);
       return res.render("index", {
         products: [],
         services: [],
@@ -41,7 +52,7 @@ router.get("/", async (req, res) => {
         user: req.user,
         votedMap: {},
         categories,
-        selectedCategory: selected || "all",
+        selectedCategory: selectedCategoryDisplay,
         csrfToken: req.csrfToken ? req.csrfToken() : '',
         activeTab: 'services' // Указываем активную вкладку
       });
@@ -68,6 +79,7 @@ router.get("/", async (req, res) => {
     // Получаем дерево категорий для услуг
     const categoryTree = await Category.getTree('service');
     const categoryFlat = await Category.getFlatList('service');
+    const selectedCategoryDisplay = resolveSelectedCategoryDisplay(selected, hasDbAccess, categoryFlat);
 
     // Запросы
     const [products, services, banners, visitors, users] = await Promise.all([
@@ -109,7 +121,7 @@ router.get("/", async (req, res) => {
       votedMap,
       categories: categoryFlat, // Новая система категорий
       hierarchicalCategories: categoryTree, // Дерево категорий
-      selectedCategory: selected || "all",
+      selectedCategory: selectedCategoryDisplay,
       csrfToken: req.csrfToken ? req.csrfToken() : '',
       activeTab: 'services' // Указываем активную вкладку
     });

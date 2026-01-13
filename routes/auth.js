@@ -1,50 +1,26 @@
-// Роуты для авторизации и регистрации
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const authController = require("../controllers/authController");
-const emailVerificationController = require("../controllers/emailVerificationController");
-const { hasMongo } = require("../config/database");
-const mongoose = require("mongoose");
-const { loginLimiter } = require("../middleware/rateLimiter");
-const { validateLogin, validateRegister } = require("../middleware/validators");
-const csrfProtection = require('csurf')({ cookie: true });
+const emailVerificationController = require('../controllers/emailVerificationController');
+const authController = require('../controllers/authController');
 
-const isVercel = Boolean(process.env.VERCEL);
+function renderUserLogin(req, res, error = null) {
+  if (typeof error === "function") error = null;
+  res.render("user-login", {
+    error,
+    csrfToken: res.locals.csrfToken || ""
+  });
+}
 
-// Вход для админов (GET)
-router.get("/admin/login", (req, res) => {
-  const isVercel = Boolean(process.env.VERCEL);
-  const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
-  if (req.user && req.user.role === "admin") {
-    return res.redirect("/admin");
-  }
-  const error = hasDbAccess ? null : "Админка недоступна: отсутствует подключение к БД";
-  res.render("login", { error, debug: null, csrfToken: res.locals.csrfToken });
-});
+function renderAdminLogin(req, res, error = null, debug = null) {
+  if (typeof error === "function") error = null;
+  res.render("login", {
+    error,
+    debug,
+    csrfToken: res.locals.csrfToken || ""
+  });
+}
 
-// Вход для пользователей (GET)
-router.get("/user/login", (req, res) => {
-  const isVercel = Boolean(process.env.VERCEL);
-  const hasDbAccess = isVercel ? req.dbConnected : hasMongo();
-  if (req.user) {
-    return res.redirect("/cabinet");
-  }
-  const error = hasDbAccess ? null : "База данных недоступна, вход невозможен";
-  res.render("user-login", { error, csrfToken: res.locals.csrfToken });
-});
-
-router.post("/admin/login", loginLimiter, validateLogin, authController.adminLogin);
-router.post("/user/login", loginLimiter, validateLogin, authController.userLogin);
-router.post("/auth/register", loginLimiter, validateRegister, authController.register);
-router.post("/logout", authController.logout);
-
-// Получение CSRF токена для AJAX запросов
-router.get("/csrf-token", (req, res) => {
-  res.json({ csrfToken: res.locals.csrfToken });
-});
-
-// Выход (logout) - GET
-router.get("/logout", (req, res) => {
+router.post("/logout", (req, res) => {
   const isVercel = Boolean(process.env.VERCEL);
 
   if (isVercel) {
@@ -59,9 +35,19 @@ router.get("/logout", (req, res) => {
       }
     });
   }
+  res.clearCookie('exto_token');
 
   res.redirect("/");
 });
+
+// User auth routes
+router.get("/user/login", renderUserLogin);
+router.post("/user/login", authController.userLogin);
+router.get("/login", (req, res) => res.redirect("/user/login"));
+
+// Admin auth routes
+router.get("/admin/login", renderAdminLogin);
+router.post("/admin/login", authController.adminLogin);
 
 // Email verification routes
 router.get('/auth/verify-email/:token', emailVerificationController.verifyEmail);

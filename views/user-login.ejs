@@ -49,17 +49,19 @@
     }
     button {
       padding: 12px;
-      background: linear-gradient(#3a0e0e, #3a0e0e) padding-box,
-                  linear-gradient(45deg, #ff0000, #ff4d4d) border-box;
-      color: #fff;
+      background: var(--btn-bg);
+      color: var(--color-text);
       border: 2px solid transparent;
-      border-radius: 10px;
+      border-radius: var(--btn-radius);
       cursor: pointer;
       font-weight: 600;
-      transition: transform 0.15s ease;
+      box-shadow: var(--btn-shadow);
+      transition: box-shadow .2s ease, transform .15s ease, filter .2s ease;
     }
     button:hover {
-      transform: translateY(-2px);
+      box-shadow: var(--btn-shadow-hover);
+      transform: translateY(-1px);
+      filter: brightness(1.03);
     }
     .error {
       color: #ff3333;
@@ -81,6 +83,7 @@
   </style>
 </head>
 <body>
+  <div id="bg-animated" aria-hidden="true"></div>
   <div class="login-container">
     <h2>Вход для пользователей</h2>
 

@@ -3,6 +3,14 @@ const jwt = require('jsonwebtoken');
 
 // Секретный ключ для подписи JWT токенов
 const JWT_SECRET = process.env.JWT_SECRET || 'exto-jwt-secret-change-in-production';
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (isProduction) {
+  const rawSecret = process.env.JWT_SECRET;
+  if (!rawSecret || rawSecret.length < 32) {
+    throw new Error('JWT_SECRET must be set and at least 32 characters in production.');
+  }
+}
 
 // Время жизни токена (по умолчанию 24 часа)
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';

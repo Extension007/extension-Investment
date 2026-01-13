@@ -111,29 +111,32 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: none;
-  color: #fff;
+  background: var(--btn-bg);
+  border: 2px solid transparent;
+  color: var(--color-text);
   cursor: pointer;
   padding: 12px 8px;
-  border-radius: 8px;
+  border-radius: var(--btn-radius);
   transition: all 0.3s ease;
   text-decoration: none;
   min-width: 60px;
   font-size: 12px;
   font-weight: 600;
   flex: 1;
+  box-shadow: var(--btn-shadow);
   touch-action: manipulation; /* Оптимизация для touch */
 }
 
 .mobile-tab-button:hover {
-  color: #fff;
-  background: rgba(255, 51, 51, 0.1);
+  box-shadow: var(--btn-shadow-hover);
+  transform: translateY(-1px);
+  filter: brightness(1.03);
 }
 
 .mobile-tab-button.active {
-  color: #ff3333;
-  background: rgba(255, 51, 51, 0.1);
+  color: var(--color-text);
+  box-shadow: var(--btn-shadow-hover);
+  filter: brightness(1.05);
 }
 
 .mobile-tab-button.active::before {

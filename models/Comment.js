@@ -9,7 +9,7 @@ const commentSchema = new mongoose.Schema({
   cardType: {
     type: String,
     required: true,
-    enum: ['Product', 'Service'] // Тип карточки
+    enum: ['Product', 'Service', 'Banner'] // Тип карточки
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
