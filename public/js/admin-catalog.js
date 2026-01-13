@@ -207,13 +207,11 @@
               endpoint = `${apiBase}/${id}`;
             }
             
-            const res = await fetch(endpoint, {
+            const res = await window.csrfFetch(endpoint, {
               method: 'DELETE',
               headers: {
-                'X-CSRF-Token': csrfToken,
                 'Content-Type': 'application/json'
-              },
-              credentials: 'same-origin'
+              }
             });
 
             const data = await res.json();
@@ -362,14 +360,12 @@
             return;
           }
           
-          const res = await fetch(voteEndpoint, {
+          const res = await window.csrfFetch(voteEndpoint, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken
+              'Content-Type': 'application/json'
             },
-            body: voteBody,
-            credentials: 'same-origin'
+            body: voteBody
           });
           
           const data = await res.json();
@@ -481,13 +477,11 @@
             endpoint = `/admin/banners/${id}/toggle-visibility`;
           }
           
-          const res = await fetch(endpoint, {
+          const res = await window.csrfFetch(endpoint, {
             method: 'POST',
             headers: {
-              'X-CSRF-Token': csrfToken,
               'Content-Type': 'application/json'
-            },
-            credentials: 'same-origin'
+            }
           });
           
           const data = await res.json();

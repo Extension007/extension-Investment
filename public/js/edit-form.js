@@ -127,13 +127,11 @@
 
       try {
         const apiUrl = window.location.origin + `/api/products/${productId}`;
-        const res = await fetch(apiUrl, {
+        const res = await window.csrfFetch(apiUrl, {
           method: 'DELETE',
           headers: {
-            'X-CSRF-Token': csrfToken,
             'Content-Type': 'application/json'
-          },
-          credentials: 'same-origin'
+          }
         });
 
         const data = await res.json();
@@ -259,10 +257,8 @@
 
     try {
       const apiUrl = window.location.origin + `/api/images/${productId}/${index}`;
-      const res = await fetch(apiUrl, {
-        method: 'DELETE',
-        headers: { 'X-CSRF-Token': csrfToken },
-        credentials: 'same-origin'
+      const res = await window.csrfFetch(apiUrl, {
+        method: 'DELETE'
       });
 
       if (res.ok || res.status === 204) {
@@ -406,13 +402,9 @@
           action = window.location.origin + action;
         }
         
-        const res = await fetch(action, {
+        const res = await window.csrfFetch(action, {
           method: 'POST',
-          body: formData,
-          headers: {
-            'X-CSRF-Token': getCsrfToken()
-          },
-          credentials: 'same-origin'
+          body: formData
         });
         
         const contentType = res.headers.get("content-type");
