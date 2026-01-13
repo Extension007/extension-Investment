@@ -12,7 +12,11 @@ const { HAS_MONGO, hasMongo } = require("../config/database");
 const { CATEGORY_LABELS, CATEGORY_KEYS, HIERARCHICAL_CATEGORIES } = require("../config/app");
 
 // Авторизация
-router.use("/auth", require("./auth"));
+const authController = require("../controllers/authController");
+router.use("/", require("./auth"));
+
+// Добавляем маршрут /auth/register для обеспечения совместимости с клиентским кодом
+router.post("/auth/register", authController.register);
 
 // API
 router.use("/api", require("./api"));
