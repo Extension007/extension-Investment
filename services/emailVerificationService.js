@@ -32,7 +32,7 @@ async function sendVerificationEmail(user) {
 
   const baseUrl = resolveBaseUrl();
   const supportEmail = resolveSupportEmail();
-  const verificationLink = `${baseUrl}/auth/verify-email/${token}`;
+  const verificationLink = `${baseUrl}/verify-email/${token}`;
   const logoUrl = `${baseUrl}/albamount.png`;
   const subject = 'Подтвердите email';
   const preheader = 'Подтвердите email, чтобы завершить регистрацию в ALBAMOUNT.';
@@ -98,7 +98,7 @@ async function verifyEmail(token) {
 
   const baseUrl = resolveBaseUrl();
   const supportEmail = resolveSupportEmail();
-  const loginLink = `${baseUrl}/auth/user/login`;
+  const loginLink = `${baseUrl}/user/login`;
   const logoUrl = `${baseUrl}/albamount.png`;
   const subject = 'Email подтвержден';
   const preheader = 'Email подтвержден. Добро пожаловать в ALBAMOUNT.';

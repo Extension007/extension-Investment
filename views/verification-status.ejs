@@ -64,7 +64,7 @@
   <script>
     document.getElementById('resendVerificationBtn')?.addEventListener('click', async function() {
       try {
-        const response = await axios.post('/auth/resend-verification', {
+        const response = await axios.post('/resend-verification', {
           email: "<%= typeof user !== 'undefined' ? user.email : '' %>",
           _csrf: '<%= typeof csrfToken !== "undefined" ? csrfToken : "" %>'
         });

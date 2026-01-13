@@ -1013,7 +1013,7 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         }
 
-        const res = await fetch(window.location.origin + "/auth/register", {
+        const res = await fetch(window.location.origin + "/register", {
           method: "POST",
           headers: headers,
           body: JSON.stringify(formData),

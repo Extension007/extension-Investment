@@ -60,13 +60,13 @@ exports.verificationStatus = async (req, res) => {
   try {
     const authUser = getUserFromRequest(req);
     if (!authUser) {
-      return res.status(401).redirect('/auth/user/login');
+      return res.status(401).redirect('/user/login');
     }
 
     const user = await User.findById(authUser._id);
 
     if (!user) {
-      return res.status(404).redirect('/auth/user/login');
+      return res.status(404).redirect('/user/login');
     }
 
     res.render('verification-status', {
