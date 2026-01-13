@@ -54,8 +54,8 @@ router.get("/admin/login", renderAdminLogin);
 router.post("/admin/login", authController.adminLogin);
 
 // Email verification routes
-router.get('/auth/verify-email/:token', emailVerificationController.verifyEmail);
-router.post('/auth/resend-verification', emailVerificationController.resendVerification);
-router.get('/auth/verification-status', emailVerificationController.verificationStatus);
+router.get('/verify-email/:token', emailVerificationController.verifyEmail);
+router.post('/resend-verification', emailVerificationController.resendVerification);
+router.get('/verification-status', emailVerificationController.verificationStatus);
 
 module.exports = router;
