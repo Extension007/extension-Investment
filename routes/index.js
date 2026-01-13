@@ -12,7 +12,7 @@ const { HAS_MONGO, hasMongo } = require("../config/database");
 const { CATEGORY_LABELS, CATEGORY_KEYS, HIERARCHICAL_CATEGORIES } = require("../config/app");
 
 // Авторизация
-router.use("/", require("./auth"));
+router.use("/auth", require("./auth"));
 
 // API
 router.use("/api", require("./api"));
