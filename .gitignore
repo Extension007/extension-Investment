@@ -74,19 +74,25 @@ dist
 # Gatsby files
 .cache/
 public/
-!public/*.png
-!public/*.jpg
-!public/*.jpeg
-!public/*.gif
-!public/*.webp
-!public/*.ico
-!public/*.css
-!public/*.js
-!public/*.svg
-!public/*.woff
-!public/*.woff2
-!public/*.ttf
-!public/*.eot
+
+# Разрешаем вложенные ассеты в public (в т.ч. public/js/* и public/utils/*)
+!public/**
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.jpeg
+!public/**/*.gif
+!public/**/*.webp
+!public/**/*.ico
+!public/**/*.css
+!public/**/*.js
+!public/**/*.svg
+!public/**/*.woff
+!public/**/*.woff2
+!public/**/*.ttf
+!public/**/*.eot
+
+# Но uploads всё равно игнорим (как и было)
+public/uploads/
 
 # Storybook build outputs
 .out
@@ -130,7 +136,7 @@ out/
 # Jest cache
 .jest/
 
-# Cypress
+# Cypressf
 cypress/videos/
 cypress/screenshots/
 
