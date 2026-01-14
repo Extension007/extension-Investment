@@ -59,7 +59,7 @@ async function connectDatabase(retries = 5, delay = 5000) {
     try {
       const start = Date.now();
       
-      // Опции подключения, оптимизированные для Vercel
+      // Опции подключения, оптимизированные для Vercel (убраны неподдерживаемые опции)
       const options = {
         dbName: "extoecosystem",
         serverSelectionTimeoutMS: 30000,
@@ -69,7 +69,6 @@ async function connectDatabase(retries = 5, delay = 5000) {
         maxPoolSize: 10, // Увеличено для Vercel
         minPoolSize: 1,  // Установлено минимум для Vercel
         maxIdleTimeMS: 30000, // Время жизни неиспользуемого соединения
-        serverMonitoringMode: 'auto',
         retryWrites: true,
         retryReads: true,
         w: "majority"
@@ -117,6 +116,9 @@ async function connectDatabase(retries = 5, delay = 5000) {
       } else if (err.message.includes('TLS')) {
         console.error("⚠️  Проблема с TLS/SSL соединением");
         console.error("💡 Решение: Убедитесь, что URI содержит ssl=true или использует mongodb+srv://");
+      } else if (err.message.includes('servermonitoringmode')) {
+        console.error("⚠️  Неподдерживаемая опция в Vercel. Убедитесь, что в строке подключения нет неподдерживаемых опций.");
+        console.error("💡 Решение: Используйте стандартную строку подключения из MongoDB Atlas без дополнительных параметров.");
       }
       
       if (attempt < retries) {
