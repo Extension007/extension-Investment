@@ -5,6 +5,28 @@
   let currentImages = [];
   let formConfig = {};
 
+  // Обеспечиваем наличие window.csrfFetch
+ if (!window.csrfFetch) {
+    // Получить CSRF-токен из <meta name="csrf-token">
+    function getCsrfToken() {
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      return meta ? meta.getAttribute('content') : '';
+    }
+
+    // Обертка для fetch с автоматическим добавлением CSRF-токена
+    window.csrfFetch = function(url, options = {}) {
+      const csrfToken = getCsrfToken();
+      options.headers = options.headers || {};
+      // Добавляем токен только для небезопасных методов
+      if (options.method && options.method.toUpperCase() !== 'GET') {
+        options.headers['X-CSRF-Token'] = csrfToken;
+      }
+      // Всегда отправляем куки
+      options.credentials = options.credentials || 'same-origin';
+      return fetch(url, options);
+    };
+  }
+
   // Функция для перепривязки обработчиков удаления
   function reattachDeleteHandlers() {
     const buttons = document.querySelectorAll('.image-delete-button');
