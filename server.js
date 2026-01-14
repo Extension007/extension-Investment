@@ -24,7 +24,7 @@ if (!process.env.VERCEL) {
   });
 
   // Подключаем маршруты с Socket.IO
-  require("./routes/comments").setSocketIO(io); // Передаем io в комментарии до подключения маршрутов
+  require("./routes/comments").setSocketIO(io);
   app.use("/", routes);
 
   // Обработчик 404 для правильных CSP заголовков (для Chrome DevTools)

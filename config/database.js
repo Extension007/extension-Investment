@@ -21,18 +21,18 @@ function hasMongo() {
   return Boolean(process.env.MONGODB_URI) && mongoose.connection.readyState === 1;
 }
 
-// Глобальный кеш подключения
+// Глобальный кеш подключения для Vercel
 global.mongoose = global.mongoose || { conn: null, promise: null };
 
 async function connectDatabase(retries = 5, delay = 5000) {
   console.log('MONGODB_URI set:', Boolean(process.env.MONGODB_URI));
   
   if (!HAS_MONGO_URI) {
-    console.warn("⚠️  MONGODB_URI не задан. Приложение запущено без БД (каталог пуст, админ/рейтинг отключены).");
+    console.warn("⚠️  MONGODB_URI не задан. Приложение будет работать без БД (каталог пуст, админ/рейтинг отключены).");
     return { connection: null, isConnected: false };
   }
 
-  // 🔍 Логируем реальное значение переменной окружения
+  // Проверяем реальное значение переменной окружения
   console.log("🔍 MONGODB_URI:", process.env.MONGODB_URI);
 
   const mongoUri = process.env.MONGODB_URI;
@@ -42,7 +42,7 @@ async function connectDatabase(retries = 5, delay = 5000) {
     return { connection: null, isConnected: false };
   }
 
-  // Проверяем глобальный кеш
+  // Проверяем глобальный кеш для Vercel
   if (global.mongoose.conn) {
     console.log("✅ Используем существующее подключение к MongoDB");
     return { connection: global.mongoose.conn, isConnected: true };
@@ -58,21 +58,32 @@ async function connectDatabase(retries = 5, delay = 5000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const start = Date.now();
-      const clientPromise = mongoose.connect(process.env.MONGODB_URI, {
+      
+      // Опции подключения, оптимизированные для Vercel
+      const options = {
         dbName: "extoecosystem",
         serverSelectionTimeoutMS: 30000,
         socketTimeoutMS: 60000,
         connectTimeoutMS: 30000,
         bufferCommands: false,
-        maxPoolSize: 1,
-        minPoolSize: 0,
+        maxPoolSize: 10, // Увеличено для Vercel
+        minPoolSize: 1,  // Установлено минимум для Vercel
+        maxIdleTimeMS: 30000, // Время жизни неиспользуемого соединения
+        serverMonitoringMode: 'auto',
         retryWrites: true,
         retryReads: true,
         w: "majority"
-      });
+      };
 
-      global.mongoose.promise = clientPromise;
-      global.mongoose.conn = await clientPromise;
+      // В Vercel среде используем более щадящие настройки
+      if (isVercel) {
+        options.maxPoolSize = 5;
+        options.minPoolSize = 0;
+        options.maxIdleTimeMS = 15000;
+      }
+
+      global.mongoose.promise = mongoose.connect(mongoUri, options);
+      global.mongoose.conn = await global.mongoose.promise;
       
       console.log("⏱️ Время подключения:", Date.now() - start, "мс");
       console.log("✅ MongoDB подключена");
