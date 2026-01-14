@@ -73,7 +73,6 @@ dist
 
 # Gatsby files
 .cache/
-public/
 
 # Разрешаем вложенные ассеты в public (в т.ч. public/js/* и public/utils/*)
 !public/**
