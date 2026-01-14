@@ -35,12 +35,15 @@ async function connectDatabase(retries = 5, delay = 5000) {
   // Проверяем реальное значение переменной окружения
   console.log("🔍 MONGODB_URI:", process.env.MONGODB_URI);
 
-  const mongoUri = process.env.MONGODB_URI;
+  let mongoUri = process.env.MONGODB_URI;
   if (!mongoUri || !mongoUri.startsWith('mongodb')) {
     console.error("❌ Неверный формат MONGODB_URI. Ожидается строка, начинающаяся с 'mongodb://' или 'mongodb+srv://'");
     console.warn("⚠️  Приложение будет работать без БД");
     return { connection: null, isConnected: false };
   }
+
+  // Исправляем регистр опций в URI для совместимости с новым драйвером MongoDB
+  mongoUri = mongoUri.replace(/servermonitoringmode/gi, 'serverMonitoringMode');
 
   // Проверяем глобальный кеш для Vercel
   if (global.mongoose.conn) {
