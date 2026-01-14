@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
@@ -18,425 +18,233 @@
     }
     .tab {
       padding: 12px 24px;
-          const imagesInput = form.querySelector('input[name="images"]');
-          if (imagesInput && imagesInput.files.length > 5) {
-            msg.textContent = "Максимальное количество изображений: 5";
-            msg.style.color = "#b00020";
-            return;
-          }
-          
-          if (imagesInput && imagesInput.files.length > 0) {
-            for (let i = 0; i < imagesInput.files.length; i++) {
-              const file = imagesInput.files[i];
-              if (file.size > 5 * 1024 * 1024) {
-                msg.textContent = `Файл "${file.name}" превышает 5MB`;
-                msg.style.color = "#b00020";
-                return;
-              }
-            }
-          }
-          
-          msg.textContent = "Отправка...";
-          msg.style.color = "#666";
-          
-          const formData = new FormData(form);
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-          
-          try {
-            const res = await fetch("/cabinet/product", { 
-              method: "POST", 
-              body: formData,
-              headers: {
-                'X-CSRF-Token': csrfToken || ''
-              },
-              credentials: 'same-origin'
-            });
-            
-            const contentType = res.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-              const text = await res.text();
-              msg.textContent = "Ошибка: " + (text || "Неверный формат ответа");
-              msg.style.color = "#b00020";
-              return;
-            }
-            
-            const json = await res.json();
-            
-            if (json.success) {
-              msg.textContent = "Карточка отправлена на модерацию.";
-              msg.style.color = "green";
-              form.reset();
-              document.getElementById('imagePreview').style.display = 'none';
-              setTimeout(() => location.reload(), 800);
-            } else {
-              msg.textContent = json.message || "Ошибка при создании карточки";
-              msg.style.color = "#b00020";
-            }
-          } catch (err) {
-            console.error("❌ Ошибка при отправке:", err);
-            msg.textContent = "Ошибка сети: " + err.message;
-            msg.style.color = "#b00020";
-          }
-        });
-      }
-      }
-    </style>
-    <script src="/js/cabinet.js?v=1.0.1"></script>
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #666;
+      transition: all 0.2s;
+    }
+    .tab:hover {
+      color: #2196f3;
+    }
+    .tab.active {
+      color: #2196f3;
+      border-bottom-color: #2196f3;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <header class="main-header">
+    <div class="container header-inner">
+      <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+      <nav class="nav" style="display:none;">
+        <!-- Навигация скрыта -->
+      </nav>
+      <div class="header-actions">
+        <span class="user-chip">👤 <%= user.username %></span>
+        <form id="logoutForm" method="POST" action="/logout" style="display:inline;margin-left:10px;">
+          <button type="submit" class="btn outline small">Выход</button>
+        </form>
+      </div>
+    </div>
+  </header>
 
-      // Превью изображений
-      const imagesInput = document.getElementById('images');
-      const imagePreview = document.getElementById('imagePreview');
+  <main class="container">
+    <section class="section">
+      <h1>Личный кабинет</h1>
       
-      if (imagesInput && imagePreview) {
-        imagesInput.addEventListener('change', function(e) {
-          const files = Array.from(e.target.files);
-          const maxFiles = parseInt(imagesInput.getAttribute('data-max-files')) || 5;
-          
-          if (files.length > maxFiles) {
-            alert(`Можно выбрать не более ${maxFiles} изображений`);
-            e.target.value = '';
-            imagePreview.innerHTML = '';
-            imagePreview.style.display = 'none';
-            return;
-          }
-          
-          imagePreview.innerHTML = '';
-          
-          if (files.length === 0) {
-            imagePreview.style.display = 'none';
-            return;
-          }
-          
-          imagePreview.style.display = 'grid';
-          
-          files.forEach((file) => {
-            if (file.size > 5 * 1024 * 1024) {
-              alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
-              return;
-            }
+      <!-- Вкладки -->
+      <div class="tabs">
+        <button class="tab active" data-tab="products">Мои товары</button>
+        <button class="tab" data-tab="services">Мои услуги</button>
+        <button class="tab" data-tab="banners">Мои баннеры</button>
+        <button class="tab" data-tab="create">Создать карточку</button>
+      </div>
+
+      <!-- Вкладка: Мои товары -->
+      <div class="tab-content active" id="tab-products">
+        <h2>Мои товары</h2>
+        <% if (products && products.length > 0) { %>
+          <div class="product-grid">
+            <% products.forEach(product => { %>
+              <%- include('partials/card', { product, itemType: 'product', mode: 'user', user }) %>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>У вас пока нет товаров.</p>
+            <button class="tab btn primary" data-tab="create" style="margin-top: 20px;">Создать товар</button>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Вкладка: Мои услуги -->
+      <div class="tab-content" id="tab-services">
+        <h2>Мои услуги</h2>
+        <% if (services && services.length > 0) { %>
+          <div class="product-grid">
+            <% services.forEach(service => { %>
+              <%- include('partials/card', { service, itemType: 'service', mode: 'user', user }) %>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>У вас пока нет услуг.</p>
+            <button class="tab btn primary" data-tab="create" style="margin-top: 20px;">Создать услугу</button>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Вкладка: Мои баннеры -->
+      <div class="tab-content" id="tab-banners">
+        <h2>Мои баннеры</h2>
+        <% if (banners && banners.length > 0) { %>
+          <div class="product-grid">
+            <% banners.forEach(banner => { %>
+              <%- include('partials/card', { banner, itemType: 'banner', mode: 'user', user }) %>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p>У вас пока нет баннеров.</p>
+            <button class="tab btn primary" data-tab="create" style="margin-top: 20px;">Создать баннер</button>
+          </div>
+        <% } %>
+      </div>
+
+      <!-- Вкладка: Создать карточку -->
+      <div class="tab-content" id="tab-create">
+        <h2>Создать карточку</h2>
+        
+        <!-- Форма создания товара/услуги -->
+        <div id="createProductSection">
+          <h3>Товар или услуга</h3>
+          <form id="createProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/product">
+            <div class="form-section">
+              <label for="type">Тип публикации:</label>
+              <select id="type" name="type" required>
+                <option value="product">Товар</option>
+                <option value="service">Услуга</option>
+              </select>
+            </div>
             
-            const reader = new FileReader();
-            reader.onload = function(e) {
-              const div = document.createElement('div');
-              div.className = 'preview-item';
-              div.style.position = 'relative';
-              div.style.aspectRatio = '1';
-              div.style.overflow = 'hidden';
-              div.style.borderRadius = '8px';
-              div.style.border = '2px solid #ddd';
-              
-              const img = document.createElement('img');
-              img.src = e.target.result;
-              img.style.width = '100%';
-              img.style.height = '100%';
-              img.style.objectFit = 'cover';
-              
-              div.appendChild(img);
-              imagePreview.appendChild(div);
-            };
-            reader.readAsDataURL(file);
-          });
-        });
-      }
-
-      // Обработка формы загрузки баннера
-      const bannerForm = document.getElementById("createBannerForm");
-      const bannerMsg = document.getElementById("createBannerMsg");
-      const bannerPreview = document.getElementById("bannerPreview");
-      const bannerPreviewImg = document.getElementById("bannerPreviewImg");
-      const bannerImageInput = document.getElementById("bannerImage");
-
-      if (bannerForm) {
-        if (bannerImageInput && bannerPreviewImg) {
-          bannerImageInput.addEventListener("change", function(e) {
-            const file = e.target.files[0];
-            if (file) {
-              if (file.size > 5 * 1024 * 1024) {
-                alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
-                e.target.value = '';
-                bannerPreview.style.display = 'none';
-                return;
-              }
-              
-              const reader = new FileReader();
-              reader.onload = function(e) {
-                bannerPreviewImg.src = e.target.result;
-                bannerPreview.style.display = 'block';
-              };
-              reader.readAsDataURL(file);
-            } else {
-              bannerPreview.style.display = 'none';
-            }
-          });
-        }
-
-        bannerForm.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          
-          if (bannerImageInput && bannerImageInput.files.length > 0) {
-            const file = bannerImageInput.files[0];
-            if (file.size > 5 * 1024 * 1024) {
-              bannerMsg.textContent = `Файл "${file.name}" превышает 5MB`;
-              bannerMsg.style.color = "#b00020";
-              return;
-            }
-          }
-          
-          bannerMsg.textContent = "Отправка...";
-          bannerMsg.style.color = "#666";
-          
-          const formData = new FormData(bannerForm);
-          const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-          
-          try {
-            const res = await fetch("/cabinet/banner", { 
-              method: "POST", 
-              body: formData,
-              headers: {
-                'X-CSRF-Token': csrfToken || ''
-              },
-              credentials: 'same-origin'
-            });
+            <input type="text" name="name" placeholder="Название" required>
+            <textarea name="description" placeholder="Описание" rows="4"></textarea>
+            <input type="url" name="link" placeholder="Ссылка">
+            <input type="url" name="video_url" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)">
+            <input type="number" name="price" placeholder="Цена" min="0" step="1" required>
             
-            const contentType = res.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-              const text = await res.text();
-              bannerMsg.textContent = "Ошибка: " + (text || "Неверный формат ответа");
-              bannerMsg.style.color = "#b00020";
-              return;
-            }
+            <div class="form-section">
+              <label for="images">Изображения (до 5 шт.):</label>
+              <input type="file" id="images" name="images" accept="image/*" multiple data-max-files="5">
+              <div id="imagePreview" class="image-preview-container" style="display: none; margin-top: 10px; display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;"></div>
+              <small class="form-hint">Можно выбрать до 5 изображений</small>
+            </div>
             
-            const json = await res.json();
+                        <div class="form-section">
+              <label>&#1050;&#1072;&#1090;&#1077;&#1075;&#1086;&#1088;&#1080;&#1103;:</label>
+              <div id="categorySelectorContainer">
+                <select name="category" id="categorySelect" required>
+              <option value="home">Для дома</option>
+              <option value="beauty">Красота и здоровье</option>
+              <option value="auto">Авто мото</option>
+              <option value="electric">Электрика</option>
+              <option value="electronics">Электроника</option>
+              <option value="plumbing">Сантехника</option>
+                            </select>
+                <div id="subcategorySelector" style="margin-top: 10px; display: none;">
+                  <button class="btn small outline" id="backToBlocks" style="margin-bottom: 10px;">&larr; &#1053;&#1072;&#1079;&#1072;&#1076; &#1082; &#1073;&#1083;&#1086;&#1082;&#1072;&#1084;</button>
+                  <select id="subcategorySelect" style="width: 100%;">
+                    <option value="">&#1042;&#1099;&#1073;&#1077;&#1088;&#1080;&#1090;&#1077; &#1087;&#1086;&#1076;&#1082;&#1072;&#1090;&#1077;&#1075;&#1086;&#1088;&#1080;&#1102;</option>
+                  </select>
+                </div>
+              </div>
             
-            if (json.success) {
-              bannerMsg.textContent = "Баннер отправлен на модерацию.";
-              bannerMsg.style.color = "green";
-              bannerForm.reset();
-              bannerPreview.style.display = 'none';
-              setTimeout(() => location.reload(), 800);
-            } else {
-              bannerMsg.textContent = json.message || "Ошибка при загрузке баннера";
-              bannerMsg.style.color = "#b00020";
-            }
-          } catch (err) {
-            console.error("❌ Ошибка при отправке:", err);
-            bannerMsg.textContent = "Ошибка сети: " + err.message;
-            bannerMsg.style.color = "#b00020";
-          }
-        });
-      }
-      
+            <div class="form-section">
+              <h3 style="margin-bottom: 10px;">Контакты продавца</h3>
+              <input type="tel" name="phone" placeholder="Телефон">
+              <input type="email" name="email" placeholder="Email">
+              <input type="text" name="telegram" placeholder="Telegram (например: @username)">
+              <input type="text" name="whatsapp" placeholder="WhatsApp (номер телефона)">
+              <label for="contact_method">Способ связи:</label>
+              <textarea id="contact_method" name="contact_method" placeholder="Укажите предпочтительный способ связи (например: Звоните с 9:00 до 18:00, Пишите в Telegram)" rows="2"></textarea>
+            </div>
+            
+            <button type="submit" class="btn primary">Отправить на модерацию</button>
+          </form>
+          <div id="createProductMsg" class="note" style="margin-top:10px;"></div>
+        </div>
 
-      
-      // Инициализация выбора категорий
-      const categorySelect = document.getElementById('categorySelect');
-      const subcategorySelector = document.getElementById('subcategorySelector');
-      const subcategorySelect = document.getElementById('subcategorySelect');
-      const backToBlocksBtn = document.getElementById('backToBlocks');
-      const typeSelect = document.getElementById('type');
+        <!-- Форма создания баннера -->
+        <div id="createBannerSection" style="margin-top: 40px;">
+          <h3>Баннер рекламы</h3>
+          <p style="margin-bottom: 15px; color: #666;">Загрузите баннер для секции "Тут ваша реклама" на главной странице. Баннер будет отправлен на модерацию.</p>
+          <form id="createBannerForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/banner">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+            <div class="form-section">
+              <label for="bannerImage">Изображение баннера:</label>
+              <input type="file" id="bannerImage" name="image" accept="image/*" required>
+              <div id="bannerPreview" class="image-preview-container" style="display: none; margin-top: 10px;">
+                <img id="bannerPreviewImg" src="" alt="Предпросмотр баннера" style="max-width: 100%; max-height: 300px; border-radius: 8px;">
+              </div>
+              <small class="form-hint">Максимальный размер файла: 5MB. Рекомендуемые размеры: 1200x400px</small>
+            </div>
+            <input type="url" name="link" placeholder="Ссылка для перехода (необязательно)">
+            <button type="submit" class="btn primary">Отправить на модерацию</button>
+          </form>
+          <div id="createBannerMsg" class="note" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </section>
+  </main>
 
-      let currentCategories = [];
-      let currentType = 'product'; // По умолчанию товар
 
-      // Загружаем блоки категорий при загрузке страницы
-      loadCategoryBlocks();
 
-      // Обработчик изменения типа
-      if (typeSelect) {
-        typeSelect.addEventListener('change', function() {
-          currentType = this.value;
-          loadCategoryBlocks();
-        });
-      }
-
-      async function loadCategoryBlocks() {
-        try {
-          const response = await fetch(`/api/categories/tree/${currentType}`);
-          const data = await response.json();
-
-          if (data.success && data.categories) {
-            currentCategories = data.categories;
-            renderCategoryBlocks(data.categories);
-          } else {
-            console.error('Ошибка загрузки блоков категорий:', data.message);
-          }
-        } catch (error) {
-          console.error('Ошибка сети при загрузке блоков:', error);
-        }
-      }
-
-      function renderCategoryBlocks(blocks) {
-        if (!categorySelect) return;
-
-        // Очищаем селект, оставляем только первую опцию
-        categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
-
-        blocks.forEach(block => {
-          const option = document.createElement('option');
-          option.value = block._id;
-          option.textContent = `${block.icon || ''} ${block.name}`;
-          categorySelect.appendChild(option);
-        });
-      }
-
-      async function loadSubcategories(blockId, blockName) {
-        try {
-          const response = await fetch(`/api/categories/children/${blockId}`);
-          const data = await response.json();
-
-          if (data.success && data.categories) {
-            renderSubcategories(data.categories, blockName);
-          } else {
-            console.error('Ошибка загрузки подкатегорий:', data.message);
-          }
-        } catch (error) {
-          console.error('Ошибка сети при загрузке подкатегорий:', error);
-        }
-      }
-
-      function renderSubcategories(subcategories, blockName) {
-        if (!subcategorySelector || !subcategorySelect) return;
-
-        subcategorySelect.innerHTML = '<option value="">Выберите подкатегорию</option>';
-
-        subcategories.forEach(sub => {
-          const option = document.createElement('option');
-          option.value = sub._id;
-          option.textContent = `${sub.icon || ''} ${sub.name}`;
-          subcategorySelect.appendChild(option);
-        });
-
-        // Показываем контейнер подкатегорий
-        subcategorySelector.style.display = 'block';
-      }
-
-      function hideSubcategories() {
-        if (subcategorySelector) {
-          subcategorySelector.style.display = 'none';
-        }
-      }
-
-      // Обработчик выбора блока
-      if (categorySelect) {
-        categorySelect.addEventListener('change', function() {
-          const selectedBlockId = this.value;
-          if (selectedBlockId) {
-            // Находим выбранный блок
-            const selectedBlock = currentCategories.find(block => block._id === selectedBlockId);
-            if (selectedBlock) {
-              loadSubcategories(selectedBlockId, selectedBlock.name);
-            }
-          } else {
-            hideSubcategories();
-          }
-        });
-      }
-
-      // Обработчик выбора подкатегории
-      if (subcategorySelect) {
-        subcategorySelect.addEventListener('change', function() {
-          const selectedCategoryId = this.value;
-          const selectedCategoryName = this.options[this.selectedIndex].text;
-
-          if (selectedCategoryId) {
-            // Добавляем выбранную подкатегорию в основной селектор, если её там нет
-            let optionExists = false;
-            for (let i = 0; i < categorySelect.options.length; i++) {
-              if (categorySelect.options[i].value === selectedCategoryId) {
-                optionExists = true;
-                break;
-              }
-            }
-
-            if (!optionExists) {
-              const newOption = document.createElement('option');
-              newOption.value = selectedCategoryId;
-              newOption.textContent = selectedCategoryName;
-              categorySelect.appendChild(newOption);
-            }
-
-            // Выбираем подкатегорию в основном селекторе
-            categorySelect.value = selectedCategoryId;
-          }
-        });
-      }
-
-      // Обработчик кнопки "Назад к блокам"
-      if (backToBlocksBtn) {
-        backToBlocksBtn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          hideSubcategories();
-          categorySelect.value = '';
-        });
-      }
-    });
-
-    // Обработка кнопок редактирования и удаления карточек
-    document.addEventListener('click', (e) => {
-      // Редактирование
-      if (e.target.classList.contains('edit-product-btn') ||
-          e.target.classList.contains('edit-service-btn') ||
-          e.target.classList.contains('edit-banner-btn')) {
-        const id = e.target.getAttribute('data-id');
-        const isBanner = e.target.classList.contains('edit-banner-btn');
-        const url = isBanner ? `/cabinet/banner/${id}/edit` : `/cabinet/product/${id}/edit`;
-        window.location.href = url;
-      }
-
-      // Удаление
-      if (e.target.classList.contains('delete-product-btn') ||
-          e.target.classList.contains('delete-service-btn') ||
-          e.target.classList.contains('delete-banner-btn')) {
-        const id = e.target.getAttribute('data-id');
-        const isBanner = e.target.classList.contains('delete-banner-btn');
-        const type = isBanner ? 'баннер' : 'карточку';
-
-        if (confirm(`Вы уверены, что хотите удалить эту ${type}?`)) {
-          const url = isBanner ? `/cabinet/banner/${id}` : `/cabinet/product/${id}`;
-          fetch(url, {
-            method: 'DELETE',
-            headers: {
-              'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-            },
-            credentials: 'same-origin'
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.success) {
-              location.reload();
-            } else {
-              alert('Ошибка удаления: ' + (data.message || 'Неизвестная ошибка'));
-            }
-          })
-          .catch(err => {
-            console.error('Ошибка:', err);
-            alert('Ошибка сети');
-          });
-        }
-      }
-    });
-  </script>
+  
+  
+  
+  
+    
+  
+    
+    
 
   <!-- Загрузка YouTube IFrame API -->
+    <!-- Bootstrap script for safe EJS to JS data transfer -->
+  <script src="/utils/bootstrap.js"></script>
   <script>
+    window.AppBootstrap.init(<%- JSON.stringify({
+      isAuth: true,
+      isAdmin: typeof isAdmin !== 'undefined' ? isAdmin : false,
+      socketIoAvailable: typeof socket_io_available !== 'undefined' ? socket_io_available : false,
+      userRole: typeof userRole !== 'undefined' ? userRole : null,
+      csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : ''
+    }) %>);
+  </script>
+
+  <script src="/js/cabinet.js?v=1.0.1"></script>
+
+<script>
     var tag = document.createElement('script');
     tag.src = "https://www.youtube.com/iframe_api";
     var firstScriptTag = document.getElementsByTagName('script')[0];
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
   </script>
 
-
-  <!-- Bootstrap script for safe EJS → JS data transfer -->
-  <script src="/utils/bootstrap.js"></script>
-  <script>
-    // Safe initialization of global variables
-    window.AppBootstrap.init(<%- JSON.stringify({
-      isAuth: true,
-      isAdmin: typeof isAdmin !== 'undefined' ? isAdmin : false,
-      socketIoAvailable: typeof socket_io_available !== 'undefined' ? socket_io_available : false,
-      userRole: typeof userRole !== 'undefined' ? userRole : null
-    }) %>);
-  </script>
 
 <% if (!process.env.VERCEL) { %>
 <!-- Socket.IO -->

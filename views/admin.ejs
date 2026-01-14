@@ -26,7 +26,6 @@
           <strong style="color: #2196f3;"><%= typeof userCount !== 'undefined' ? userCount : 0 %></strong>
         </div>
       </div>
-    </div>
     <div class="header-actions">
 <span class="user-chip">Админ-панель</span>
 <form id="logoutForm" method="POST" action="/logout" style="display:inline;margin-left:10px;">
@@ -283,7 +282,6 @@
 <!-- Контейнер для иерархического выбора -->
 <div id="adminHierarchicalCategorySelector" style="margin-top: 10px; display: none;">
 <button class="btn small outline" id="adminBackToMain" style="margin-bottom: 10px;">← Назад к основным категориям</button>
-</div>
 </div>
 </div>
 
@@ -663,7 +661,7 @@ data-type="banner">
 </main>
 
 <footer class="footer">
-  <p>© 2025 EXTO Ecosystem</p>
+  <p></p>
 </footer>
 
 <!-- Модальное окно для отклонения -->
@@ -689,7 +687,7 @@ data-type="banner">
 </div>
 
 <!-- Передаем информацию о доступности Socket.IO на клиент -->
-  <!-- Bootstrap script for safe EJS → JS data transfer -->
+ <!-- Bootstrap script for safe EJS → JS data transfer -->
   <script src="/utils/bootstrap.js"></script>
   <script>
     // Safe initialization of global variables
@@ -725,6 +723,7 @@ const logoutForm = document.getElementById("logoutForm");
 if (logoutForm) {
 logoutForm.addEventListener("submit", async (e) => {
 e.preventDefault();
+e.stopPropagation();
 if (!confirm("Вы уверены, что хотите выйти?")) return;
 try {
 const res = await fetch("/logout", { method: "POST" });
@@ -736,6 +735,7 @@ console.error("Ошибка выхода:", err);
 window.location.href = "/";
 }
 });
+}
 }
 
 // Блокировка/Разблокировка карточек (товары, услуги, баннеры)
@@ -774,6 +774,7 @@ alert("Ошибка сети: " + err.message);
 }
 });
 });
+});
 
 // Модерация: одобрение
 const approveBtns = document.querySelectorAll(".approve-btn");
@@ -805,6 +806,7 @@ alert("Ошибка: " + (data.message || "Неизвестная ошибка")
 console.error("❌ Ошибка одобрения:", err);
 alert("Ошибка сети: " + err.message);
 }
+});
 });
 });
 
@@ -862,6 +864,7 @@ alert("Ошибка сети: " + err.message);
 }
 });
 }
+}
 
 // Обработка формы создания товара админом
 const adminCreateForm = document.getElementById('adminCreateProductForm');
@@ -906,14 +909,13 @@ location.reload();
 adminCreateMsg.textContent = data.message || 'Ошибка при добавлении товара';
 adminCreateMsg.style.color = '#b00020';
 }
-} else {
-location.reload();
 }
 } catch (err) {
 adminCreateMsg.textContent = 'Ошибка сети: ' + err.message;
 adminCreateMsg.style.color = '#b00020';
 }
 });
+}
 }
 
 // Обработка формы создания баннера админом
@@ -959,14 +961,13 @@ location.reload();
 adminCreateBannerMsg.textContent = data.message || 'Ошибка при добавлении баннера';
 adminCreateBannerMsg.style.color = '#b00020';
 }
-} else {
-location.reload();
 }
 } catch (err) {
 adminCreateBannerMsg.textContent = 'Ошибка сети: ' + err.message;
 adminCreateBannerMsg.style.color = '#b00020';
 }
 });
+}
 }
 
 // Превью изображений для админ-формы баннеров
@@ -1023,6 +1024,7 @@ reader.readAsDataURL(file);
 });
 });
 }
+}
 
 // Превью изображений для админ-формы
 if (adminImagesInput && adminImagePreview) {
@@ -1076,6 +1078,7 @@ reader.readAsDataURL(file);
 });
 }
 });
+}
 
 // Иерархическая структура категорий (скопирована из cabinet.ejs)
 const hierarchicalCategories = {
@@ -1343,7 +1346,7 @@ function renderAdminCategoryBlocks(blocks) {
   if (!adminCategorySelect) return;
 
   // Очищаем селект, оставляем только первую опцию
-  adminCategorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+ adminCategorySelect.innerHTML = '<option value="">Выберите категорию</option>';
 
   blocks.forEach(block => {
     const option = document.createElement('option');
