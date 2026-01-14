@@ -4,12 +4,11 @@ const router = express.Router();
 const ContactInfo = require("../models/ContactInfo");
 const { HAS_MONGO } = require("../config/database");
 const { requireAdmin } = require("../middleware/auth");
-const { csrfToken } = require("../middleware/csrf");
+const { csrfToken, csrfProtection } = require("../middleware/csrf");
 const { notifyAdmin } = require("../services/adminNotificationService");
 
-// Условный CSRF middleware для Vercel
-const isVercel = Boolean(process.env.VERCEL);
-const conditionalCsrfToken = isVercel ? (req, res, next) => next() : csrfToken;
+// CSRF token middleware
+const conditionalCsrfToken = csrfToken;
 
 // Страница управления контактами (только для админов)
 router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
@@ -31,7 +30,7 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
     const userCount = users || 0;
 
     // Генерируем CSRF токен для формы и API запросов
-    const csrfTokenValue = res.locals.csrfToken || null;
+    const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : '');
 
     res.render("admin-contacts", {
       contacts: contacts || [],
@@ -46,7 +45,7 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
 });
 
 // Добавление контакта (админом)
-router.post("/create", requireAdmin, conditionalCsrfToken, async (req, res) => {
+router.post("/create", requireAdmin, csrfProtection, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
 
@@ -111,7 +110,7 @@ router.post("/create", requireAdmin, conditionalCsrfToken, async (req, res) => {
 });
 
 // Обновление контакта (админом)
-router.post("/:id/update", requireAdmin, conditionalCsrfToken, async (req, res) => {
+router.post("/:id/update", requireAdmin, csrfProtection, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
 
@@ -190,7 +189,7 @@ router.post("/:id/update", requireAdmin, conditionalCsrfToken, async (req, res) 
 });
 
 // Удаление контакта (админом)
-router.post("/:id/delete", requireAdmin, conditionalCsrfToken, async (req, res) => {
+router.post("/:id/delete", requireAdmin, csrfProtection, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
 

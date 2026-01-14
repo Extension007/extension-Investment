@@ -6,8 +6,6 @@ const isVercel = Boolean(process.env.VERCEL);
 const isProduction = process.env.NODE_ENV === 'production' || isVercel;
 
 // Логирование отсутствующих переменных окружения
-console.log("🔍 process.env.MONGODB_URI:", process.env.MONGODB_URI);
-console.log("🔍 process.env.SESSION_SECRET:", process.env.SESSION_SECRET);
 
 if (!process.env.MONGODB_URI) {
   console.warn("⚠️  MONGODB_URI не задан. Приложение запущено без БД (каталог пуст, админ/рейтинг отключены).");
@@ -25,7 +23,6 @@ function hasMongo() {
 global.mongoose = global.mongoose || { conn: null, promise: null };
 
 async function connectDatabase(retries = 5, delay = 5000) {
-  console.log('MONGODB_URI set:', Boolean(process.env.MONGODB_URI));
   
   if (!HAS_MONGO_URI) {
     console.warn("⚠️  MONGODB_URI не задан. Приложение будет работать без БД (каталог пуст, админ/рейтинг отключены).");
@@ -33,7 +30,6 @@ async function connectDatabase(retries = 5, delay = 5000) {
   }
 
   // Проверяем реальное значение переменной окружения
-  console.log("🔍 MONGODB_URI:", process.env.MONGODB_URI);
 
   let mongoUri = process.env.MONGODB_URI;
   if (!mongoUri || !mongoUri.startsWith('mongodb')) {

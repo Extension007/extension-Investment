@@ -88,27 +88,6 @@ router.get('/:cardId', [
   }
 });
 
-// Тестовый эндпоинт для проверки авторизации
-router.post('/test/:cardId', async (req, res) => {
-  console.log('🧪 Тестовый запрос на создание комментария:');
-  console.log('  - req.user:', req.user ? `${req.user._id} (${req.user.role || 'no-role'})` : 'null');
-  console.log('  - req.session:', req.session ? 'exists' : 'null');
-  console.log('  - cookies:', req.cookies ? Object.keys(req.cookies) : 'none');
-  console.log('  - authorization header:', req.headers.authorization ? 'exists' : 'none');
-  console.log('  - headers:', req.headers);
-  
-  res.json({
-    success: true,
-    message: 'Тестовый эндпоинт работает',
-    user: req.user ? {
-      _id: req.user._id,
-      role: req.user.role,
-      username: req.user.username
-    } : null,
-    session: req.session ? 'exists' : 'null',
-    cookies: req.cookies ? Object.keys(req.cookies) : []
-  });
-});
 
 // POST /api/comments/:cardId - создать комментарий
 router.post('/:cardId', canWriteComments, commentLimiter, async (req, res) => {

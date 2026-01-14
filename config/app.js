@@ -93,12 +93,22 @@ if (!isVercel) {
   console.log("✅ Сессии и CSRF включены");
 } else {
   app.use(cookieParser());
-  console.log("⚠️ Сессии и CSRF отключены (Vercel)");
+  const csrf = require('csurf');
+  const csrfProtection = csrf({ cookie: true });
+  app.use(csrfProtection);
+
+  const { csrfToken } = require("../middleware/csrf");
+  app.use(csrfToken);
+
+  console.log("INFO: sessions disabled; CSRF enabled (cookie) for Vercel");
 }
 
 const csrfSafeMethods = new Set(['GET', 'HEAD', 'OPTIONS']);
 app.use((req, res, next) => {
   if (!isProduction) {
+    return next();
+  }
+  if (isVercel) {
     return next();
   }
   if (csrfSafeMethods.has(req.method)) {

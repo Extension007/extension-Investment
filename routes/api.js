@@ -27,8 +27,8 @@ router.post("/rating/:id", apiLimiter, csrfProtection, validateProductId, valida
     if (!product) return res.status(404).json({ success: false, message: "Товар не найден" });
 
     // Проверяем, голосовал ли уже
-    if (req.session.user) {
-      const userId = req.session.user._id.toString();
+    if (req.user) {
+      const userId = req.user._id.toString();
       const already = (product.voters || []).map(v => v.toString()).includes(userId);
       if (already) {
         return res.status(409).json({ success: false, message: "Вы уже голосовали за этот товар" });
@@ -46,15 +46,15 @@ router.post("/rating/:id", apiLimiter, csrfProtection, validateProductId, valida
 
     product.rating_updated_at = Date.now();
 
-    if (req.session.user) {
+    if (req.user) {
       product.voters = product.voters || [];
-      product.voters.push(req.session.user._id);
+      product.voters.push(req.user._id);
     }
 
     await product.save();
 
     // Для гостей устанавливаем cookie
-    if (!req.session.user) {
+    if (!req.user) {
       res.cookie(`exto_vote_${req.params.id}`, '1', {
         maxAge: 365 * 24 * 60 * 60 * 1000,
         httpOnly: true,
@@ -115,7 +115,10 @@ router.get("/instagram/oembed", apiLimiter, validateInstagramUrl, async (req, re
     
     try {
       const data = await new Promise((resolve, reject) => {
-        https.get(oembedUrl, {
+        const timeoutMs = 4000;
+        let timeoutId;
+
+        const request = https.get(oembedUrl, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
           }
@@ -123,6 +126,7 @@ router.get("/instagram/oembed", apiLimiter, validateInstagramUrl, async (req, re
           let body = '';
           response.on('data', (chunk) => body += chunk);
           response.on('end', () => {
+            clearTimeout(timeoutId);
             if (response.statusCode === 200) {
               try {
                 resolve(JSON.parse(body));
@@ -133,11 +137,29 @@ router.get("/instagram/oembed", apiLimiter, validateInstagramUrl, async (req, re
               reject(new Error(`Instagram API returned ${response.statusCode}`));
             }
           });
-        }).on('error', reject);
+          response.on('error', (err) => {
+            clearTimeout(timeoutId);
+            reject(err);
+          });
+        });
+
+        timeoutId = setTimeout(() => {
+          const timeoutError = new Error('Instagram oEmbed timeout');
+          timeoutError.code = 'ETIMEDOUT';
+          request.destroy(timeoutError);
+        }, timeoutMs);
+
+        request.on('error', (err) => {
+          clearTimeout(timeoutId);
+          reject(err);
+        });
       });
 
       res.json({ success: true, html: data.html || '', thumbnail_url: data.thumbnail_url || null });
     } catch (fetchErr) {
+      if (fetchErr && (fetchErr.code === 'ETIMEDOUT' || (fetchErr.message && fetchErr.message.includes('timeout')))) {
+        return res.status(504).json({ success: false, message: "Instagram oEmbed timeout" });
+      }
       console.error("❌ Ошибка запроса к Instagram oEmbed API:", fetchErr);
       // Fallback: return embed URL
       const postId = url.match(/\/(p|reel|tv)\/([A-Za-z0-9_-]+)/);
@@ -164,7 +186,7 @@ router.delete("/images/:productId/:index", apiLimiter, csrfProtection, async (re
     const { productId, index } = req.params;
     const imageIndex = parseInt(index);
     
-    console.log("🗑️ Удаление изображения", { productId, index: imageIndex, userId: req.session.user?._id });
+    console.log("🗑️ Удаление изображения", { productId, index: imageIndex, userId: req.user?._id });
     
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: 'Недоступно: нет БД' });
     
@@ -173,7 +195,7 @@ router.delete("/images/:productId/:index", apiLimiter, csrfProtection, async (re
       return res.status(400).json({ success: false, message: "Неверный формат ID товара" });
     }
 
-    if (!req.session.user) {
+    if (!req.user) {
       console.error('❌ Попытка удаления без авторизации');
       return res.status(401).json({ success: false, message: "Необходима авторизация" });
     }
@@ -185,8 +207,8 @@ router.delete("/images/:productId/:index", apiLimiter, csrfProtection, async (re
     }
 
     // Проверка прав: админ или владелец
-    const isAdmin = req.session.user.role === "admin";
-    const isOwner = product.owner && product.owner.toString() === req.session.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+    const isOwner = product.owner && product.owner.toString() === req.user._id.toString();
     
     if (!isAdmin && !isOwner) {
       return res.status(403).json({ success: false, message: "Доступ запрещен" });
@@ -249,12 +271,12 @@ router.delete("/products/:id", apiLimiter, requireUser, csrfProtection, async (r
       return res.status(400).json({ success: false, message: "Неверный формат ID товара" });
     }
 
-    if (!req.session.user) {
+    if (!req.user) {
       return res.status(401).json({ success: false, message: "Необходима авторизация" });
     }
 
     const productId = req.params.id;
-    console.log("🗑️ Удаление карточки товара", { productId, userId: req.session.user._id });
+    console.log("🗑️ Удаление карточки товара", { productId, userId: req.user._id });
 
     // Найти продукт в базе
     const product = await Product.findById(productId);
@@ -263,8 +285,8 @@ router.delete("/products/:id", apiLimiter, requireUser, csrfProtection, async (r
     }
 
     // Проверка прав: админ или владелец
-    const isAdmin = req.session.user.role === "admin";
-    const isOwner = product.owner && product.owner.toString() === req.session.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+    const isOwner = product.owner && product.owner.toString() === req.user._id.toString();
     
     if (!isAdmin && !isOwner) {
       return res.status(403).json({ success: false, message: "Доступ запрещен" });
@@ -382,8 +404,8 @@ router.put("/products/:id", apiLimiter, requireUser, csrfProtection, async (req,
     }
     
     // Проверка прав: админ или владелец
-    const isAdmin = req.session.user.role === "admin";
-    const isOwner = product.owner && product.owner.toString() === req.session.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+    const isOwner = product.owner && product.owner.toString() === req.user._id.toString();
     
     if (!isAdmin && !isOwner) {
       return res.status(403).json({ success: false, message: "Доступ запрещен" });
@@ -491,7 +513,7 @@ router.post("/banners", apiLimiter, requireUser, csrfProtection, async (req, res
       description: description ? description.trim() : "",
       link: link ? link.trim() : "",
       video_url: video_url ? video_url.trim() : "",
-      owner: owner || req.session.user._id,
+      owner: owner || req.user._id,
       category: category ? category.trim() : "",
       price: price ? Number(price) : 0,
       status: status || "published",
@@ -527,8 +549,8 @@ router.put("/banners/:id", apiLimiter, requireUser, csrfProtection, async (req, 
     }
     
     // Проверка прав: админ или владелец
-    const isAdmin = req.session.user.role === "admin";
-    const isOwner = banner.owner && banner.owner.toString() === req.session.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+    const isOwner = banner.owner && banner.owner.toString() === req.user._id.toString();
     
     if (!isAdmin && !isOwner) {
       return res.status(403).json({ success: false, message: "Доступ запрещен" });
@@ -577,8 +599,8 @@ router.delete("/banners/:id", apiLimiter, requireUser, csrfProtection, async (re
     }
     
     // Проверка прав: админ или владелец
-    const isAdmin = req.session.user.role === "admin";
-    const isOwner = banner.owner && banner.owner.toString() === req.session.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+    const isOwner = banner.owner && banner.owner.toString() === req.user._id.toString();
     
     if (!isAdmin && !isOwner) {
       return res.status(403).json({ success: false, message: "Доступ запрещен" });
@@ -620,8 +642,8 @@ router.post("/banners/:id/vote", apiLimiter, csrfProtection, validateBannerId, a
     }
     
     // Проверяем, голосовал ли уже
-    if (req.session.user) {
-      const userId = req.session.user._id.toString();
+    if (req.user) {
+      const userId = req.user._id.toString();
       const already = (banner.voters || []).map(v => v.toString()).includes(userId);
       if (already) {
         return res.status(409).json({ success: false, message: "Вы уже голосовали за этот баннер" });
@@ -644,15 +666,15 @@ router.post("/banners/:id/vote", apiLimiter, csrfProtection, validateBannerId, a
     
     banner.rating_updated_at = Date.now();
     
-    if (req.session.user) {
+    if (req.user) {
       banner.voters = banner.voters || [];
-      banner.voters.push(req.session.user._id);
+      banner.voters.push(req.user._id);
     }
     
     await banner.save();
     
     // Для гостей устанавливаем cookie
-    if (!req.session.user) {
+    if (!req.user) {
       res.cookie(`exto_banner_vote_${req.params.id}`, '1', {
         maxAge: 365 * 24 * 60 * 60 * 1000,
         httpOnly: true,
@@ -768,7 +790,7 @@ router.post("/services", apiLimiter, requireUser, requireEmailVerification, csrf
       description: description ? description.trim() : "",
       link: link ? link.trim() : "",
       video_url: video_url ? video_url.trim() : "",
-      owner: owner || req.session.user._id,
+      owner: owner || req.user._id,
       category: category ? category.trim() : "home",
       price: price ? Number(price) : 0,
       type: "service", // Важно: указываем тип "service"
@@ -810,8 +832,8 @@ router.put("/services/:id", apiLimiter, requireUser, csrfProtection, async (req,
     }
     
     // Проверка прав: админ или владелец
-    const isAdmin = req.session.user.role === "admin";
-    const isOwner = service.owner && service.owner.toString() === req.session.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+    const isOwner = service.owner && service.owner.toString() === req.user._id.toString();
     
     if (!isAdmin && !isOwner) {
       return res.status(403).json({ success: false, message: "Доступ запрещен" });
@@ -865,8 +887,8 @@ router.delete("/services/:id", apiLimiter, requireUser, csrfProtection, async (r
     }
     
     // Проверка прав: админ или владелец
-    const isAdmin = req.session.user.role === "admin";
-    const isOwner = service.owner && service.owner.toString() === req.session.user._id.toString();
+    const isAdmin = req.user.role === "admin";
+    const isOwner = service.owner && service.owner.toString() === req.user._id.toString();
     
     if (!isAdmin && !isOwner) {
       return res.status(403).json({ success: false, message: "Доступ запрещен" });
@@ -913,8 +935,8 @@ router.post("/services/:id/vote", apiLimiter, csrfProtection, validateServiceId,
     }
     
     // Проверяем, голосовал ли уже
-    if (req.session.user) {
-      const userId = req.session.user._id.toString();
+    if (req.user) {
+      const userId = req.user._id.toString();
       const already = (service.voters || []).map(v => v.toString()).includes(userId);
       if (already) {
         return res.status(409).json({ success: false, message: "Вы уже голосовали за эту услугу" });
@@ -937,15 +959,15 @@ router.post("/services/:id/vote", apiLimiter, csrfProtection, validateServiceId,
     
     service.rating_updated_at = Date.now();
     
-    if (req.session.user) {
+    if (req.user) {
       service.voters = service.voters || [];
-      service.voters.push(req.session.user._id);
+      service.voters.push(req.user._id);
     }
     
     await service.save();
     
     // Для гостей устанавливаем cookie
-    if (!req.session.user) {
+    if (!req.user) {
       res.cookie(`exto_service_vote_${req.params.id}`, '1', {
         maxAge: 365 * 24 * 60 * 60 * 1000,
         httpOnly: true,

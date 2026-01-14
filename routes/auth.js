@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const emailVerificationController = require('../controllers/emailVerificationController');
 const authController = require('../controllers/authController');
+const { loginLimiter } = require('../middleware/rateLimiter');
 
 function renderUserLogin(req, res, error = null) {
   if (typeof error === "function") error = null;
@@ -46,12 +47,12 @@ router.post("/logout", (req, res) => {
 router.post("/register", authController.register);
 
 router.get("/user/login", renderUserLogin);
-router.post("/user/login", authController.userLogin);
+router.post("/user/login", loginLimiter, authController.userLogin);
 router.get("/login", (req, res) => res.redirect("/user/login"));
 
 // Admin auth routes
 router.get("/admin/login", renderAdminLogin);
-router.post("/admin/login", authController.adminLogin);
+router.post("/admin/login", loginLimiter, authController.adminLogin);
 
 // Email verification routes
 router.get('/verify-email/:token', emailVerificationController.verifyEmail);

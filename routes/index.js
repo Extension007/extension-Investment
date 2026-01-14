@@ -199,12 +199,8 @@ router.get("/", async (req, res) => {
 // Health-check Cloudinary
 router.get("/__health/cloudinary", async (req, res) => {
   try {
-    const dataUri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAukB9yx7CmoAAAAASUVORK5CYII=";
-    const result = await cloudinary.uploader.upload(dataUri, {
-      folder: "health-check",
-      transformation: [{ width: 10, height: 10, crop: "limit" }]
-    });
-    res.json({ ok: true, public_id: result.public_id, secure_url: result.secure_url });
+    await cloudinary.api.ping();
+    res.json({ ok: true, status: "ok" });
   } catch (err) {
     res.status(500).json({ ok: false, message: err.message });
   }

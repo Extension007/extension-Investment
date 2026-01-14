@@ -8,7 +8,6 @@ const loginLimiter = rateLimit({
   message: "Слишком много попыток входа. Попробуйте позже.",
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: true
 });
 
 // Rate limiter для API (рейтинг, Instagram oEmbed)
