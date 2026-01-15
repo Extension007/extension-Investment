@@ -92,6 +92,15 @@ const productSchema = new mongoose.Schema({
     default: "pending"
   },
   rejection_reason: { type: String, default: "", maxlength: 1000 },
+
+  // P1: Tier and payment system
+  tier: { type: String, enum: ['free', 'paid'], default: 'free' },
+  tierRequested: { type: String, enum: ['free', 'paid'], default: 'free' },
+  editCount: { type: Number, default: 0 },
+  adminComment: { type: String, default: '' },
+  rejectionReason: { type: String, default: '' },
+  paymentStatus: { type: String, enum: ['none', 'requested', 'paid'], default: 'none' },
+  activationCodeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Code', default: null },
   
   // Soft delete
   deleted: { type: Boolean, default: false }

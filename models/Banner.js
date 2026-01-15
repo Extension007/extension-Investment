@@ -38,6 +38,15 @@ const bannerSchema = new mongoose.Schema({
     default: "published"
   },
   rejection_reason: { type: String, default: "" },
+
+  // P1: Tier and payment system
+  tier: { type: String, enum: ['free', 'paid'], default: 'free' },
+  tierRequested: { type: String, enum: ['free', 'paid'], default: 'free' },
+  editCount: { type: Number, default: 0 },
+  adminComment: { type: String, default: '' },
+  rejectionReason: { type: String, default: '' },
+  paymentStatus: { type: String, enum: ['none', 'requested', 'paid'], default: 'none' },
+  activationCodeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Code', default: null },
   
   // Рейтинг (голосование)
   rating_up: { type: Number, default: 0 }, // Голоса "за"
