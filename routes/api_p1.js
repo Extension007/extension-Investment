@@ -33,7 +33,7 @@ router.post('/codes/redeem', requireUser, csrfProtection, async (req, res, next)
   }
 });
 
-router.post('/codes', requireAdmin, async (req, res, next) => {
+router.post('/codes', requireAdmin, csrfProtection, async (req, res, next) => {
   try {
     const { count, kind, type, expiresAt } = req.body;
     if (!count || !kind || !type) return res.status(400).json({ success: false, message: 'count, kind, type required' });
