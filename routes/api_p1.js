@@ -224,6 +224,9 @@ router.post('/videos/:id/reject', requireAdmin, async (req, res, next) => {
     if (!adminComment || !rejectionReason) return res.status(400).json({ success: false, message: 'adminComment and rejectionReason required' });
 
     const video = await moderate({ id: req.params.id, action: 'reject', adminComment, rejectionReason });
+    if (!video) return res.status(404).json({ success: false, error: 'NotFound', message: 'Video not found' });
+    if (!video.userId) return res.status(400).json({ success: false, message: 'Video has no associated user' });
+
     await notifyUser(video.userId, { type: 'video_rejected', videoId: video._id, adminComment, rejectionReason });
     res.json({ success: true, video });
   } catch (err) {
