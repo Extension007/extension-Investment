@@ -8,7 +8,7 @@ const AlbaTransactionSchema = new mongoose.Schema(
     type: { type: String, enum: ['earn', 'spend', 'grant'], required: true, index: true },
     reason: {
       type: String,
-      enum: ['referral_bonus', 'card_payment', 'admin_grant', 'manual_adjustment'],
+      enum: ['referral_bonus', 'card_payment', 'admin_grant', 'manual_adjustment', 'upgrade_to_paid'],
       required: true,
       index: true,
     },
