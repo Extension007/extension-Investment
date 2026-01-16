@@ -10,7 +10,7 @@ const { createVideo, listPublic, moderate, vote } = require('../services/videoSe
 const { assertVerified } = require('../services/p1Rules');
 
 // CODES
-router.post('/codes/redeem', requireAuth, async (req, res, next) => {
+router.post('/codes/redeem', requireAuth, csrfProtection, async (req, res, next) => {
   try {
     assertVerified(req.user);
     const { code } = req.body;
