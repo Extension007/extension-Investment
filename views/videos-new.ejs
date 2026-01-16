@@ -8,7 +8,25 @@
     <link rel="stylesheet" href="/adaptive-tabs.css">
 </head>
 <body>
-    <%- include('partials/header') %>
+    <div id="bg-animated" aria-hidden="true"></div>
+    <!-- РћРґРЅРѕСЌС‚Р°Р¶РЅС‹Р№ header Р±РµР· РІРєР»Р°РґРѕРє -->
+    <header class="main-header">
+      <div class="container header-inner">
+        <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+        <div class="header-actions">
+          <% if (isAuth) { %>
+            <% if (isAdmin) { %>
+              <a class="btn outline" href="/admin">РђРґРјРёРЅ-РїР°РЅРµР»СЊ</a>
+            <% } else { %>
+              <a class="btn outline" href="/cabinet">Р›РёС‡РЅС‹Р№ РєР°Р±РёРЅРµС‚</a>
+            <% } %>
+          <% } else { %>
+            <a class="btn outline" href="/user/login">Р’С…РѕРґ</a>
+            <button id="openRegister" type="button" class="btn outline">Р РµРіРёСЃС‚СЂР°С†РёСЏ</button>
+          <% } %>
+        </div>
+      </div>
+    </header>
 
     <main class="container mt-4">
         <h1 class="mb-4">Добавить видео</h1>
@@ -47,7 +65,45 @@
         </form>
     </main>
 
-    <%- include('partials/footer') %>
+    <!-- Footer с вкладками для мобильных устройств -->
+    <footer class="mobile-tabs-footer">
+      <div class="mobile-tabs-container">
+        <a href="/products" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'products' ? 'active' : '' %>">
+          Товары
+        </a>
+        <a href="/services" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'services' ? 'active' : '' %>">
+          Услуги
+        </a>
+        <a href="/videos" class="mobile-tab-button active">
+          Видео
+        </a>
+        <a href="/ad" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'ad' ? 'active' : '' %>">
+          Реклама
+        </a>
+        <a href="/about" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'about' ? 'active' : '' %>">
+          О Нас
+        </a>
+      </div>
+    </footer>
+
+    <!-- FIX: Полноэкранный overlay для YouTube видео -->
+    <div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
+      <div class="video-overlay-container">
+        <button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
+        <div class="video-overlay-content">
+          <iframe id="videoOverlayFrame" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap script for safe EJS → JS data transfer -->
+    <script src="/utils/bootstrap.js"></script>
+
+    <!-- FIX: Подключаем основной скрипт (включает весь JS: youtube init, модалки, рейтинг, категории, регистрация) -->
+    <script src="/script.js?v=1.0.1"></script>
+
+    <!-- Подключаем скрипт для предотвращения перекрытия контента футером -->
+    <script src="/fix-footer-overlap.js?v=1.0.1"></script>
 
     <script>
         document.getElementById('videoForm').addEventListener('submit', async function(e) {
