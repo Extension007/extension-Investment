@@ -124,8 +124,19 @@ function requireOwnerOrAdmin(modelName = 'Product', paramName = 'id') {
   };
 }
 
-// Для обратной совместимости
-const requireAuth = requireAdmin;
+function requireAuth(req, res, next) {
+  const user = getUserFromRequest(req);
+
+  if (!user) {
+    if (wantsJsonResponse(req)) {
+      return res.status(401).json({ success: false, error: "Unauthorized", message: "Требуется авторизация" });
+    }
+    return res.redirect('/user/login');
+  }
+  req.user = user;
+  req.currentUser = user;
+  return next();
+}
 
 module.exports = {
   requireAdmin,
