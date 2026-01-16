@@ -167,7 +167,7 @@ router.post('/users/activate-paid', requireAuth, async (req, res, next) => {
 });
 
 // VIDEO API
-router.post('/videos', requireAuth, async (req, res, next) => {
+router.post('/videos', requireAuth, csrfProtection, async (req, res, next) => {
   try {
     assertVerified(req.user);
     const video = await createVideo({ user: req.user, payload: req.body });
@@ -205,10 +205,10 @@ router.post('/videos/:id/vote', ensureGuestId, guestRateLimit(), captchaHook, as
 });
 
 // Admin moderation
-router.post('/videos/:id/approve', requireAdmin, async (req, res, next) => {
+router.post('/videos/:id/approve', requireAdmin, csrfProtection, async (req, res, next) => {
   try {
     const { adminComment } = req.body;
-    if (!adminComment) return res.status(400).json({ success: false, message: 'adminComment required' });
+    // adminComment is optional for approve
 
     const video = await moderate({ id: req.params.id, action: 'approve', adminComment });
     await notifyUser(video.userId, { type: 'video_approved', videoId: video._id, adminComment });
@@ -218,7 +218,7 @@ router.post('/videos/:id/approve', requireAdmin, async (req, res, next) => {
   }
 });
 
-router.post('/videos/:id/reject', requireAdmin, async (req, res, next) => {
+router.post('/videos/:id/reject', requireAdmin, csrfProtection, async (req, res, next) => {
   try {
     const { adminComment, rejectionReason } = req.body;
     if (!adminComment || !rejectionReason) return res.status(400).json({ success: false, message: 'adminComment and rejectionReason required' });
@@ -234,7 +234,7 @@ router.post('/videos/:id/reject', requireAdmin, async (req, res, next) => {
   }
 });
 
-router.post('/videos/:id/block', requireAdmin, async (req, res, next) => {
+router.post('/videos/:id/block', requireAdmin, csrfProtection, async (req, res, next) => {
   try {
     const { adminComment } = req.body;
     if (!adminComment) return res.status(400).json({ success: false, message: 'adminComment required' });

@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { requireEmailVerification: requireVerified } = require('../middleware/emailVerification');
 const { ensureGuestId, guestRateLimit, captchaHook } = require('../middleware/p1Guest');
 const { createVideo, listPublic, moderate, vote } = require('../services/videoService');
 const { notifyUser } = require('../services/notify');
+const { csrfProtection } = require('../middleware/csrf');
 
 // Public video listing
 router.get('/', async (req, res, next) => {
@@ -62,10 +63,10 @@ router.post('/:id/vote', ensureGuestId, guestRateLimit(), captchaHook, async (re
 });
 
 // Admin moderation endpoints
-router.post('/:id/approve', requireAuth, async (req, res, next) => {
+router.post('/:id/approve', requireAdmin, csrfProtection, async (req, res, next) => {
   try {
     const { adminComment } = req.body;
-    if (!adminComment) return res.status(400).json({ success: false, message: 'adminComment required' });
+    // adminComment is optional for approve
 
     const video = await moderate({ id: req.params.id, action: 'approve', adminComment });
     await notifyUser(video.userId, { type: 'video_approved', videoId: video._id, adminComment });
@@ -75,7 +76,7 @@ router.post('/:id/approve', requireAuth, async (req, res, next) => {
   }
 });
 
-router.post('/:id/reject', requireAuth, async (req, res, next) => {
+router.post('/:id/reject', requireAdmin, csrfProtection, async (req, res, next) => {
   try {
     const { adminComment, rejectionReason } = req.body;
     if (!adminComment || !rejectionReason) return res.status(400).json({ success: false, message: 'adminComment and rejectionReason required' });
@@ -88,7 +89,7 @@ router.post('/:id/reject', requireAuth, async (req, res, next) => {
   }
 });
 
-router.post('/:id/block', requireAuth, async (req, res, next) => {
+router.post('/:id/block', requireAdmin, csrfProtection, async (req, res, next) => {
   try {
     const { adminComment } = req.body;
     if (!adminComment) return res.status(400).json({ success: false, message: 'adminComment required' });
