@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { ensureGuestId, guestRateLimit, captchaHook } = require('../middleware/p1Guest');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { requireAuth, requireAdmin, requireUser } = require('../middleware/auth');
+const { csrfProtection } = require('../middleware/csrf');
 const { httpError } = require('../utils/httpError');
 const { notifyUser } = require('../services/notify');
 const { redeemSlotCode, createCodes, issuePaymentActivationCode, consumePaymentActivationCode } = require('../services/codeService');
