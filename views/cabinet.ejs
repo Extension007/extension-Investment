@@ -56,6 +56,11 @@
       </nav>
       <div class="header-actions">
         <span class="user-chip">👤 <%= user.username %></span>
+        <% if (typeof user.albaBalance !== 'undefined') { %>
+          <span class="alba-balance" style="margin-left: 10px; background: #ff9999; padding: 4px 12px; border-radius: 12px; font-weight: bold; color: white;">
+            💰 <%= user.albaBalance %> ALBA
+          </span>
+        <% } %>
         <form id="logoutForm" method="POST" action="/logout" style="display:inline;margin-left:10px;">
           <button type="submit" class="btn outline small">Выход</button>
         </form>
@@ -72,6 +77,7 @@
         <button class="tab active" data-tab="products">Мои товары</button>
         <button class="tab" data-tab="services">Мои услуги</button>
         <button class="tab" data-tab="banners">Мои баннеры</button>
+        <button class="tab" data-tab="alba">ALBA баланс</button>
         <button class="tab" data-tab="create">Создать карточку</button>
       </div>
 
@@ -124,6 +130,57 @@
             <button class="tab btn primary" data-tab="create" style="margin-top: 20px;">Создать баннер</button>
           </div>
         <% } %>
+      </div>
+
+      <!-- Вкладка: ALBA баланс -->
+      <div class="tab-content" id="tab-alba">
+        <h2>ALBA баланс</h2>
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+          <h3 style="color: #ff3333; margin-bottom: 10px;">💰 Ваш ALBA баланс</h3>
+          <% if (typeof user.albaBalance !== 'undefined') { %>
+            <div style="font-size: 2rem; font-weight: bold; color: #ff3333; margin-bottom: 10px;">
+              <%= user.albaBalance %> ALBA
+            </div>
+          <% } else { %>
+            <div style="font-size: 1.5rem; color: #666; margin-bottom: 10px;">
+              Загрузка баланса...
+            </div>
+          <% } %>
+          <p style="color: #666; margin-bottom: 15px;">
+            ALBA - это внутренняя валюта платформы Albamount. Используйте её для специальных возможностей и бонусов.
+          </p>
+        </div>
+
+        <!-- История транзакций -->
+        <div>
+          <h3 style="margin-bottom: 15px;">История транзакций</h3>
+          <% if (typeof albaTransactions !== 'undefined' && albaTransactions.length > 0) { %>
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
+              <% albaTransactions.forEach(function(tx) { %>
+                <div style="padding: 12px; border-bottom: 1px solid #eee; <%= tx.amount > 0 ? 'background: #e8f5e9;' : 'background: #ffebee;' %> margin-bottom: 8px; border-radius: 4px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <strong style="<%= tx.amount > 0 ? 'color: #2e7d32;' : 'color: #c62828;' %>"><%= tx.amount > 0 ? '+' : '' %><%= tx.amount %> ALBA</strong>
+                      <div style="font-size: 0.9rem; color: #666; margin-top: 4px;">
+                        <%= tx.reason %> <%= tx.type === 'referral_bonus' ? '(реферальный бонус)' : '' %>
+                      </div>
+                      <div style="font-size: 0.8rem; color: #999; margin-top: 4px;">
+                        <%= new Date(tx.createdAt).toLocaleString() %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <div style="text-align: center; padding: 40px 20px; color: #666;">
+              <p>У вас пока нет транзакций ALBA.</p>
+              <p style="font-size: 0.9rem; margin-top: 10px; color: #999;">
+                ALBA можно получить за активность на платформе, реферальные бонусы и специальные акции.
+              </p>
+            </div>
+          <% } %>
+        </div>
       </div>
 
       <!-- Вкладка: Создать карточку -->
