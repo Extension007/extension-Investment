@@ -24,6 +24,14 @@ exports.verifyEmail = async (req, res) => {
       console.error('Ошибка при отправке уведомления администратору:', notificationError);
     }
 
+    // P1: Referral bonus hook (idempotent)
+    try {
+      const { grantReferralBonusIfEligible } = require('../services/referralService');
+      await grantReferralBonusIfEligible({ UserModel: User, user });
+    } catch (referralError) {
+      console.error('Ошибка при начислении реферального бонуса:', referralError);
+    }
+
     // Рендерить шаблон успеха
     res.render('verification-success', {
       message: 'Ваш email успешно подтвержден!',

@@ -32,6 +32,7 @@ router.use("/services", require("./services"));
 router.use("/ad", require("./ad"));
 router.use("/about", require("./about"));
 router.use("/contacts", require("./contacts"));
+router.use("/videos", require("./videos"));
 
 // Главная страница — каталог
 router.get("/", async (req, res) => {

@@ -311,12 +311,18 @@ const validateRating = [
 
 // Валидация модерации
 const validateModeration = [
-  body("reason")
+  body("adminComment")
+    .optional()
+    .trim()
+    .isLength({ max: 1000 })
+    .withMessage("Комментарий администратора не должен превышать 1000 символов"),
+
+  body("rejectionReason")
     .optional()
     .trim()
     .isLength({ max: 1000 })
     .withMessage("Причина отклонения не должна превышать 1000 символов"),
-  
+
   handleValidationErrors
 ];
 

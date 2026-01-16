@@ -357,14 +357,23 @@ router.post("/products/:id/approve", requireAdmin, conditionalCsrfProtection, va
 router.post("/products/:id/reject", requireAdmin, conditionalCsrfProtection, validateProductId, validateModeration, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
-    const { reason } = req.body;
+    const { adminComment, rejectionReason } = req.body;
+
+    // P1: Validate required fields for reject
+    if (!adminComment) {
+      return res.status(400).json({ success: false, message: "adminComment required" });
+    }
+    if (!rejectionReason) {
+      return res.status(400).json({ success: false, message: "rejectionReason required" });
+    }
+
     const product = await Product.findByIdAndUpdate(
       req.params.id,
-      { status: "rejected", rejection_reason: reason || "Несоответствие правилам публикации" },
+      { status: "rejected", adminComment, rejection_reason: rejectionReason },
       { new: true }
     );
     if (!product) return res.status(404).json({ success: false, message: "Карточка не найдена" });
-    
+
     // Отправляем уведомление администратору о модерации
     try {
       await notifyAdmin(
@@ -375,7 +384,8 @@ router.post("/products/:id/reject", requireAdmin, conditionalCsrfProtection, val
           'Название': product.name,
           'Тип': product.type || 'product',
           'Статус': 'rejected',
-          'Причина отклонения': reason || "Несоответствие правилам публикации",
+          'Причина отклонения': rejectionReason,
+          'Комментарий администратора': adminComment,
           'Отклонено администратором': req.user?.username || 'Неизвестно',
           'Дата отклонения': new Date().toLocaleString('ru-RU')
         }
@@ -383,7 +393,7 @@ router.post("/products/:id/reject", requireAdmin, conditionalCsrfProtection, val
     } catch (notificationError) {
       console.error('Ошибка при отправке уведомления администратору:', notificationError);
     }
-    
+
     res.json({ success: true, status: product.status, rejection_reason: product.rejection_reason });
   } catch (err) {
     console.error("❌ Ошибка отклонения карточки:", err);
@@ -473,14 +483,23 @@ router.post("/banners/:id/approve", requireAdmin, conditionalCsrfProtection, val
 router.post("/banners/:id/reject", requireAdmin, conditionalCsrfProtection, validateBannerId, validateModeration, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
-    const { reason } = req.body;
+    const { adminComment, rejectionReason } = req.body;
+
+    // P1: Validate required fields for reject
+    if (!adminComment) {
+      return res.status(400).json({ success: false, message: "adminComment required" });
+    }
+    if (!rejectionReason) {
+      return res.status(400).json({ success: false, message: "rejectionReason required" });
+    }
+
     const banner = await Banner.findByIdAndUpdate(
       req.params.id,
-      { status: "rejected", rejection_reason: reason || "Несоответствие правилам публикации" },
+      { status: "rejected", adminComment, rejection_reason: rejectionReason },
       { new: true }
     );
     if (!banner) return res.status(404).json({ success: false, message: "Баннер не найден" });
-    
+
     // Отправляем уведомление администратору о модерации
     try {
       await notifyAdmin(
@@ -490,7 +509,8 @@ router.post("/banners/:id/reject", requireAdmin, conditionalCsrfProtection, vali
           'ID баннера': banner._id.toString(),
           'Заголовок': banner.title,
           'Статус': 'rejected',
-          'Причина отклонения': reason || "Несоответствие правилам публикации",
+          'Причина отклонения': rejectionReason,
+          'Комментарий администратора': adminComment,
           'Отклонен администратором': req.user?.username || 'Неизвестно',
           'Дата отклонения': new Date().toLocaleString('ru-RU')
         }
@@ -498,7 +518,7 @@ router.post("/banners/:id/reject", requireAdmin, conditionalCsrfProtection, vali
     } catch (notificationError) {
       console.error('Ошибка при отправке уведомления администратору:', notificationError);
     }
-    
+
     res.json({ success: true, status: banner.status, rejection_reason: banner.rejection_reason });
   } catch (err) {
     console.error("❌ Ошибка отклонения баннера:", err);
@@ -550,10 +570,19 @@ router.post("/services/:id/approve", requireAdmin, conditionalCsrfProtection, va
 router.post("/services/:id/reject", requireAdmin, conditionalCsrfProtection, validateServiceId, validateModeration, async (req, res) => {
   try {
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
-    const { reason } = req.body;
+    const { adminComment, rejectionReason } = req.body;
+
+    // P1: Validate required fields for reject
+    if (!adminComment) {
+      return res.status(400).json({ success: false, message: "adminComment required" });
+    }
+    if (!rejectionReason) {
+      return res.status(400).json({ success: false, message: "rejectionReason required" });
+    }
+
     const service = await Product.findByIdAndUpdate(
       req.params.id,
-      { status: "rejected", rejection_reason: reason || "Несоответствие правилам публикации" },
+      { status: "rejected", adminComment, rejection_reason: rejectionReason },
       { new: true }
     );
     if (!service) return res.status(404).json({ success: false, message: "Услуга не найдена" });
@@ -561,7 +590,7 @@ router.post("/services/:id/reject", requireAdmin, conditionalCsrfProtection, val
     if (service.type !== "service") {
       return res.status(400).json({ success: false, message: "Это не услуга" });
     }
-    
+
     // Отправляем уведомление администратору о модерации
     try {
       await notifyAdmin(
@@ -572,7 +601,8 @@ router.post("/services/:id/reject", requireAdmin, conditionalCsrfProtection, val
           'Название': service.name,
           'Тип': service.type || 'service',
           'Статус': 'rejected',
-          'Причина отклонения': reason || "Несоответствие правилам публикации",
+          'Причина отклонения': rejectionReason,
+          'Комментарий администратора': adminComment,
           'Отклонено администратором': req.user?.username || 'Неизвестно',
           'Дата отклонения': new Date().toLocaleString('ru-RU')
         }
@@ -580,7 +610,7 @@ router.post("/services/:id/reject", requireAdmin, conditionalCsrfProtection, val
     } catch (notificationError) {
       console.error('Ошибка при отправке уведомления администратору:', notificationError);
     }
-    
+
     res.json({ success: true, status: service.status, rejection_reason: service.rejection_reason });
   } catch (err) {
     console.error("❌ Ошибка отклонения услуги:", err);

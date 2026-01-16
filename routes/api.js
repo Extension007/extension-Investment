@@ -1010,7 +1010,7 @@ router.get("/contacts", async (req, res) => {
     const contacts = await ContactInfo.find({})
       .sort({ type: 1, updatedAt: -1 })
       .lean();
-    
+
     res.json({ success: true, contacts });
   } catch (err) {
     console.error("❌ Ошибка получения контактов:", err);
@@ -1024,18 +1024,23 @@ router.get("/contacts/:id", async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ success: false, message: "Неверный формат ID контакта" });
     }
-    
+
     const contact = await ContactInfo.findById(req.params.id).lean();
-    
+
     if (!contact) {
       return res.status(404).json({ success: false, message: "Контакт не найден" });
     }
-    
+
     res.json({ success: true, contact });
   } catch (err) {
     console.error("❌ Ошибка получения контакта:", err);
     res.status(500).json({ success: false, message: "Ошибка сервера" });
   }
 });
+
+// =======================
+// P1 API Routes
+// =======================
+router.use(require('./api_p1'));
 
 module.exports = router;

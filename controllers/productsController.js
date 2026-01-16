@@ -45,7 +45,7 @@ exports.createProduct = async (req, res, next) => {
   try {
     // FIX: Валидация и санитизация данных
     const { name, title, description, phone, email, telegram, whatsapp, price, link, video_url, category } = req.body;
-    
+
     // Валидация категории
     if (category) {
       // Проверяем, является ли категория ObjectId (новая система)
@@ -62,10 +62,10 @@ exports.createProduct = async (req, res, next) => {
         }
       }
     }
-    
+
     // FIX: Поддержка старого формата с title для обратной совместимости
     const productName = name || title;
-    
+
     if (!productName || !productName.trim()) {
       return res.status(400).json({ success: false, message: "Название товара обязательно" });
     }
@@ -113,6 +113,18 @@ exports.createProduct = async (req, res, next) => {
     const sanitizedLink = link ? sanitizeText(link, 500) : "";
     const sanitizedVideoUrl = video_url ? sanitizeText(video_url, 500) : "";
 
+    // P1: Enforcement rules
+    const { assertVerified, consumeSlotOrThrow } = require('../services/p1Rules');
+    const User = require('../models/User');
+
+    // P1: Check if user is verified
+    if (req.user) {
+      assertVerified(req.user);
+
+      // P1: Consume slot for user creation
+      await consumeSlotOrThrow(User, req.user._id);
+    }
+
     // FIX: Создаем товар с санитизированными данными
     const productData = {
       name: productName.trim(),
@@ -124,7 +136,11 @@ exports.createProduct = async (req, res, next) => {
       contacts: sanitizedContacts,
       category: category || "home",
       owner: req.user?._id || null,
-      status: req.user?.role === 'admin' ? "approved" : "pending"
+      status: req.user?.role === 'admin' ? "approved" : "pending",
+      tier: 'free',
+      tierRequested: 'free',
+      editCount: 0,
+      paymentStatus: 'none'
     };
 
     const product = await Product.create(productData);
@@ -315,6 +331,20 @@ exports.updateProduct = async (req, res, next) => {
     const sanitizedLink = link ? sanitizeText(link, 500) : "";
     const sanitizedVideoUrl = video_url ? sanitizeText(video_url, 500) : "";
 
+    // P1: Enforcement rules for editing
+    const { assertVerified, assertEditAllowed } = require('../services/p1Rules');
+
+    // P1: Check if user is verified
+    if (req.user) {
+      assertVerified(req.user);
+
+      // P1: Check edit limit
+      assertEditAllowed(product);
+
+      // P1: Increment edit count
+      product.editCount = Number(product.editCount || 0) + 1;
+    }
+
     // FIX: Обновляем товар с санитизированными данными
     const updateData = {
       name: productName.trim(),
@@ -324,15 +354,16 @@ exports.updateProduct = async (req, res, next) => {
       video_url: sanitizedVideoUrl,
       images: newImages,
       contacts: sanitizedContacts,
-      status: "pending"
+      status: "pending",
+      editCount: product.editCount
     };
-    
+
     if (category) {
       updateData.category = category;
     }
-    
+
     Object.assign(product, updateData);
-    
+
     console.log(`✅ Обновление карточки ${product._id}: статус установлен в "pending", изображений: ${newImages.length}`);
 
     await product.save();

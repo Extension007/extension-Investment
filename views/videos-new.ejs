@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить видео - AlbaMount</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/adaptive-tabs.css">
+</head>
+<body>
+    <%- include('partials/header') %>
+
+    <main class="container mt-4">
+        <h1 class="mb-4">Добавить видео</h1>
+
+        <form id="videoForm" class="needs-validation" novalidate>
+            <div class="mb-3">
+                <label for="videoUrl" class="form-label">Ссылка на видео *</label>
+                <input type="url" class="form-control" id="videoUrl" name="videoUrl" required>
+                <div class="invalid-feedback">Пожалуйста, укажите ссылку на видео</div>
+                <small class="form-text text-muted">Поддерживаются YouTube, Vimeo и другие платформы</small>
+            </div>
+
+            <div class="mb-3">
+                <label for="platform" class="form-label">Платформа</label>
+                <input type="text" class="form-control" id="platform" name="platform" placeholder="YouTube, Vimeo и т.д.">
+            </div>
+
+            <div class="mb-3">
+                <label for="title" class="form-label">Название *</label>
+                <input type="text" class="form-control" id="title" name="title" required>
+                <div class="invalid-feedback">Пожалуйста, укажите название видео</div>
+            </div>
+
+            <div class="mb-3">
+                <label for="description" class="form-label">Описание</label>
+                <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="genres" class="form-label">Жанры (через запятую)</label>
+                <input type="text" class="form-control" id="genres" name="genres" placeholder="например: музыка, спорт, образование">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Добавить видео</button>
+            <a href="/videos" class="btn btn-secondary">Отмена</a>
+        </form>
+    </main>
+
+    <%- include('partials/footer') %>
+
+    <script>
+        document.getElementById('videoForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const form = e.target;
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                return;
+            }
+
+            const formData = {
+                videoUrl: document.getElementById('videoUrl').value,
+                platform: document.getElementById('platform').value,
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                genres: document.getElementById('genres').value
+            };
+
+            try {
+                const response = await fetch('/api/videos', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    alert('Видео успешно добавлено и отправлено на модерацию!');
+                    window.location.href = '/videos';
+                } else {
+                    alert(result.message || 'Ошибка при добавлении видео');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Ошибка при добавлении видео');
+            }
+        });
+    </script>
+</body>
+</html>
