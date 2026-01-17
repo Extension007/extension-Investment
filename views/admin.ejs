@@ -226,101 +226,28 @@
 <% } %>
 </section>
 
-<!-- Добавить товар/услугу -->
+<!-- Управление ALBA -->
 <section class="section">
 <div class="section-header">
-<h2>Добавить товар/услугу</h2>
+<h2>Управление ALBA</h2>
 </div>
-<form id="adminCreateProductForm" method="POST" action="/admin/products" enctype="multipart/form-data" class="form-grid">
+<form id="adminGrantAlbaForm" class="form-grid">
 <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-<!-- Селектор типа публикации -->
-<div class="form-section">
-<label for="adminType">Тип публикации:</label>
-<select id="adminType" name="type" required>
-<option value="product">Товар</option>
-<option value="service">Услуга</option>
-</select>
-</div>
-
-<input type="text" name="name" placeholder="Название" required>
-<textarea name="description" placeholder="Описание" rows="4"></textarea>
-<input type="text" name="price" placeholder="Цена" required>
-<input type="url" name="link" placeholder="Ссылка">
-<input type="url" name="video_url" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)">
-
-<!-- Поля контактов продавца -->
-<div class="form-section">
-<h3>Контакты продавца</h3>
-<input type="tel" name="phone" placeholder="Телефон">
-<input type="email" name="email" placeholder="Email">
-<input type="text" name="telegram" placeholder="Telegram (например: @username)">
-<input type="text" name="whatsapp" placeholder="WhatsApp (номер телефона)">
-<textarea name="contact_method" placeholder="Способ связи (например: Звоните с 9:00 до 18:00)" rows="2"></textarea>
-</div>
-
-<!-- Загрузка до 5 изображений -->
-<div class="form-section">
-<label for="adminImages">Изображения (до 5 шт.):</label>
-<input type="file" id="adminImages" name="images" accept="image/*" multiple data-max-files="5">
-<div id="adminImagePreview" class="image-preview-container" style="display:none;margin-top:10px;"></div>
-<small class="form-hint">Можно выбрать до 5 изображений</small>
-</div>
-
-<div class="form-section">
-<label for="adminCategory">Категория:</label>
-<div id="adminCategorySelectorContainer">
-<select name="category" id="adminCategorySelect" required>
-<option value="">Выберите категорию</option>
-<!-- Блоки категорий будут загружены динамически -->
-</select>
-<div id="adminSubcategorySelector" style="margin-top: 10px; display: none;">
-<button class="btn small outline" id="adminBackToBlocks" style="margin-bottom: 10px;">← Назад к блокам</button>
-<select id="adminSubcategorySelect" name="subcategory" style="width: 100%;">
-<option value="">Выберите подкатегорию</option>
-</select>
-</div>
-<!-- Контейнер для иерархического выбора -->
-<div id="adminHierarchicalCategorySelector" style="margin-top: 10px; display: none;">
-<button class="btn small outline" id="adminBackToMain" style="margin-bottom: 10px;">← Назад к основным категориям</button>
-</div>
-</div>
-
-<button type="submit" class="btn primary">Добавить</button>
+<input type="text" id="albaUsername" name="login" placeholder="Логин пользователя" required>
+<input type="number" id="albaAmount" name="amount" placeholder="Количество ALBA" required min="1">
+<input type="text" id="albaComment" name="reason" placeholder="Комментарий" required>
+<button type="submit" class="btn primary">Начислить ALBA</button>
 </form>
-<div id="adminCreateMsg" class="note" style="margin-top:10px;"></div>
-</section>
+<div id="albaGrantMsg" class="note" style="margin-top:10px;"></div>
 
-<!-- Добавить баннер -->
-<section class="section">
-<div class="section-header">
-<h2>Добавить баннер</h2>
+<!-- История транзакций ALBA -->
+<div class="section-header" style="margin-top: 30px;">
+<h2>История транзакций ALBA</h2>
 </div>
-<form id="adminCreateBannerForm" method="POST" action="/admin/banners" enctype="multipart/form-data" class="form-grid">
-<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-<input type="text" name="title" placeholder="Название баннера" required>
-<textarea name="description" placeholder="Описание" rows="4"></textarea>
-<input type="text" name="price" placeholder="Цена">
-<input type="url" name="link" placeholder="Ссылка">
-<input type="url" name="video_url" placeholder="Ссылка на видео (YouTube, ВКонтакте, Instagram)">
-<input type="text" name="category" placeholder="Категория (реклама, промо и т.д.)">
-
-<!-- Загрузка до 5 изображений -->
-<div class="form-section">
-<label for="adminBannerImages">Изображения (до 5 шт.):</label>
-<input type="file" id="adminBannerImages" name="images" accept="image/*" multiple data-max-files="5">
-<div id="adminBannerImagePreview" class="image-preview-container" style="display:none;margin-top:10px;"></div>
-<small class="form-hint">Можно выбрать до 5 изображений</small>
+<button id="loadTransactionsBtn" class="btn small" style="margin-bottom: 15px;">Загрузить историю</button>
+<div id="albaTransactionsContainer">
+<p class="empty-state">Нажмите кнопку для загрузки истории транзакций</p>
 </div>
-
-<select name="status">
-<option value="published">Опубликовано</option>
-<option value="draft">Черновик</option>
-<option value="pending">На модерации</option>
-</select>
-
-<button type="submit" class="btn primary">Добавить баннер</button>
-</form>
-<div id="adminCreateBannerMsg" class="note" style="margin-top:10px;"></div>
 </section>
 
 <!-- Каталог товаров -->

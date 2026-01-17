@@ -163,48 +163,13 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
   }
 });
 
-// Добавление товара (админом - сразу approved)
-// ВАЖНО: multer должен быть ПЕРЕД csrfProtection, чтобы _csrf был доступен в req.body
-router.post("/products", requireAdmin, productLimiter, upload, handleMulterError, csrfProtection, validateProduct, async (req, res) => {
-  if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
-  try {
-    // Проверка наличия изображений (если обязательны)
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ success: false, message: "Необходимо загрузить хотя бы одно изображение" });
-    }
-
-    const productData = {
-      name: req.body.name,
-      description: req.body.description,
-      price: req.body.price,
-      link: req.body.link,
-      video_url: req.body.video_url,
-      category: req.body.category,
-      type: req.body.type,
-      phone: req.body.phone,
-      email: req.body.email,
-      telegram: req.body.telegram,
-      whatsapp: req.body.whatsapp,
-      contact_method: req.body.contact_method,
-      ownerId: null, // Админ создает без владельца
-      status: "approved" // Админ создает сразу опубликованные
-    };
-
-    await createProduct(productData, req.files || []);
-
-    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-    if (wantsJson) {
-      return res.json({ success: true, message: "Товар успешно добавлен" });
-    }
-    res.redirect("/admin");
-  } catch (err) {
-    console.error("❌ Ошибка добавления товара:", err);
-    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
-    if (wantsJson) {
-      return res.status(500).json({ success: false, message: "Ошибка добавления товара: " + err.message });
-    }
-    res.status(500).send("Ошибка загрузки изображения или базы данных");
-  }
+// ДОСТУП ЗАБЛОКИРОВАН: Админы не могут создавать товары/услуги напрямую
+// Это нарушает бизнес-инварианты (только пользователи могут создавать карточки)
+router.post("/products", requireAdmin, async (req, res) => {
+  return res.status(403).json({
+    success: false,
+    message: "Администраторы не могут создавать товары/услуги напрямую. Используйте модерацию существующих карточек."
+  });
 });
 
 // Удаление товара (soft delete)

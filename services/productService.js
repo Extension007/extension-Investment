@@ -4,6 +4,8 @@ const Category = require("../models/Category");
 const { CATEGORY_KEYS } = require("../config/constants");
 const { processUploadedFiles, deleteProductImages } = require("./imageService");
 const mongoose = require("mongoose");
+const { getAvailableEntitlementsCount, consumeEntitlement } = require("./albaService");
+const Entitlement = require("../models/Entitlement");
 
 async function resolveCategoryData(category) {
   if (!category) return { categoryId: null, categoryValue: "" };
@@ -334,9 +336,125 @@ async function getProducts(filters = {}, options = {}) {
   };
 }
 
+/**
+ * Create product with entitlement validation and consumption
+ * @param {Object} data - Product data
+ * @param {Array} files - Uploaded files
+ * @param {Object} user - User object
+ * @returns {Promise<Object>} - Created product or error
+ */
+async function createProductWithEntitlementCheck(data, files = [], user) {
+  const { type = 'product' } = data;
+
+  // Validate user is verified
+  if (!user || !user.emailVerified) {
+    throw new Error('User must be verified to create products');
+  }
+
+  // Check if user already has a base card of this type
+  const existingBaseCards = await Product.countDocuments({
+    owner: user._id,
+    type,
+    deleted: { $ne: true },
+    $or: [
+      { tier: { $exists: false } },
+      { tier: 'free' }
+    ]
+  });
+
+  // Check if user has any purchased cards of this type
+  const existingPurchasedCards = await Product.countDocuments({
+    owner: user._id,
+    type,
+    deleted: { $ne: true },
+    tier: 'paid'
+  });
+
+  const totalCardsOfType = existingBaseCards + existingPurchasedCards;
+
+  if (totalCardsOfType >= 1 && existingBaseCards >= 1) {
+    // User already has base card, check for available entitlements
+    const availableEntitlements = await getAvailableEntitlementsCount(user._id, type);
+
+    if (availableEntitlements <= 0) {
+      throw new Error(`No available entitlements for ${type} creation. Purchase more entitlements.`);
+    }
+
+    // Find and consume an available entitlement
+    const entitlementToConsume = await Entitlement.findOne({
+      owner: user._id,
+      type,
+      status: 'available'
+    }).sort({ createdAt: 1 }); // Use oldest entitlement first
+
+    if (!entitlementToConsume) {
+      throw new Error(`No available entitlements found for ${type} creation`);
+    }
+
+    // Consume the entitlement
+    const consumeResult = await consumeEntitlement(entitlementToConsume._id);
+    if (!consumeResult.ok) {
+      throw new Error(`Failed to consume entitlement: ${consumeResult.message}`);
+    }
+
+    // Create product as purchased
+    data.tier = 'paid';
+    data.status = 'pending';
+    const product = await createProduct(data, files);
+    return { product, entitlementConsumed: true, entitlementId: entitlementToConsume._id };
+  } else {
+    // Create base product (first one is free)
+    data.tier = 'free';
+    data.status = 'pending';
+    const product = await createProduct(data, files);
+    return { product, entitlementConsumed: false };
+  }
+}
+
+/**
+ * Update product with edit limits
+ * @param {string} productId - Product ID
+ * @param {Object} data - New data
+ * @param {Array} files - New uploaded files
+ * @param {Object} options - Options (ownerId for rights check)
+ * @returns {Promise<Object>} - Updated product or error
+ */
+async function updateProductWithEditLimits(productId, data, files = [], options = {}) {
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  // Check ownership
+  if (options.ownerId && product.owner && product.owner.toString() !== options.ownerId.toString()) {
+    throw new Error("No rights to edit this product");
+  }
+
+  // Check edit limits
+  const isBaseCard = !product.tier || product.tier === 'free';
+  const isPurchasedCard = product.tier === 'paid';
+
+  const maxEdits = isBaseCard ? 3 : 5;
+  const currentEditCount = product.editCount || 0;
+
+  if (currentEditCount >= maxEdits) {
+    throw new Error(`Edit limit reached for this ${isBaseCard ? 'base' : 'purchased'} card (max ${maxEdits} edits)`);
+  }
+
+  // Increment edit count
+  product.editCount = currentEditCount + 1;
+
+  // Update product (will set status to pending)
+  const updatedProduct = await updateProduct(productId, data, files, options);
+
+  return updatedProduct;
+}
+
 module.exports = {
   createProduct,
   updateProduct,
   deleteProduct,
-  getProducts
+  getProducts,
+  createProductWithEntitlementCheck,
+  updateProductWithEditLimits
 };

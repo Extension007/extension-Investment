@@ -4,6 +4,8 @@ const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const Banner = require("../models/Banner");
 const Category = require("../models/Category");
+const User = require("../models/User");
+const AlbaTransaction = require("../models/AlbaTransaction");
 const { HAS_MONGO } = require("../config/database");
 const { requireUser } = require("../middleware/auth");
 const { productLimiter } = require("../middleware/rateLimiter");
@@ -74,11 +76,21 @@ router.get("/", requireUser, conditionalCsrfToken, async (req, res) => {
     const categoryTree = await Category.getTree('all');
     const categoryFlat = await Category.getFlatList('all');
 
+    // Получаем свежие данные пользователя (включая актуальный ALBA баланс) из базы данных
+    const freshUser = await User.findById(req.user._id).select('username email role albaBalance refCode referredBy refBonusGranted').lean();
+    
+    // Получаем последние транзакции ALBA для пользователя
+    const albaTransactions = await AlbaTransaction.find({ userId: req.user._id })
+      .sort({ createdAt: -1 })
+      .limit(50) // ограничиваем количество транзакций
+      .lean();
+
     // Генерируем CSRF токен
     const csrfTokenValue = res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : '');
 
     res.render("cabinet", {
-      user: req.user,
+      user: freshUser, // используем свежие данные из базы
+      albaTransactions, // передаем транзакции в шаблон
       products: myProducts,
       services: myServices || [],
       banners: myBanners || [],
@@ -127,19 +139,28 @@ router.post("/product", requireUser, productLimiter, mobileOptimization, upload,
 
     console.log(`📋 Creating product: device=${req.isMobile ? 'mobile' : 'desktop'}, filesCount=${req.files ? req.files.length : 0}`);
 
-    const created = await createProduct(productData, req.files || []);
+    // Use new product creation with entitlement check
+    const { createProductWithEntitlementCheck } = require('../services/productService');
+    const result = await createProductWithEntitlementCheck(productData, req.files || [], req.user);
 
-    const imagesCount = created.images?.length || 0;
+    const imagesCount = result.product.images?.length || 0;
 
     console.log("✅ Карточка создана пользователем:", {
-      id: created._id.toString(),
-      name: created.name,
-      owner: created.owner.toString(),
+      id: result.product._id.toString(),
+      name: result.product.name,
+      owner: result.product.owner.toString(),
       imagesCount,
-      deviceType: req.isMobile ? 'mobile' : 'desktop'
+      deviceType: req.isMobile ? 'mobile' : 'desktop',
+      tier: result.product.tier,
+      entitlementConsumed: result.entitlementConsumed
     });
 
-    res.json({ success: true, productId: created._id });
+    res.json({
+      success: true,
+      productId: result.product._id,
+      tier: result.product.tier,
+      entitlementConsumed: result.entitlementConsumed
+    });
   } catch (err) {
     console.error("❌ Ошибка создания карточки:", err);
     res.status(500).json({ success: false, message: "Ошибка создания карточки: " + err.message });

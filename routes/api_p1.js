@@ -93,7 +93,7 @@ router.post('/alba/grant-by-login', requireAdmin, async (req, res) => {
     }
 
     const User = require('../models/User');
-    
+
     // Find user by login (username)
     const user = await User.findOne({ username: login });
     if (!user) {
@@ -138,6 +138,136 @@ router.post('/alba/grant-by-login', requireAdmin, async (req, res) => {
   }
 });
 
+// ENTITLEMENTS API
+router.post('/entitlements/purchase', requireAuth, async (req, res) => {
+  try {
+    const { type, idempotencyKey } = req.body;
+    if (!type || !idempotencyKey) {
+      return res.status(400).json({
+        success: false,
+        message: 'Type and idempotencyKey are required'
+      });
+    }
+
+    const User = require('../models/User');
+    const { purchaseEntitlement } = require('../services/albaService');
+
+    const result = await purchaseEntitlement({
+      UserModel: User,
+      userId: req.user._id,
+      type,
+      idempotencyKey
+    });
+
+    if (!result.ok) {
+      return res.status(result.status || 400).json({
+        success: false,
+        message: result.message
+      });
+    }
+
+    res.json({
+      success: true,
+      entitlement: result.entitlement,
+      transaction: result.transaction,
+      message: 'Entitlement purchased successfully'
+    });
+  } catch (err) {
+    console.error('Error purchasing entitlement:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error purchasing entitlement: ' + err.message
+    });
+  }
+});
+
+router.get('/entitlements/available', requireAuth, async (req, res) => {
+  try {
+    const { getAvailableEntitlements } = require('../services/albaService');
+
+    const entitlements = await getAvailableEntitlements(req.user._id);
+
+    // Group by type
+    const productEntitlements = entitlements.filter(e => e.type === 'product');
+    const serviceEntitlements = entitlements.filter(e => e.type === 'service');
+
+    res.json({
+      success: true,
+      entitlements: {
+        product: productEntitlements,
+        service: serviceEntitlements,
+        total: entitlements.length
+      }
+    });
+  } catch (err) {
+    console.error('Error getting available entitlements:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error getting available entitlements: ' + err.message
+    });
+  }
+});
+
+// REFERRAL API
+router.post('/referrals/set-binding', requireAuth, async (req, res) => {
+  try {
+    const { referrerId } = req.body;
+    if (!referrerId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Referrer ID is required'
+      });
+    }
+
+    const User = require('../models/User');
+    const { setReferralBinding } = require('../services/referralService');
+
+    const result = await setReferralBinding({
+      UserModel: User,
+      userId: req.user._id,
+      referrerId
+    });
+
+    if (!result.ok) {
+      return res.status(result.status || 400).json({
+        success: false,
+        message: result.message
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Referral binding set successfully',
+      user: result.user
+    });
+  } catch (err) {
+    console.error('Error setting referral binding:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error setting referral binding: ' + err.message
+    });
+  }
+});
+
+router.get('/referrals/stats', requireAuth, async (req, res) => {
+  try {
+    const { getReferralStats } = require('../services/referralService');
+
+    const stats = await getReferralStats(req.user._id);
+
+    res.json({
+      success: true,
+      stats
+    });
+  } catch (err) {
+    console.error('Error getting referral stats:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error getting referral stats: ' + err.message
+    });
+  }
+});
+
 // Get ALBA transactions history
 router.get('/alba/transactions-history', requireAdmin, async (req, res) => {
   try {
@@ -176,18 +306,17 @@ router.get('/alba/transactions', requireAuth, async (req, res, next) => {
   }
 });
 
-// PAID FLOW
-router.post('/payments/alba', requireAuth, async (req, res, next) => {
+// LEGACY PAID FLOW - ADMIN ONLY
+router.post('/payments/alba', requireAdmin, async (req, res, next) => {
   try {
-    assertVerified(req.user);
-    const { paymentType, cardType, cardId } = req.body;
-    if (paymentType !== 'upgrade_to_paid' || !cardType || !cardId) {
-      return res.status(400).json({ success: false, message: 'paymentType=upgrade_to_paid, cardType, cardId required' });
+    const { paymentType, cardType, cardId, userId } = req.body;
+    if (paymentType !== 'upgrade_to_paid' || !cardType || !cardId || !userId) {
+      return res.status(400).json({ success: false, message: 'paymentType=upgrade_to_paid, cardType, cardId, userId required' });
     }
 
     const result = await spendAlba({
       UserModel: require('../models/User'),
-      userId: req.user._id,
+      userId: userId,
       amount: 30,
       reason: 'upgrade_to_paid',
       relatedCardType: cardType,
@@ -197,13 +326,13 @@ router.post('/payments/alba', requireAuth, async (req, res, next) => {
     if (!result.ok) return res.status(result.status).json({ success: false, message: result.message });
 
     const activationCode = await issuePaymentActivationCode({
-      userId: req.user._id,
+      userId: userId,
       cardType,
       cardId,
       createdBy: req.user._id
     });
 
-    await notifyUser(req.user._id, { type: 'paid_upgrade_requested', cardType, cardId, activationCode: activationCode.code });
+    await notifyUser(userId, { type: 'paid_upgrade_requested', cardType, cardId, activationCode: activationCode.code });
     res.json({ success: true, activationCode: activationCode.code });
   } catch (err) {
     next(err);

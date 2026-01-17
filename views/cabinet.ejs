@@ -45,6 +45,117 @@
       padding: 40px 20px;
       color: #666;
     }
+
+    /* Стили для нового footer в кабинете */
+    .cabinet-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to bottom, transparent, rgba(30, 46, 0.8));
+      border-top: 1px solid rgba(255,0,0,0.25);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+      z-index: 1000;
+      padding: 12px 0;
+    }
+
+    .footer-buttons {
+      display: flex;
+      gap: 12px;
+      padding: 0 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .footer-btn {
+      flex: 1;
+      padding: 14px 8px;
+      border: none;
+      background: transparent;
+      color: #fff;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      position: relative;
+      text-align: center;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.35), 0 0 22px rgba(255, 0, 0, 0.2);
+      background:
+        linear-gradient(#2e0b0b, #2e0b0b) padding-box,
+        linear-gradient(45deg, var(--color-accent-strong), #ff4d4d) border-box;
+    }
+
+    .footer-btn:hover {
+      color: #fff;
+      background: rgba(255, 51, 51, 0.1);
+      transform: translateY(-1px);
+      box-shadow: 0 0 14px rgba(255, 0, 0, 0.55), 0 0 28px rgba(255, 0, 0, 0.28);
+    }
+
+    .footer-btn:active {
+      transform: translateY(0);
+    }
+
+    /* Стили для модальных окон в кабинете */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+    }
+
+    .modal-content {
+      background: #111;
+      margin: 5% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 900px;
+      box-shadow: 0 0 20px #ff3333;
+      position: relative;
+    }
+
+    .modal .close {
+      color: #fff;
+      font-size: 28px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      position: absolute;
+      top: 10px;
+      right: 14px;
+    }
+
+    .modal .close:hover {
+      color: #ff3333;
+    }
+
+    /* Адаптивность для мобильных устройств */
+    @media (max-width: 768px) {
+      .modal-content {
+        width: 95%;
+        margin: 2% auto;
+        padding: 15px;
+      }
+
+      .footer-btn {
+        padding: 12px 6px;
+        font-size: 0.9rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .footer-btn {
+        padding: 10px 4px;
+        font-size: 0.8rem;
+      }
+    }
   </style>
 </head>
 <body>
@@ -56,11 +167,6 @@
       </nav>
       <div class="header-actions">
         <span class="user-chip">👤 <%= user.username %></span>
-        <% if (typeof user.albaBalance !== 'undefined') { %>
-          <span class="alba-balance" style="margin-left: 10px; background: #ff9999; padding: 4px 12px; border-radius: 12px; font-weight: bold; color: white;">
-            💰 <%= user.albaBalance %> ALBA
-          </span>
-        <% } %>
         <form id="logoutForm" method="POST" action="/logout" style="display:inline;margin-left:10px;">
           <button type="submit" class="btn outline small">Выход</button>
         </form>
@@ -77,7 +183,6 @@
         <button class="tab active" data-tab="products">Мои товары</button>
         <button class="tab" data-tab="services">Мои услуги</button>
         <button class="tab" data-tab="banners">Мои баннеры</button>
-        <button class="tab" data-tab="alba">ALBA баланс</button>
         <button class="tab" data-tab="create">Создать карточку</button>
       </div>
 
@@ -138,48 +243,52 @@
         <div style="background: #f5f5f5; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
           <h3 style="color: #ff3333; margin-bottom: 10px;">💰 Ваш ALBA баланс</h3>
           <% if (typeof user.albaBalance !== 'undefined') { %>
-            <div style="font-size: 2rem; font-weight: bold; color: #ff3333; margin-bottom: 10px;">
+            <div id="albaBalanceDisplay" style="font-size: 2rem; font-weight: bold; color: #ff3333; margin-bottom: 10px;">
               <%= user.albaBalance %> ALBA
             </div>
           <% } else { %>
-            <div style="font-size: 1.5rem; color: #666; margin-bottom: 10px;">
+            <div id="albaBalanceDisplay" style="font-size: 1.5rem; color: #666; margin-bottom: 10px;">
               Загрузка баланса...
             </div>
           <% } %>
           <p style="color: #666; margin-bottom: 15px;">
             ALBA - это внутренняя валюта платформы Albamount. Используйте её для специальных возможностей и бонусов.
-          </p>
+        </p>
         </div>
-
+      
         <!-- История транзакций -->
         <div>
           <h3 style="margin-bottom: 15px;">История транзакций</h3>
-          <% if (typeof albaTransactions !== 'undefined' && albaTransactions.length > 0) { %>
-            <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
-              <% albaTransactions.forEach(function(tx) { %>
-                <div style="padding: 12px; border-bottom: 1px solid #eee; <%= tx.amount > 0 ? 'background: #e8f5e9;' : 'background: #ffebee;' %> margin-bottom: 8px; border-radius: 4px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                      <strong style="<%= tx.amount > 0 ? 'color: #2e7d32;' : 'color: #c62828;' %>"><%= tx.amount > 0 ? '+' : '' %><%= tx.amount %> ALBA</strong>
-                      <div style="font-size: 0.9rem; color: #666; margin-top: 4px;">
-                        <%= tx.reason %> <%= tx.type === 'referral_bonus' ? '(реферальный бонус)' : '' %>
-                      </div>
-                      <div style="font-size: 0.8rem; color: #999; margin-top: 4px;">
-                        <%= new Date(tx.createdAt).toLocaleString() %>
+          <button id="refreshAlbaBtn" class="btn small" style="margin-bottom: 15px;">🔄 Обновить данные</button>
+          <div id="albaTransactionsContainer">
+            <% if (typeof albaTransactions !== 'undefined' && albaTransactions.length > 0) { %>
+              <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">
+                <% albaTransactions.forEach(function(tx) { %>
+                  <div class="alba-tx-item" style="padding: 12px; border-bottom: 1px solid #eee; margin-bottom: 8px; border-radius: 4px;"
+                       data-amount="<%= tx.amount %>">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div>
+                        <strong class="alba-amount" data-amount="<%= tx.amount %>"><%= tx.amount > 0 ? '+' : '' %><%= tx.amount %> ALBA</strong>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 4px;">
+                          <%= tx.reason %> <%= tx.type === 'referral_bonus' ? '(реферальный бонус)' : '' %>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #999; margin-top: 4px;">
+                          <%= new Date(tx.createdAt).toLocaleString() %>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              <% }); %>
-            </div>
-          <% } else { %>
-            <div style="text-align: center; padding: 40px 20px; color: #666;">
-              <p>У вас пока нет транзакций ALBA.</p>
-              <p style="font-size: 0.9rem; margin-top: 10px; color: #999;">
-                ALBA можно получить за активность на платформе, реферальные бонусы и специальные акции.
-              </p>
-            </div>
-          <% } %>
+                <% }); %>
+              </div>
+            <% } else { %>
+              <div style="text-align: center; padding: 40px 20px; color: #666;">
+                <p>У вас пока нет транзакций ALBA.</p>
+                <p style="font-size: 0.9rem; margin-top: 10px; color: #999;">
+                  ALBA можно получить за активность на платформе, реферальные бонусы и специальные акции.
+                </p>
+              </div>
+            <% } %>
+          </div>
         </div>
       </div>
 
@@ -280,6 +389,114 @@
     
     
 
+  <!-- Модальное окно для баланса ALBA -->
+  <div id="albaBalanceModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeAlbaModal">&times;</span>
+      <h2 style="color: #ff3333; margin-bottom: 20px;">Ваш ALBA баланс</h2>
+      <% if (typeof user.albaBalance !== 'undefined') { %>
+        <div id="modalAlbaBalance" style="font-size: 2.5rem; font-weight: bold; color: #ff3333; margin-bottom: 20px; text-align: center;">
+          <%= user.albaBalance %> ALBA
+        </div>
+      <% } else { %>
+        <div id="modalAlbaBalance" style="font-size: 1.8rem; color: #ccc; margin-bottom: 20px; text-align: center;">
+          Загрузка баланса...
+        </div>
+      <% } %>
+
+      <div style="margin-bottom: 20px; padding: 15px; background: rgba(255, 51, 51, 0.05); border-radius: 10px; border: 1px solid rgba(255, 51, 51, 0.2);">
+        <h3 style="color: #ff9999; margin-bottom: 10px; font-size: 1.1rem;">Покупка дополнительных карточек</h3>
+        <p style="color: #ccc; margin-bottom: 15px; font-size: 0.95rem; line-height: 1.5;">
+          Используйте ALBA для покупки права на создание дополнительных карточек товаров, услуг или баннеров.
+        </p>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; color: #ff9999; margin-bottom: 8px; font-weight: 600;">Тип карточки:</label>
+          <select id="cardType" style="width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid rgba(255, 51, 51, 0.3); border-radius: 8px; color: #fff;">
+            <option value="product" data-cost="30">Товар (30 ALBA)</option>
+            <option value="service" data-cost="30">Услуга (30 ALBA)</option>
+            <option value="banner" data-cost="50">Баннер (50 ALBA)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; color: #ff9999; margin-bottom: 8px; font-weight: 600;">Количество:</label>
+          <input type="number" id="cardsToBuy" min="1" max="10" value="1"
+                 style="width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid rgba(255, 51, 51, 0.3); border-radius: 8px; color: #fff; text-align: center;">
+        </div>
+
+        <div style="margin-bottom: 15px; padding: 12px; background: rgba(255, 51, 51, 0.1); border-radius: 8px; border: 1px solid rgba(255, 51, 51, 0.2);">
+          <strong style="color: #ff9999;">Общая стоимость:</strong>
+          <span id="totalCostDisplay" style="color: #fff; font-weight: bold; margin-left: 10px;">30 ALBA</span>
+        </div>
+
+        <button id="buyEntitlementBtn" class="btn primary" style="width: 100%; padding: 14px;">Купить право на карточку</button>
+        <div id="purchaseStatus" style="text-align: center; font-size: 0.9rem; color: #ff9999; min-height: 24px; margin-top: 10px;"></div>
+      </div>
+
+      <p style="color: #ccc; margin-bottom: 20px; text-align: center; line-height: 1.6;">
+        ALBA - это внутренняя валюта платформы Albamount. Используйте её для специальных возможностей и бонусов.
+      </p>
+
+      <!-- Available entitlements info -->
+      <div id="entitlementsInfo" style="margin-bottom: 20px;"></div>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button id="refreshAlbaModalBtn" class="btn primary" style="margin-right: 10px;">Обновить баланс</button>
+        <button id="closeAlbaModalBtn" class="btn outline">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для реферальной программы -->
+  <div id="referralModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeReferralModal">&times;</span>
+      <h2 style="color: #ff3333; margin-bottom: 20px;">Реферальная программа</h2>
+      <p style="color: #ccc; margin-bottom: 20px; line-height: 1.6;">
+        Приглашайте друзей и получайте бонусы! За каждого приглашенного друга вы получаете 100 ALBA.
+      </p>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; color: #ff9999; margin-bottom: 8px; font-weight: 600;">Ваша реферальная ссылка:</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="referralLink" value="<%= 'https://albamount.com/register?ref=' + (user.referralCode || '') %>" readonly
+                 style="flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid rgba(255, 51, 51, 0.3); border-radius: 8px; color: #fff;">
+          <button id="copyReferralLink" class="btn primary" style="white-space: nowrap;">Копировать</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; color: #ff9999; margin-bottom: 8px; font-weight: 600;">Ваш реферальный код:</label>
+        <div style="display: flex; gap: 10px;">
+          <input type="text" id="referralCode" value="<%= user.referralCode || '' %>" readonly
+                 style="flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid rgba(255, 51, 51, 0.3); border-radius: 8px; color: #fff;">
+          <button id="copyReferralCode" class="btn primary" style="white-space: nowrap;">Копировать</button>
+        </div>
+      </div>
+
+      <div style="text-align: center;">
+        <button id="closeReferralModalBtn" class="btn outline">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Новый footer с кнопками -->
+  <footer class="cabinet-footer">
+    <div class="footer-buttons">
+      <% if (typeof user.albaBalance !== 'undefined') { %>
+        <button id="albaBalanceBtn" class="footer-btn">
+          Баланс: <span id="footerAlbaBalance"><%= user.albaBalance %></span> ALBA
+        </button>
+      <% } else { %>
+        <button id="albaBalanceBtn" class="footer-btn">
+          Баланс: <span id="footerAlbaBalance">Загрузка...</span>
+        </button>
+      <% } %>
+      <button id="referralBtn" class="footer-btn">Пригласить</button>
+    </div>
+  </footer>
+
   <!-- Загрузка YouTube IFrame API -->
     <!-- Bootstrap script for safe EJS to JS data transfer -->
   <script src="/utils/bootstrap.js"></script>
@@ -302,6 +519,303 @@
     firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
   </script>
 
+  <script>
+    // Function to refresh ALBA data
+    async function refreshAlbaData() {
+      try {
+        const response = await fetch('/api/p1/alba/transactions');
+        const data = await response.json();
+
+        if (data.success) {
+          // Update the ALBA balance display
+          const balanceElement = document.getElementById('albaBalanceDisplay');
+          if (balanceElement) {
+            // Use current user data from the page instead of API
+            const currentBalance = document.getElementById('footerAlbaBalance')?.textContent || '0';
+            if (currentBalance && currentBalance !== 'Загрузка...') {
+              balanceElement.textContent = currentBalance + ' ALBA';
+              balanceElement.style.fontSize = '2rem';
+              balanceElement.style.fontWeight = 'bold';
+              balanceElement.style.color = '#ff3333';
+            }
+          }
+
+          // Update the transactions container
+          const container = document.getElementById('albaTransactionsContainer');
+          if (container) {
+            let html = '<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px;">';
+
+            if (data.transactions && data.transactions.length > 0) {
+              data.transactions.forEach(tx => {
+                const backgroundColor = tx.amount > 0 ? '#e8f5e9' : '#ffebee';
+                const textColor = tx.amount > 0 ? '#2e7d32' : '#c62828';
+
+                html += `
+                  <div style="padding: 12px; border-bottom: 1px solid #eee; background: ${backgroundColor}; margin-bottom: 8px; border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div>
+                        <strong style="color: ${textColor};">${tx.amount > 0 ? '+' : ''}${tx.amount} ALBA</strong>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 4px;">
+                          ${tx.reason} ${tx.type === 'referral_bonus' ? '(реферальный бонус)' : ''}
+                        </div>
+                        <div style="font-size: 0.8rem; color: #999; margin-top: 4px;">
+                          ${new Date(tx.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              });
+            } else {
+              html += `
+                <div style="text-align: center; padding: 40px 20px; color: #666;">
+                  <p>У вас пока нет транзакций ALBA.</p>
+                  <p style="font-size: 0.9rem; margin-top: 10px; color: #999;">
+                    ALBA можно получить за активность на платформе, реферальные бонусы и специальные акции.
+                  </p>
+                </div>
+              `;
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+          }
+
+          console.log('ALBA data refreshed successfully');
+        } else {
+          console.error('Failed to refresh ALBA data:', data.message);
+        }
+      } catch (error) {
+        console.error('Error refreshing ALBA data:', error);
+      }
+    }
+
+    // Add event listener to the refresh button
+    document.addEventListener('DOMContentLoaded', function() {
+      const refreshBtn = document.getElementById('refreshAlbaBtn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshAlbaData);
+      }
+
+      // Apply styling to ALBA transaction items
+      const txItems = document.querySelectorAll('.alba-tx-item');
+      txItems.forEach(item => {
+        const amount = parseFloat(item.getAttribute('data-amount'));
+        if (amount > 0) {
+          item.style.background = '#e8f5e9';
+        } else {
+          item.style.background = '#ffebee';
+        }
+      });
+
+      // Apply styling to ALBA amount elements
+      const amountElements = document.querySelectorAll('.alba-amount');
+      amountElements.forEach(element => {
+        const amount = parseFloat(element.getAttribute('data-amount'));
+        if (amount > 0) {
+          element.style.color = '#2e7d32';
+        } else {
+          element.style.color = '#c62828';
+        }
+      });
+
+      // Модальное окно баланса ALBA
+      const albaBalanceBtn = document.getElementById('albaBalanceBtn');
+      const albaBalanceModal = document.getElementById('albaBalanceModal');
+      const closeAlbaModal = document.getElementById('closeAlbaModal');
+      const closeAlbaModalBtn = document.getElementById('closeAlbaModalBtn');
+      const refreshAlbaModalBtn = document.getElementById('refreshAlbaModalBtn');
+      const buyCardsBtn = document.getElementById('buyCardsBtn');
+      const cardsToBuyInput = document.getElementById('cardsToBuy');
+      const purchaseStatus = document.getElementById('purchaseStatus');
+
+      if (albaBalanceBtn && albaBalanceModal) {
+        albaBalanceBtn.addEventListener('click', () => {
+          albaBalanceModal.style.display = 'block';
+        });
+      }
+
+      if (closeAlbaModal) {
+        closeAlbaModal.addEventListener('click', () => {
+          albaBalanceModal.style.display = 'none';
+        });
+      }
+
+      if (closeAlbaModalBtn) {
+        closeAlbaModalBtn.addEventListener('click', () => {
+          albaBalanceModal.style.display = 'none';
+        });
+      }
+
+      if (refreshAlbaModalBtn) {
+        refreshAlbaModalBtn.addEventListener('click', async () => {
+          try {
+            // Use current user data from the page instead of API
+            const currentBalance = document.getElementById('footerAlbaBalance')?.textContent || '0';
+            if (currentBalance && currentBalance !== 'Загрузка...') {
+              const modalBalanceElement = document.getElementById('modalAlbaBalance');
+              const footerBalanceElement = document.getElementById('footerAlbaBalance');
+
+              if (modalBalanceElement) {
+                modalBalanceElement.textContent = currentBalance + ' ALBA';
+              }
+
+              if (footerBalanceElement) {
+                footerBalanceElement.textContent = currentBalance;
+              }
+            }
+          } catch (error) {
+            console.error('Error refreshing balance:', error);
+          }
+        });
+      }
+
+      // Обработка покупки дополнительных карточек
+      const cardTypeSelect = document.getElementById('cardType');
+      const totalCostDisplay = document.getElementById('totalCostDisplay');
+
+      // Функция для обновления общей стоимости
+      function updateTotalCost() {
+        if (cardTypeSelect && cardsToBuyInput && totalCostDisplay) {
+          const cardType = cardTypeSelect.value;
+          const cardsToBuy = parseInt(cardsToBuyInput.value) || 1;
+
+          // Получаем стоимость из data-cost или по умолчанию
+          const costPerCard = parseInt(cardTypeSelect.selectedOptions[0]?.dataset?.cost) || 30;
+          const totalCost = cardsToBuy * costPerCard;
+
+          totalCostDisplay.textContent = `${totalCost} ALBA`;
+        }
+      }
+
+      // Обновляем стоимость при загрузке и изменении
+      if (cardTypeSelect && cardsToBuyInput) {
+        cardTypeSelect.addEventListener('change', updateTotalCost);
+        cardsToBuyInput.addEventListener('input', updateTotalCost);
+        updateTotalCost(); // Инициализация
+      }
+
+      if (buyCardsBtn && cardsToBuyInput && purchaseStatus) {
+        buyCardsBtn.addEventListener('click', () => {
+          const cardType = cardTypeSelect?.value || 'product';
+          const cardsToBuy = parseInt(cardsToBuyInput.value) || 1;
+          const currentBalanceText = document.getElementById('footerAlbaBalance')?.textContent || '0';
+          const currentBalance = currentBalanceText === 'Загрузка...' ? 0 : parseInt(currentBalanceText);
+
+          // Получаем актуальную стоимость
+          const costPerCard = parseInt(cardTypeSelect?.selectedOptions[0]?.dataset?.cost) || 30;
+          const totalCost = cardsToBuy * costPerCard;
+
+          // Типы карточек для сообщений
+          const cardTypeNames = {
+            'product': 'товаров',
+            'service': 'услуг',
+            'banner': 'баннеров'
+          };
+          const cardTypeName = cardTypeNames[cardType] || 'карточек';
+
+          if (isNaN(currentBalance) || currentBalance <= 0) {
+            purchaseStatus.textContent = 'Ошибка: не удалось определить текущий баланс';
+            purchaseStatus.style.color = '#ff6666';
+            return;
+          }
+
+          if (currentBalance < totalCost) {
+            purchaseStatus.textContent = `Недостаточно ALBA. Требуется ${totalCost}, у вас ${currentBalance}`;
+            purchaseStatus.style.color = '#ff6666';
+            return;
+          }
+
+          // Симулируем покупку (в реальном проекте здесь будет API запрос)
+          const newBalance = currentBalance - totalCost;
+
+          // Обновляем баланс в интерфейсе
+          const modalBalanceElement = document.getElementById('modalAlbaBalance');
+          const footerBalanceElement = document.getElementById('footerAlbaBalance');
+
+          if (modalBalanceElement) {
+            modalBalanceElement.textContent = `${newBalance} ALBA`;
+          }
+
+          if (footerBalanceElement) {
+            footerBalanceElement.textContent = newBalance.toString();
+          }
+
+          purchaseStatus.textContent = `Успешно! Куплено ${cardsToBuy} ${cardTypeName} за ${totalCost} ALBA`;
+          purchaseStatus.style.color = '#66ff66';
+
+          // Сбрасываем статус через 5 секунд
+          setTimeout(() => {
+            purchaseStatus.textContent = '';
+          }, 5000);
+        });
+      }
+
+      // Модальное окно реферальной программы
+      const referralBtn = document.getElementById('referralBtn');
+      const referralModal = document.getElementById('referralModal');
+      const closeReferralModal = document.getElementById('closeReferralModal');
+      const closeReferralModalBtn = document.getElementById('closeReferralModalBtn');
+      const copyReferralLink = document.getElementById('copyReferralLink');
+      const copyReferralCode = document.getElementById('copyReferralCode');
+
+      if (referralBtn && referralModal) {
+        referralBtn.addEventListener('click', () => {
+          referralModal.style.display = 'block';
+        });
+      }
+
+      if (closeReferralModal) {
+        closeReferralModal.addEventListener('click', () => {
+          referralModal.style.display = 'none';
+        });
+      }
+
+      if (closeReferralModalBtn) {
+        closeReferralModalBtn.addEventListener('click', () => {
+          referralModal.style.display = 'none';
+        });
+      }
+
+      if (copyReferralLink) {
+        copyReferralLink.addEventListener('click', () => {
+          const referralLinkInput = document.getElementById('referralLink');
+          if (referralLinkInput) {
+            referralLinkInput.select();
+            document.execCommand('copy');
+            copyReferralLink.textContent = 'Скопировано!';
+            setTimeout(() => {
+              copyReferralLink.textContent = 'Копировать';
+            }, 2000);
+          }
+        });
+      }
+
+      if (copyReferralCode) {
+        copyReferralCode.addEventListener('click', () => {
+          const referralCodeInput = document.getElementById('referralCode');
+          if (referralCodeInput) {
+            referralCodeInput.select();
+            document.execCommand('copy');
+            copyReferralCode.textContent = 'Скопировано!';
+            setTimeout(() => {
+              copyReferralCode.textContent = 'Копировать';
+            }, 2000);
+          }
+        });
+      }
+
+      // Закрытие модальных окон при клике вне их
+      window.addEventListener('click', (event) => {
+        if (event.target === albaBalanceModal) {
+          albaBalanceModal.style.display = 'none';
+        }
+        if (event.target === referralModal) {
+          referralModal.style.display = 'none';
+        }
+      });
+    });
+  </script>
 
 <% if (!process.env.VERCEL) { %>
 <!-- Socket.IO -->

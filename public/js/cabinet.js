@@ -27,6 +27,7 @@
     initImagePreview();
     initBannerForm();
     initCategorySelector();
+    initAlbaModal();
   });
 
   document.addEventListener('click', function(e) {
@@ -456,5 +457,206 @@
           alert('Ошибка сети');
         });
     }
+  }
+
+  function initAlbaModal() {
+    const albaBalanceBtn = document.getElementById('albaBalanceBtn');
+    const albaBalanceModal = document.getElementById('albaBalanceModal');
+    const closeAlbaModal = document.getElementById('closeAlbaModal');
+    const closeAlbaModalBtn = document.getElementById('closeAlbaModalBtn');
+    const refreshAlbaModalBtn = document.getElementById('refreshAlbaModalBtn');
+    const buyEntitlementBtn = document.getElementById('buyEntitlementBtn');
+    const cardTypeSelect = document.getElementById('cardType');
+    const cardsToBuyInput = document.getElementById('cardsToBuy');
+    const purchaseStatus = document.getElementById('purchaseStatus');
+    const totalCostDisplay = document.getElementById('totalCostDisplay');
+
+    if (!albaBalanceBtn || !albaBalanceModal) return;
+
+    // Open modal
+    albaBalanceBtn.addEventListener('click', () => {
+      albaBalanceModal.style.display = 'block';
+      loadAvailableEntitlements();
+    });
+
+    // Close modal
+    if (closeAlbaModal) {
+      closeAlbaModal.addEventListener('click', () => {
+        albaBalanceModal.style.display = 'none';
+      });
+    }
+
+    if (closeAlbaModalBtn) {
+      closeAlbaModalBtn.addEventListener('click', () => {
+        albaBalanceModal.style.display = 'none';
+      });
+    }
+
+    // Refresh balance
+    if (refreshAlbaModalBtn) {
+      refreshAlbaModalBtn.addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/p1/alba/transactions');
+          const data = await response.json();
+
+          if (data.success && data.transactions && data.transactions.length > 0) {
+            const currentBalance = data.transactions[0].userId?.albaBalance || 0;
+            updateBalanceDisplays(currentBalance);
+          }
+        } catch (error) {
+          console.error('Error refreshing balance:', error);
+        }
+      });
+    }
+
+    // Update total cost when selection changes
+    function updateTotalCost() {
+      if (cardTypeSelect && cardsToBuyInput && totalCostDisplay) {
+        const cardType = cardTypeSelect.value;
+        const cardsToBuy = parseInt(cardsToBuyInput.value) || 1;
+        const costPerCard = parseInt(cardTypeSelect.selectedOptions[0]?.dataset?.cost) || 30;
+        const totalCost = cardsToBuy * costPerCard;
+        totalCostDisplay.textContent = `${totalCost} ALBA`;
+      }
+    }
+
+    if (cardTypeSelect && cardsToBuyInput) {
+      cardTypeSelect.addEventListener('change', updateTotalCost);
+      cardsToBuyInput.addEventListener('input', updateTotalCost);
+      updateTotalCost();
+    }
+
+    // Handle entitlement purchase
+    if (buyEntitlementBtn && cardTypeSelect && cardsToBuyInput && purchaseStatus) {
+      buyEntitlementBtn.addEventListener('click', async () => {
+        const cardType = cardTypeSelect.value;
+        const cardsToBuy = parseInt(cardsToBuyInput.value) || 1;
+        const costPerCard = parseInt(cardTypeSelect.selectedOptions[0]?.dataset?.cost) || 30;
+        const totalCost = cardsToBuy * costPerCard;
+
+        // Generate unique idempotency key
+        const idempotencyKey = 'ent_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+        try {
+          // Check current balance
+          const balanceResponse = await fetch('/api/p1/alba/transactions');
+          const balanceData = await balanceResponse.json();
+
+          let currentBalance = 0;
+          if (balanceData.success && balanceData.transactions && balanceData.transactions.length > 0) {
+            currentBalance = balanceData.transactions[0].userId?.albaBalance || 0;
+          }
+
+          if (currentBalance < totalCost) {
+            purchaseStatus.textContent = `Недостаточно ALBA. Требуется ${totalCost}, у вас ${currentBalance}`;
+            purchaseStatus.style.color = '#ff6666';
+            return;
+          }
+
+          // Purchase entitlement
+          const response = await csrfFetch('/api/p1/entitlements/purchase', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              type: cardType,
+              idempotencyKey: idempotencyKey
+            })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+            purchaseStatus.textContent = `Успешно! Куплено право на ${cardType === 'product' ? 'товар' : 'услугу'} за ${costPerCard} ALBA`;
+            purchaseStatus.style.color = '#66ff66';
+
+            // Update balance display
+            const newBalance = currentBalance - costPerCard;
+            updateBalanceDisplays(newBalance);
+
+            // Reload available entitlements
+            loadAvailableEntitlements();
+
+            // Reset status after 5 seconds
+            setTimeout(() => {
+              purchaseStatus.textContent = '';
+            }, 5000);
+          } else {
+            purchaseStatus.textContent = result.message || 'Ошибка покупки права';
+            purchaseStatus.style.color = '#ff6666';
+          }
+        } catch (error) {
+          console.error('Error purchasing entitlement:', error);
+          purchaseStatus.textContent = 'Ошибка сети: ' + error.message;
+          purchaseStatus.style.color = '#ff6666';
+        }
+      });
+    }
+
+    // Load and display available entitlements
+    async function loadAvailableEntitlements() {
+      try {
+        const response = await fetch('/api/p1/entitlements/available');
+        const data = await response.json();
+
+        if (data.success) {
+          const entitlements = data.entitlements;
+          const entitlementsInfo = document.getElementById('entitlementsInfo');
+
+          if (entitlementsInfo) {
+            let html = '<div style="margin-top: 20px; padding: 15px; background: rgba(255, 51, 51, 0.05); border-radius: 8px;">';
+            html += '<h4 style="color: #ff9999; margin-bottom: 10px;">Доступные права</h4>';
+
+            if (entitlements.total > 0) {
+              html += `<p style="color: #ccc; margin-bottom: 10px;">У вас есть ${entitlements.total} доступных прав:</p>`;
+              html += '<ul style="color: #ccc; margin-left: 20px;">';
+
+              if (entitlements.product.length > 0) {
+                html += `<li>📦 Товары: ${entitlements.product.length} шт.</li>`;
+              }
+              if (entitlements.service.length > 0) {
+                html += `<li>🔧 Услуги: ${entitlements.service.length} шт.</li>`;
+              }
+
+              html += '</ul>';
+            } else {
+              html += '<p style="color: #ccc;">У вас нет доступных прав. Купите права, чтобы создать дополнительные карточки.</p>';
+            }
+
+            html += '</div>';
+            entitlementsInfo.innerHTML = html;
+          }
+        }
+      } catch (error) {
+        console.error('Error loading entitlements:', error);
+      }
+    }
+
+    // Update balance displays
+    function updateBalanceDisplays(balance) {
+      const modalBalanceElement = document.getElementById('modalAlbaBalance');
+      const footerBalanceElement = document.getElementById('footerAlbaBalance');
+      const albaBalanceDisplay = document.getElementById('albaBalanceDisplay');
+
+      if (modalBalanceElement) {
+        modalBalanceElement.textContent = `${balance} ALBA`;
+      }
+
+      if (footerBalanceElement) {
+        footerBalanceElement.textContent = balance.toString();
+      }
+
+      if (albaBalanceDisplay) {
+        albaBalanceDisplay.textContent = `${balance} ALBA`;
+      }
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (event) => {
+      if (event.target === albaBalanceModal) {
+        albaBalanceModal.style.display = 'none';
+      }
+    });
   }
 })();
