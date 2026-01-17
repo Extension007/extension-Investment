@@ -60,13 +60,112 @@ router.post('/alba/grant', requireAdmin, async (req, res, next) => {
     const { userId, amount, reason } = req.body;
     if (!userId || amount == null || !reason) return res.status(400).json({ success: false, message: 'userId, amount, reason required' });
 
-    const user = await grantAlba({ UserModel: require('../models/User'), userId, amount, reason, actorAdminId: req.user._id });
+    const user = await grantAlba({
+      UserModel: require('../models/User'),
+      userId,
+      amount,
+      reason,
+      actorAdminId: req.user._id
+    });
     await notifyUser(userId, { type: 'alba_granted', amount, reason });
     res.json({ success: true, user });
   } catch (err) {
     next(err);
   }
 });
+
+// Grant ALBA by login (username)
+router.post('/alba/grant-by-login', requireAdmin, async (req, res) => {
+  try {
+    const { login, amount, reason } = req.body;
+    if (!login || !amount || !reason) {
+      return res.status(400).json({
+        success: false,
+        message: 'Login, amount, and reason are required'
+      });
+    }
+
+    if (typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Amount must be a positive number'
+      });
+    }
+
+    const User = require('../models/User');
+    
+    // Find user by login (username)
+    const user = await User.findOne({ username: login });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found with this login'
+      });
+    }
+
+    // Grant ALBA to the user
+    const updatedUser = await grantAlba({
+      UserModel: User,
+      userId: user._id,
+      amount,
+      reason,
+      actorAdminId: req.user._id
+    });
+
+    // Notify the user about the ALBA grant
+    await notifyUser(user._id, {
+      type: 'alba_granted',
+      amount,
+      reason,
+      admin: req.user.username
+    });
+
+    res.json({
+      success: true,
+      message: `Successfully granted ${amount} ALBA to user ${login}`,
+      user: {
+        id: user._id,
+        username: user.username,
+        newBalance: updatedUser.albaBalance
+      }
+    });
+  } catch (err) {
+    console.error('Error granting ALBA by login:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error granting ALBA: ' + err.message
+    });
+  }
+});
+
+// Get ALBA transactions history
+router.get('/alba/transactions-history', requireAdmin, async (req, res) => {
+  try {
+    const { limit = 50, skip = 0 } = req.query;
+    const AlbaTransaction = require('../models/AlbaTransaction');
+    
+    // Get transactions with related user info
+    const transactions = await AlbaTransaction.find({})
+      .sort({ createdAt: -1 })
+      .skip(parseInt(skip))
+      .limit(parseInt(limit))
+      .populate('userId', 'username email')
+      .populate('relatedUserId', 'username email'); // This would be the target user for admin grants
+    
+    res.json({
+      success: true,
+      transactions,
+      total: await AlbaTransaction.countDocuments({})
+    });
+  } catch (err) {
+    console.error('Error fetching ALBA transactions:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching ALBA transactions: ' + err.message
+    });
+  }
+});
+
 
 router.get('/alba/transactions', requireAuth, async (req, res, next) => {
   try {
