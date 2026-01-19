@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Регистрация - Exto Ecosystem</title>
+  <link rel="stylesheet" href="/styles.css?v=1.0.1">
+  <link rel="stylesheet" href="/header-tabs.css?v=1.0.1">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <%- include('partials/header') %>
+
+  <main class="container">
+    <div class="auth-container">
+      <h1>Регистрация</h1>
+
+      <form id="registerForm" action="/register" method="POST" class="auth-form">
+        <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
+
+        <div class="form-group">
+          <label for="username">Никнейм</label>
+          <input type="text" id="username" name="username" placeholder="Ваш никнейм" required>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="Ваш email" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Пароль</label>
+          <input type="password" id="password" name="password" placeholder="Ваш пароль" required>
+        </div>
+
+        <% if (refCode) { %>
+          <div class="form-group">
+            <label for="refCode">Реферальный код (автоматически)</label>
+            <input type="text" id="refCode" name="refCode" value="<%= refCode %>" readonly>
+            <input type="hidden" name="ref" value="<%= refCode %>">
+          </div>
+        <% } else { %>
+          <div class="form-group">
+            <label for="refCode">Реферальный код (необязательно)</label>
+            <input type="text" id="refCode" name="refCode" placeholder="Если у вас есть реферальный код">
+          </div>
+        <% } %>
+
+        <button type="submit" class="btn">Зарегистрироваться</button>
+      </form>
+
+      <div id="registerError" class="error" style="color:#b00020;margin-top:10px;display:none;"></div>
+      <div id="registerSuccess" style="color:green;margin-top:10px;display:none;"></div>
+
+      <div class="auth-links">
+        <p>Уже есть аккаунт? <a href="/user/login">Войти</a></p>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+
+  <script src="/script.js?v=1.0.1"></script>
+  <script src="/fix-footer-overlap.js?v=1.0.1"></script>
+
+  <script>
+    // Обработка формы регистрации
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const form = e.target;
+      const formData = new FormData(form);
+      const errorElement = document.getElementById('registerError');
+      const successElement = document.getElementById('registerSuccess');
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'CSRF-Token': formData.get('csrfToken')
+          },
+          body: JSON.stringify({
+            username: formData.get('username'),
+            email: formData.get('email'),
+            password: formData.get('password'),
+            refCode: formData.get('refCode'),
+            ref: formData.get('ref')
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          errorElement.style.display = 'none';
+          successElement.style.display = 'block';
+          successElement.textContent = data.message || 'Регистрация успешна! Проверьте ваш email.';
+          form.reset();
+
+          // Перенаправление через 3 секунды
+          setTimeout(() => {
+            window.location.href = '/user/login';
+          }, 3000);
+        } else {
+          errorElement.style.display = 'block';
+          errorElement.textContent = data.message || 'Ошибка регистрации';
+          successElement.style.display = 'none';
+        }
+      } catch (error) {
+        errorElement.style.display = 'block';
+        errorElement.textContent = 'Ошибка сети: ' + error.message;
+        successElement.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

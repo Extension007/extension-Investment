@@ -43,7 +43,16 @@ router.post("/logout", (req, res) => {
 
 // User auth routes
 
-// Регистрация пользователя
+// Страница регистрации (GET)
+router.get("/register", (req, res) => {
+  const refCode = req.query.ref || '';
+  res.render("register", {
+    refCode,
+    csrfToken: res.locals.csrfToken || ""
+  });
+});
+
+// Регистрация пользователя (POST)
 router.post("/register", authController.register);
 
 router.get("/user/login", renderUserLogin);
