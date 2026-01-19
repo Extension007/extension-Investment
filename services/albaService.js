@@ -1,13 +1,7 @@
+const mongoose = require('mongoose');
 const AlbaTransaction = require('../models/AlbaTransaction');
 const Entitlement = require('../models/Entitlement');
-let uuidv4;
-
-async function initUuid() {
-  if (!uuidv4) {
-    const { v4 } = await import('uuid');
-    uuidv4 = v4;
-  }
-}
+const { randomUUID } = require('crypto');
 
 async function incBalance(UserModel, userId, delta) {
   return UserModel.findOneAndUpdate({ _id: userId }, { $inc: { albaBalance: delta } }, { new: true }).exec();
@@ -102,8 +96,6 @@ async function listTransactions({ userId, limit=100 }) {
  * @returns {Promise<Object>} - Result with success status and entitlement
  */
 async function purchaseEntitlement({ UserModel, userId, type, idempotencyKey }) {
-  // Initialize uuid if not already done
-  await initUuid();
   // Validate type
   if (!['product', 'service'].includes(type)) {
     return { ok: false, status: 400, message: 'Invalid entitlement type. Must be "product" or "service"' };
@@ -133,7 +125,7 @@ async function purchaseEntitlement({ UserModel, userId, type, idempotencyKey }) 
   }
 
   // Generate unique eventId
-  const eventId = uuidv4();
+  const eventId = randomUUID();
 
   // Start transaction for atomicity
   const session = await mongoose.startSession();

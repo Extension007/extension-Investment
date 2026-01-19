@@ -1,6 +1,6 @@
 const { earnReferralBonus } = require('./albaService');
 const AlbaTransaction = require('../models/AlbaTransaction');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 
 // Get referral bonus amount from environment or use default
 const REFERRAL_BONUS_ALBA = parseInt(process.env.REFERRAL_BONUS_ALBA) || 10;
@@ -31,7 +31,7 @@ async function grantReferralBonusIfEligible({ UserModel, user }) {
   }
 
   // Generate unique eventId for this referral
-  const eventId = uuidv4();
+  const eventId = randomUUID();
 
   // Grant referral bonus
   await earnReferralBonus({
