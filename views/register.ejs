@@ -3,19 +3,126 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Регистрация - Exto Ecosystem</title>
+  <title>Регистрация</title>
   <link rel="stylesheet" href="/styles.css?v=1.0.1">
-  <link rel="stylesheet" href="/header-tabs.css?v=1.0.1">
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <style>
+    /* Дополнительные стили для страницы регистрации */
+    .register-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .register-container {
+      width: 100%;
+      max-width: 400px;
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      padding: 30px;
+      box-shadow: var(--shadow-card);
+      border: 1px solid rgba(255, 51, 51, 0.2);
+    }
+
+    .register-title {
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--color-muted);
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      background: var(--color-surface-alt);
+      border: 1px solid rgba(255, 51, 51, 0.3);
+      border-radius: var(--radius-sm);
+      color: var(--color-text);
+      font-family: inherit;
+      font-size: 0.95rem;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 8px rgba(255, 51, 51, 0.3);
+    }
+
+    .form-group input[readonly] {
+      background: rgba(255, 51, 51, 0.1);
+      border-color: rgba(255, 51, 51, 0.4);
+      cursor: not-allowed;
+    }
+
+    .register-button {
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    .auth-links {
+      margin-top: 25px;
+      text-align: center;
+    }
+
+    .auth-links a {
+      color: var(--color-accent);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .auth-links a:hover {
+      text-decoration: underline;
+    }
+
+    .error-message {
+      color: #b00020;
+      background: rgba(176, 0, 32, 0.1);
+      border: 1px solid rgba(176, 0, 32, 0.3);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      margin-top: 15px;
+      text-align: center;
+      display: none;
+    }
+
+    .success-message {
+      color: #4caf50;
+      background: rgba(76, 175, 80, 0.1);
+      border: 1px solid rgba(76, 175, 80, 0.3);
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      margin-top: 15px;
+      text-align: center;
+      display: none;
+    }
+  </style>
 </head>
 <body>
-  <%- include('partials/header') %>
+  <div class="register-page">
+    <div class="register-container">
+      <h1 class="register-title">Регистрация</h1>
 
-  <main class="container">
-    <div class="auth-container">
-      <h1>Регистрация</h1>
-
-      <form id="registerForm" action="/register" method="POST" class="auth-form">
+      <form id="registerForm" action="/register" method="POST">
         <input type="hidden" name="csrfToken" value="<%= csrfToken %>">
 
         <div class="form-group">
@@ -35,33 +142,28 @@
 
         <% if (refCode) { %>
           <div class="form-group">
-            <label for="refCode">Реферальный код (автоматически)</label>
+            <label for="refCode">Реферальный код</label>
             <input type="text" id="refCode" name="refCode" value="<%= refCode %>" readonly>
             <input type="hidden" name="ref" value="<%= refCode %>">
           </div>
         <% } else { %>
           <div class="form-group">
-            <label for="refCode">Реферальный код (необязательно)</label>
+            <label for="refCode">Реферальный код</label>
             <input type="text" id="refCode" name="refCode" placeholder="Если у вас есть реферальный код">
           </div>
         <% } %>
 
-        <button type="submit" class="btn">Зарегистрироваться</button>
+        <button type="submit" class="btn register-button">Зарегистрироваться</button>
       </form>
 
-      <div id="registerError" class="error" style="color:#b00020;margin-top:10px;display:none;"></div>
-      <div id="registerSuccess" style="color:green;margin-top:10px;display:none;"></div>
+      <div id="registerError" class="error-message"></div>
+      <div id="registerSuccess" class="success-message"></div>
 
       <div class="auth-links">
         <p>Уже есть аккаунт? <a href="/user/login">Войти</a></p>
       </div>
     </div>
-  </main>
-
-  <%- include('partials/footer') %>
-
-  <script src="/script.js?v=1.0.1"></script>
-  <script src="/fix-footer-overlap.js?v=1.0.1"></script>
+  </div>
 
   <script>
     // Обработка формы регистрации
