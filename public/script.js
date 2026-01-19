@@ -2393,7 +2393,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.section').forEach(section => {
       if (section.id === 'catalog' || section.id === 'services') {
         section.style.display = 'block';
-      } else if (section.id === 'ad' || section.id === 'about' || section.id === 'contacts') {
+      } else if (section.id === 'ad' || section.id === 'about' || section.id === 'contacts' || section.id === 'videos') {
         section.style.display = 'block';
       } else {
         section.style.display = 'none';

@@ -160,10 +160,14 @@ router.post('/entitlements/purchase', requireAuth, apiCsrfProtection(), async (r
       });
     }
 
+    const { getUserAlbaBalance } = require('../services/albaService');
+    const updatedBalance = await getUserAlbaBalance(req.user._id);
+    
     res.json({
       success: true,
       entitlement: result.entitlement,
       transaction: result.transaction,
+      balance: updatedBalance,
       message: 'Entitlement purchased successfully'
     });
   } catch (err) {
@@ -294,7 +298,9 @@ router.get('/alba/transactions-history', requireAdmin, async (req, res) => {
 router.get('/alba/transactions', requireAuth, async (req, res, next) => {
   try {
     const txs = await listTransactions({ userId: req.user._id });
-    res.json({ success: true, transactions: txs });
+    const { getUserAlbaBalance } = require('../services/albaService');
+    const balance = await getUserAlbaBalance(req.user._id);
+    res.json({ success: true, transactions: txs, balance });
   } catch (err) {
     next(err);
   }

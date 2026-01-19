@@ -499,8 +499,8 @@
           const response = await fetch('/api/p1/alba/transactions');
           const data = await response.json();
 
-          if (data.success && data.transactions && data.transactions.length > 0) {
-            const currentBalance = data.transactions[0].userId?.albaBalance || 0;
+          if (data.success) {
+            const currentBalance = data.balance || 0;
             updateBalanceDisplays(currentBalance);
           }
         } catch (error) {
@@ -529,6 +529,11 @@
     // Handle entitlement purchase
     if (buyEntitlementBtn && cardTypeSelect && cardsToBuyInput && purchaseStatus) {
       buyEntitlementBtn.addEventListener('click', async () => {
+        // Disable the button to prevent double click
+        buyEntitlementBtn.disabled = true;
+        buyEntitlementBtn.textContent = 'Обработка...';
+        buyEntitlementBtn.style.opacity = '0.6';
+
         const cardType = cardTypeSelect.value;
         const cardsToBuy = parseInt(cardsToBuyInput.value) || 1;
         const costPerCard = parseInt(cardTypeSelect.selectedOptions[0]?.dataset?.cost) || 30;
@@ -543,8 +548,8 @@
           const balanceData = await balanceResponse.json();
 
           let currentBalance = 0;
-          if (balanceData.success && balanceData.transactions && balanceData.transactions.length > 0) {
-            currentBalance = balanceData.transactions[0].userId?.albaBalance || 0;
+          if (balanceData.success) {
+            currentBalance = balanceData.balance || 0;
           }
 
           if (currentBalance < totalCost) {
@@ -571,8 +576,8 @@
             purchaseStatus.textContent = `Успешно! Куплено право на ${cardType === 'product' ? 'товар' : 'услугу'} за ${costPerCard} ALBA`;
             purchaseStatus.style.color = '#66ff66';
 
-            // Update balance display
-            const newBalance = currentBalance - costPerCard;
+            // Update balance display with actual returned balance
+            const newBalance = result.balance || (currentBalance - costPerCard);
             updateBalanceDisplays(newBalance);
 
             // Reload available entitlements
@@ -590,6 +595,11 @@
           console.error('Error purchasing entitlement:', error);
           purchaseStatus.textContent = 'Ошибка сети: ' + error.message;
           purchaseStatus.style.color = '#ff6666';
+        } finally {
+          // Re-enable the button after operation completes
+          buyEntitlementBtn.disabled = false;
+          buyEntitlementBtn.textContent = 'Купить право на карточку';
+          buyEntitlementBtn.style.opacity = '1';
         }
       });
     }

@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Добавить видео - AlbaMount</title>
-    <link rel="stylesheet" href="/styles.css">
-    <link rel="stylesheet" href="/adaptive-tabs.css">
+  <meta charset="UTF-8">
+  <title>Добавить видео — Albamount</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=1.0.1">
+  <link rel="stylesheet" href="/header-tabs.css?v=1.0.1">
 </head>
 <body>
     <div id="bg-animated" aria-hidden="true"></div>
-    <!-- РћРґРЅРѕСЌС‚Р°Р¶РЅС‹Р№ header Р±РµР· РІРєР»Р°РґРѕРє -->
+    <!-- Одноэтажный header без вкладок -->
     <header class="main-header">
       <div class="container header-inner">
         <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
         <div class="header-actions">
           <% if (isAuth) { %>
             <% if (isAdmin) { %>
-              <a class="btn outline" href="/admin">РђРґРјРёРЅ-РїР°РЅРµР»СЊ</a>
+              <a class="btn outline" href="/admin">Админ-панель</a>
             <% } else { %>
-              <a class="btn outline" href="/cabinet">Р›РёС‡РЅС‹Р№ РєР°Р±РёРЅРµС‚</a>
+              <a class="btn outline" href="/cabinet">Личный кабинет</a>
             <% } %>
           <% } else { %>
-            <a class="btn outline" href="/user/login">Р’С…РѕРґ</a>
-            <button id="openRegister" type="button" class="btn outline">Р РµРіРёСЃС‚СЂР°С†РёСЏ</button>
+            <a class="btn outline" href="/user/login">Вход</a>
+            <button id="openRegister" type="button" class="btn outline">Регистрация</button>
           <% } %>
         </div>
       </div>
@@ -74,14 +79,17 @@
         <a href="/services" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'services' ? 'active' : '' %>">
           Услуги
         </a>
-        <a href="/videos" class="mobile-tab-button active">
-          Видео
-        </a>
         <a href="/ad" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'ad' ? 'active' : '' %>">
           Реклама
         </a>
         <a href="/about" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'about' ? 'active' : '' %>">
           О Нас
+        </a>
+        <a href="/contacts" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'contacts' ? 'active' : '' %>">
+          Контакты
+        </a>
+        <a href="/videos" class="mobile-tab-button active">
+          Видео
         </a>
       </div>
     </footer>
