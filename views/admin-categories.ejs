@@ -241,10 +241,8 @@
           categoriesData[type] = data.categories;
           renderCategoryTree(type, data.categories);
         } else {
-          console.error('Ошибка загрузки категорий:', data.message);
         }
       } catch (error) {
-        console.error('Ошибка сети:', error);
       }
     }
 
@@ -391,7 +389,6 @@
           alert('Ошибка: ' + result.message);
         }
       } catch (error) {
-        console.error('Ошибка:', error);
         alert('Ошибка сети');
       }
     }
@@ -415,7 +412,6 @@
           alert('Ошибка: ' + result.message);
         }
       } catch (error) {
-        console.error('Ошибка:', error);
         alert('Ошибка сети');
       }
     }

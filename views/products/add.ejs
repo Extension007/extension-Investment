@@ -185,10 +185,8 @@
             currentCategories = data.categories;
             renderCategoryBlocks(data.categories);
           } else {
-            console.error('Ошибка загрузки блоков категорий:', data.message);
           }
         } catch (error) {
-          console.error('Ошибка сети при загрузке блоков:', error);
         }
       }
 
@@ -214,10 +212,8 @@
           if (data.success && data.categories) {
             renderSubcategories(data.categories, blockName);
           } else {
-            console.error('Ошибка загрузки подкатегорий:', data.message);
           }
         } catch (error) {
-          console.error('Ошибка сети при загрузке подкатегорий:', error);
         }
       }
 

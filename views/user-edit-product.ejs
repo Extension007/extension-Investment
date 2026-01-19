@@ -129,19 +129,11 @@
     (function() {
       function initializeForm() {
         if (typeof initEditForm === 'function') {
-          console.log('🚀 Инициализация формы редактирования', {
-            productId: productId,
-            mode: 'user',
-            imagesCount: currentImagesData.length
-          });
-
           initEditForm({
             mode: 'user',
             productId: productId,
             currentImages: currentImagesData
           });
-        } else {
-          console.error('❌ Функция initEditForm не найдена');
         }
       }
       

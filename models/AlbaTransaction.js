@@ -18,6 +18,7 @@ const AlbaTransactionSchema = new mongoose.Schema(
     relatedCardType: { type: String, enum: ['product', 'service', 'banner', null], default: null },
     relatedCardId: { type: mongoose.Schema.Types.ObjectId, default: null },
 
+    comment: { type: String, default: '' }, // User-provided comment/note for the transaction
     meta: { type: Object, default: {} },
   },
   { timestamps: true }

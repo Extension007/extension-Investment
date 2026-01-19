@@ -231,12 +231,23 @@
 <div class="section-header">
 <h2>Управление ALBA</h2>
 </div>
-<form id="adminGrantAlbaForm" class="form-grid">
-<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
-<input type="text" id="albaUsername" name="login" placeholder="Логин пользователя" required>
-<input type="number" id="albaAmount" name="amount" placeholder="Количество ALBA" required min="1">
-<input type="text" id="albaComment" name="reason" placeholder="Комментарий" required>
-<button type="submit" class="btn primary">Начислить ALBA</button>
+<form id="adminGrantAlbaForm"
+      method="POST"
+      action="/api/p1/alba/grant-by-login"
+      class="form-grid"
+      novalidate>
+
+  <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+
+  <input type="text" id="albaUsername" placeholder="Логин пользователя" required>
+  <input type="number" id="albaAmount" placeholder="Количество ALBA" required min="1">
+  <input type="text" id="albaComment" placeholder="Комментарий" required>
+
+  <!-- КРИТИЧНО -->
+
+  <button type="button" id="albaSubmitBtn" class="btn primary">
+    Начислить ALBA
+  </button>
 </form>
 <div id="albaGrantMsg" class="note" style="margin-top:10px;"></div>
 
@@ -333,7 +344,7 @@ data-status="<%= p.status %>">
 <a class="btn small outline" href="/admin/products/<%= p._id %>/edit">✏️ Редактировать</a>
 
 <form method="POST" action="/admin/products/<%= p._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
-<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<input type="hidden" name="_csrf" value="<%- JSON.stringify(csrfToken || '') %>">
 <button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
 </form>
 
@@ -444,7 +455,7 @@ data-status="<%= s.status %>">
 <a class="btn small outline" href="/admin/services/<%= s._id %>/edit">✏️ Редактировать</a>
 
 <form method="POST" action="/admin/services/<%= s._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
-<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<input type="hidden" name="_csrf" value="<%- JSON.stringify(csrfToken || '') %>">
 <button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
 </form>
 
@@ -558,7 +569,7 @@ data-type="banner">
 <a class="btn small outline" href="/admin/banners/<%= b._id %>/edit">✏️ Редактировать</a>
 
 <form method="POST" action="/admin/banners/<%= b._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить баннер?');">
-<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+<input type="hidden" name="_csrf" value="<%- JSON.stringify(csrfToken || '') %>">
 <button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
 </form>
 
@@ -628,785 +639,221 @@ data-type="banner">
 
 <script>
 // Глобальный CSRF токен
-const CSRF_TOKEN = "<%- typeof csrfToken !== 'undefined' ? csrfToken : '' %>";
+const CSRF_TOKEN = <%- JSON.stringify(csrfToken || '') %>;
 
 // Helper функция для POST запросов с CSRF
 async function postJSON(url, data = {}) {
-return fetch(url, {
-method: "POST",
-headers: {
-"Content-Type": "application/json",
-"X-CSRF-Token": CSRF_TOKEN
-},
-body: JSON.stringify(data)
-});
+  return fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": CSRF_TOKEN
+    },
+    body: JSON.stringify(data)
+  });
 }
 
+// ЕДИНСТВЕННЫЙ обработчик DOMContentLoaded
 document.addEventListener("DOMContentLoaded", () => {
-console.log("🔧 Инициализация админ-панели");
 
-// Обработка выхода
-const logoutForm = document.getElementById("logoutForm");
-if (logoutForm) {
-logoutForm.addEventListener("submit", async (e) => {
-e.preventDefault();
-e.stopPropagation();
-if (!confirm("Вы уверены, что хотите выйти?")) return;
-try {
-const res = await fetch("/logout", { method: "POST" });
-if (res.ok) {
-window.location.href = "/";
-}
-} catch (err) {
-console.error("Ошибка выхода:", err);
-window.location.href = "/";
-}
-});
-}
+const adminGrantAlbaForm = document.getElementById('adminGrantAlbaForm');
+if (adminGrantAlbaForm) {
+// ЖЕЛЕЗНЫЙ БЛОКЕР НАТИВНОГО SUBMIT (Enter / браузер / глюки)
+adminGrantAlbaForm.addEventListener('submit', (e) => e.preventDefault());
 }
 
-// Блокировка/Разблокировка карточек (товары, услуги, баннеры)
-const toggleBtns = document.querySelectorAll(".toggle-visibility-btn");
-toggleBtns.forEach(btn => {
-btn.addEventListener("click", async (e) => {
-e.preventDefault();
-e.stopPropagation();
-const id = btn.getAttribute("data-id");
-const currentStatus = btn.getAttribute("data-status");
-const itemType = btn.getAttribute("data-type") || "product";
-const action = (currentStatus === "approved" || currentStatus === "published") ? "заблокировать" : "разблокировать";
-if (!confirm(`Вы уверены, что хотите ${action} эту карточку?`)) return;
+const albaSubmitBtn = document.getElementById('albaSubmitBtn');
+const albaGrantMsg  = document.getElementById('albaGrantMsg');
+
+if (albaSubmitBtn && albaGrantMsg) {
+albaSubmitBtn.addEventListener('click', async () => {
+
+const username = document.getElementById('albaUsername').value.trim();
+const amount   = document.getElementById('albaAmount').value;
+const comment  = document.getElementById('albaComment').value.trim();
+
+if (!username || !amount || !comment) {
+  albaGrantMsg.textContent = 'Заполните все поля';
+  albaGrantMsg.style.color = '#b00020';
+  return;
+}
+
+albaGrantMsg.textContent = 'Начисление...';
+albaGrantMsg.style.color = '#666';
 
 try {
-let endpoint;
-if (itemType === "banner") {
-endpoint = `/admin/banners/${id}/toggle-visibility`;
-} else if (itemType === "service") {
-endpoint = `/admin/services/${id}/toggle-visibility`;
-} else {
-endpoint = `/admin/products/${id}/toggle-visibility`;
-}
+  const res = await fetch('/api/p1/alba/grant-by-login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': CSRF_TOKEN
+    },
+    body: JSON.stringify({
+      login: username,
+      amount: Number(amount),
+      reason: 'admin_grant',
+      comment: comment
+    })
+  });
 
-const res = await postJSON(endpoint);
-const data = await res.json();
-if (data.success) {
-alert(data.message || "Статус карточки изменен");
-location.reload();
-} else {
-alert("Ошибка: " + (data.message || "Не удалось изменить статус"));
-}
+  const data = await res.json();
+
+  if (data.success) {
+    albaGrantMsg.textContent = `✅ Начислено ${amount} ALBA пользователю ${username}`;
+    albaGrantMsg.style.color = '#4caf50';
+    adminGrantAlbaForm && adminGrantAlbaForm.reset();
+  } else {
+    albaGrantMsg.textContent = 'Ошибка: ' + (data.message || 'unknown');
+    albaGrantMsg.style.color = '#b00020';
+  }
 } catch (err) {
-console.error("❌ Ошибка блокировки:", err);
-alert("Ошибка сети: " + err.message);
-}
-});
-});
-});
-
-// Модерация: одобрение
-const approveBtns = document.querySelectorAll(".approve-btn");
-approveBtns.forEach(btn => {
-btn.addEventListener("click", async (e) => {
-e.preventDefault();
-e.stopPropagation();
-const id = btn.getAttribute("data-id");
-if (!confirm("Одобрить эту карточку?")) return;
-try {
-const itemType = btn.getAttribute("data-type") || "product";
-let endpoint;
-if (itemType === "banner") {
-endpoint = `/admin/banners/${id}/approve`;
-} else if (itemType === "service") {
-endpoint = `/admin/services/${id}/approve`;
-} else {
-endpoint = `/admin/products/${id}/approve`;
-}
-const res = await postJSON(endpoint);
-const data = await res.json();
-if (data.success) {
-alert("Карточка одобрена!");
-location.reload();
-} else {
-alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-}
-} catch (err) {
-console.error("❌ Ошибка одобрения:", err);
-alert("Ошибка сети: " + err.message);
-}
-});
-});
-});
-
-// Модерация: отклонение
-const rejectModal = document.getElementById("rejectModal");
-const rejectForm = document.getElementById("rejectForm");
-let currentRejectId = null;
-let currentRejectType = "product";
-
-document.querySelectorAll(".reject-btn").forEach(btn => {
-btn.addEventListener("click", () => {
-currentRejectId = btn.getAttribute("data-id");
-currentRejectType = btn.getAttribute("data-type") || "product";
-rejectModal.style.display = "block";
-rejectModal.setAttribute("aria-hidden", "false");
-});
-});
-
-const closeRejectBtn = document.querySelector("[data-close-reject]");
-if (closeRejectBtn) {
-closeRejectBtn.addEventListener("click", () => {
-rejectModal.style.display = "none";
-rejectModal.setAttribute("aria-hidden", "true");
-rejectForm && rejectForm.reset();
-currentRejectId = null;
-currentRejectType = "product";
-});
-}
-
-if (rejectForm) {
-rejectForm.addEventListener("submit", async (e) => {
-e.preventDefault();
-if (!currentRejectId) return;
-const reason = new FormData(rejectForm).get("reason") || "Несоответствие правилам публикации";
-try {
-let rejectEndpoint;
-if (currentRejectType === "banner") {
-rejectEndpoint = `/admin/banners/${currentRejectId}/reject`;
-} else if (currentRejectType === "service") {
-rejectEndpoint = `/admin/services/${currentRejectId}/reject`;
-} else {
-rejectEndpoint = `/admin/products/${currentRejectId}/reject`;
-}
-const res = await postJSON(rejectEndpoint, { reason });
-const data = await res.json();
-if (data.success) {
-alert("Карточка отклонена");
-location.reload();
-} else {
-alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
-}
-} catch (err) {
-console.error("Ошибка отклонения:", err);
-alert("Ошибка сети: " + err.message);
-}
-});
-}
-}
-
-// Обработка формы создания товара админом
-const adminCreateForm = document.getElementById('adminCreateProductForm');
-const adminCreateMsg = document.getElementById('adminCreateMsg');
-const adminImagesInput = document.getElementById('adminImages');
-const adminImagePreview = document.getElementById('adminImagePreview');
-
-if (adminCreateForm) {
-adminCreateForm.addEventListener('submit', async function(e) {
-e.preventDefault();
-
-if (adminImagesInput && adminImagesInput.files.length > 5) {
-adminCreateMsg.textContent = 'Максимальное количество изображений: 5';
-adminCreateMsg.style.color = '#b00020';
-return;
-}
-
-adminCreateMsg.textContent = 'Отправка...';
-adminCreateMsg.style.color = '#666';
-
-const formData = new FormData(adminCreateForm);
-
-try {
-const res = await fetch('/admin/products', {
-method: 'POST',
-body: formData
-});
-
-const contentType = res.headers.get("content-type");
-if (contentType && contentType.includes("application/json")) {
-const data = await res.json();
-if (data.success) {
-adminCreateMsg.textContent = 'Товар успешно добавлен!';
-adminCreateMsg.style.color = 'green';
-adminCreateForm.reset();
-adminImagePreview.innerHTML = '';
-adminImagePreview.style.display = 'none';
-setTimeout(() => {
-location.reload();
-}, 1500);
-} else {
-adminCreateMsg.textContent = data.message || 'Ошибка при добавлении товара';
-adminCreateMsg.style.color = '#b00020';
-}
-}
-} catch (err) {
-adminCreateMsg.textContent = 'Ошибка сети: ' + err.message;
-adminCreateMsg.style.color = '#b00020';
-}
-});
-}
-}
-
-// Обработка формы создания баннера админом
-const adminCreateBannerForm = document.getElementById('adminCreateBannerForm');
-const adminCreateBannerMsg = document.getElementById('adminCreateBannerMsg');
-const adminBannerImagesInput = document.getElementById('adminBannerImages');
-const adminBannerImagePreview = document.getElementById('adminBannerImagePreview');
-
-if (adminCreateBannerForm) {
-adminCreateBannerForm.addEventListener('submit', async function(e) {
-e.preventDefault();
-
-if (adminBannerImagesInput && adminBannerImagesInput.files.length > 5) {
-adminCreateBannerMsg.textContent = 'Максимальное количество изображений: 5';
-adminCreateBannerMsg.style.color = '#b00020';
-return;
-}
-
-adminCreateBannerMsg.textContent = 'Отправка...';
-adminCreateBannerMsg.style.color = '#666';
-
-const formData = new FormData(adminCreateBannerForm);
-
-try {
-const res = await fetch('/admin/banners', {
-method: 'POST',
-body: formData
-});
-
-const contentType = res.headers.get("content-type");
-if (contentType && contentType.includes("application/json")) {
-const data = await res.json();
-if (data.success) {
-adminCreateBannerMsg.textContent = '✅ Баннер успешно добавлен!';
-adminCreateBannerMsg.style.color = 'green';
-adminCreateBannerForm.reset();
-adminBannerImagePreview.innerHTML = '';
-adminBannerImagePreview.style.display = 'none';
-setTimeout(() => {
-location.reload();
-}, 1500);
-} else {
-adminCreateBannerMsg.textContent = data.message || 'Ошибка при добавлении баннера';
-adminCreateBannerMsg.style.color = '#b00020';
-}
-}
-} catch (err) {
-adminCreateBannerMsg.textContent = 'Ошибка сети: ' + err.message;
-adminCreateBannerMsg.style.color = '#b00020';
-}
-});
-}
-}
-
-// Превью изображений для админ-формы баннеров
-if (adminBannerImagesInput && adminBannerImagePreview) {
-adminBannerImagesInput.addEventListener('change', function(e) {
-const files = Array.from(e.target.files);
-const maxFiles = 5;
-
-if (files.length > maxFiles) {
-alert(`Можно выбрать не более ${maxFiles} изображений`);
-e.target.value = '';
-adminBannerImagePreview.innerHTML = '';
-adminBannerImagePreview.style.display = 'none';
-return;
-}
-
-adminBannerImagePreview.innerHTML = '';
-
-if (files.length === 0) {
-adminBannerImagePreview.style.display = 'none';
-return;
-}
-
-adminBannerImagePreview.style.display = 'grid';
-adminBannerImagePreview.style.gridTemplateColumns = 'repeat(auto-fill, minmax(100px, 1fr))';
-adminBannerImagePreview.style.gap = '10px';
-adminBannerImagePreview.style.marginTop = '10px';
-
-files.forEach((file) => {
-if (file.size > 5 * 1024 * 1024) {
-alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
-return;
-}
-
-const reader = new FileReader();
-reader.onload = function(e) {
-const div = document.createElement('div');
-div.style.position = 'relative';
-div.style.aspectRatio = '1';
-div.style.overflow = 'hidden';
-div.style.borderRadius = '8px';
-div.style.border = '2px solid #ddd';
-
-const img = document.createElement('img');
-img.src = e.target.result;
-img.style.width = '100%';
-img.style.height = '100%';
-img.style.objectFit = 'cover';
-
-div.appendChild(img);
-adminBannerImagePreview.appendChild(div);
-};
-reader.readAsDataURL(file);
-});
-});
-}
-}
-
-// Превью изображений для админ-формы
-if (adminImagesInput && adminImagePreview) {
-adminImagesInput.addEventListener('change', function(e) {
-const files = Array.from(e.target.files);
-const maxFiles = 5;
-
-if (files.length > maxFiles) {
-alert(`Можно выбрать не более ${maxFiles} изображений`);
-e.target.value = '';
-adminImagePreview.innerHTML = '';
-adminImagePreview.style.display = 'none';
-return;
-}
-
-adminImagePreview.innerHTML = '';
-
-if (files.length === 0) {
-adminImagePreview.style.display = 'none';
-return;
-}
-
-adminImagePreview.style.display = 'grid';
-
-files.forEach((file) => {
-if (file.size > 5 * 1024 * 1024) {
-alert(`Файл "${file.name}" слишком большой (максимум 5MB)`);
-return;
-}
-
-const reader = new FileReader();
-reader.onload = function(e) {
-const div = document.createElement('div');
-div.style.position = 'relative';
-div.style.aspectRatio = '1';
-div.style.overflow = 'hidden';
-div.style.borderRadius = '8px';
-div.style.border = '2px solid #ddd';
-
-const img = document.createElement('img');
-img.src = e.target.result;
-img.style.width = '100%';
-img.style.height = '100%';
-img.style.objectFit = 'cover';
-
-div.appendChild(img);
-adminImagePreview.appendChild(div);
-};
-reader.readAsDataURL(file);
-});
-});
+  albaGrantMsg.textContent = 'Ошибка сети: ' + err.message;
+  albaGrantMsg.style.color = '#b00020';
 }
 });
 }
 
-// Иерархическая структура категорий (скопирована из cabinet.ejs)
-const hierarchicalCategories = {
-  "home": {
-    label: "🏠 Недвижимость и дом",
-    children: {
-      "apartments": {
-        label: "Квартиры",
-        children: {
-          "sale": { label: "Продажа" },
-          "rent": { label: "Аренда" },
-          "new_buildings": { label: "Новостройки" }
+  // Обработка выхода
+  const logoutForm = document.getElementById("logoutForm");
+  if (logoutForm) {
+    logoutForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!confirm("Вы уверены, что хотите выйти?")) return;
+      try {
+        const res = await fetch("/logout", { method: "POST" });
+        if (res.ok) {
+          window.location.href = "/";
         }
-      },
-      "houses": { label: "Дома и коттеджи" },
-      "commercial": { label: "Коммерческая недвижимость" },
-      "land": { label: "Земельные участки" },
-      "renovation": { label: "Ремонт и дизайн интерьера" },
-      "smart_home": { label: "Умный дом и автоматизация" },
-      "garden": { label: "Сад и огород" },
-      "furniture": { label: "Мебель и интерьер" }
-    }
-  },
-  "auto": {
-    label: "🚗 Автомобили и транспорт",
-    children: {
-      "cars": {
-        label: "Автомобили",
-        children: {
-          "new": { label: "Новые" },
-          "used": { label: "Б/у" },
-          "electric": { label: "Электромобили и зарядные станции" }
-        }
-      },
-      "motorcycles": { label: "Мотоциклы и скутеры" },
-      "bicycles": { label: "Велосипеды и электросамокаты" },
-      "parts": { label: "Запчасти и аксессуары" },
-      "electronics": {
-        label: "Автоэлектроника",
-        children: {
-          "navigators": { label: "Навигаторы" },
-          "recorders": { label: "Видеорегистраторы" },
-          "multimedia": { label: "Мультимедиа" }
-        }
-      },
-      "service": { label: "Сервис и ремонт" },
-      "carsharing": { label: "Аренда и каршеринг" },
-      "tuning": { label: "Тюнинг и кастомизация" }
-    }
-  },
-  "electronics": {
-    label: "⚡ Электроника и техника",
-    children: {
-      "phones": { label: "Смартфоны и аксессуары" },
-      "computers": { label: "Компьютеры и периферия" },
-      "appliances": {
-        label: "Бытовая техника",
-        children: {
-          "large": { label: "Крупная" },
-          "small": { label: "Мелкая" }
-        }
-      },
-      "audio_video": { label: "Аудио и видео техника" },
-      "gaming": {
-        label: "Игровая электроника",
-        children: {
-          "consoles": { label: "Консоли" },
-          "vr_ar": { label: "VR/AR устройства" },
-          "gaming_peripherals": { label: "Геймерская периферия" }
-        }
-      },
-      "robotics": { label: "Робототехника и автоматизация быта" },
-      "drones": { label: "Дроны и квадрокоптеры" }
-    }
-  },
-  "beauty": {
-    label: "💄 Красота и здоровье",
-    children: {
-      "cosmetics": { label: "Косметика и уход" },
-      "medical": { label: "Медицинские товары" },
-      "fitness_trackers": { label: "Фитнес‑гаджеты и трекеры" },
-      "biohacking": { label: "Биохакинг и функциональное питание" },
-      "nutrition": { label: "Спортивное питание и добавки" },
-      "services": { label: "Услуги (салоны, телемедицина, консультации)" }
-    }
-  },
-  "household": {
-    label: "🛒 Для дома и быта",
-    children: {
-      "textiles": { label: "Текстиль и декор" },
-      "kitchen": { label: "Кухонные принадлежности" },
-      "household_items": { label: "Бытовые мелочи" },
-      "lighting": { label: "Освещение и электрика" },
-      "plumbing": {
-        label: "Сантехника",
-        children: {
-          "mixers": { label: "Смесители" },
-          "showers": { label: "Душевые" },
-          "pipes_fittings": { label: "Трубы и фитинги" },
-          "water_supply": { label: "Системы водоснабжения" }
-        }
+      } catch (err) {
+        window.location.href = "/";
       }
-    }
-  },
-  "pets": {
-    label: "🐾 Питомцы",
-    children: {
-      "food": { label: "Корма и лакомства" },
-      "accessories": { label: "Аксессуары и игрушки" },
-      "smart_devices": { label: "Умные устройства для животных" },
-      "veterinary": { label: "Ветеринарные товары и услуги" }
-    }
-  },
-  "hobbies": {
-    label: "🎨 Хобби, досуг и DIY",
-    children: {
-      "crafts": { label: "Материалы для творчества" },
-      "electronics_diy": { label: "3D‑печать и электроника для сборки" },
-      "stem": { label: "STEM‑наборы и развивающие игрушки" },
-      "instruments": { label: "Музыкальные инструменты" },
-      "tourism": { label: "Туризм и активный отдых" }
-    }
-  },
-  "eco": {
-    label: "🌍 Эко‑товары и устойчивость",
-    children: {
-      "solar": { label: "Солнечные панели и альтернативная энергия" },
-      "efficient": { label: "Энергоэффективные устройства" },
-      "materials": { label: "Перерабатываемые и биоразлагаемые материалы" },
-      "transport": { label: "Электротранспорт" }
-    }
-  },
-  "digital": {
-    label: "💻 Цифровые товары и услуги",
-    children: {
-      "licenses": { label: "Лицензии и подписки" },
-      "courses": { label: "Онлайн‑курсы и обучение" },
-      "microservices": { label: "Микро‑услуги и фриланс" },
-      "content": { label: "Цифровой контент (шаблоны, медиа, NFT)" }
-    }
-  },
-  "additional": {
-    label: "🛍️ Дополнительные блоки",
-    children: {
-      "finance": { label: "Финансы и инвестиции" },
-      "education": { label: "Образование и карьера" },
-      "food_delivery": { label: "Продукты питания и доставка" },
-      "sports": { label: "Спорт и активный образ жизни" },
-      "ar_vr": { label: "AR/VR‑категории" },
-      "remote_work": { label: "Удалённая работа и офис" }
-    }
-  }
-};
-
-// Функция для генерации иерархического выбора категорий
-function buildHierarchicalSelector(parentElement, categories, level = 0, parentPath = '', currentValue = '') {
-  parentElement.innerHTML = '';
-  
-  // Добавляем кнопку "Назад к основным категориям", если это не первый уровень
-  if (level > 0) {
-    const backButton = document.createElement('button');
-    backButton.type = 'button';
-    backButton.textContent = '← Назад к основным категориям';
-    backButton.className = 'btn small outline';
-    backButton.style.marginBottom = '10px';
-    backButton.onclick = function() {
-      // Скрываем иерархический селектор и показываем основной
-      document.getElementById('adminHierarchicalCategorySelector').style.display = 'none';
-      document.getElementById('adminCategorySelect').style.display = 'block';
-      document.getElementById('adminSubcategorySelector').style.display = 'none';
-    };
-    parentElement.appendChild(backButton);
+    });
   }
 
-  const container = document.createElement('div');
-  container.style.marginLeft = level * 20 + 'px';
-  container.style.marginTop = '10px';
-  
-  const select = document.createElement('select');
-  select.className = 'category-select';
-  select.setAttribute('data-level', level);
-  select.innerHTML = '<option value="">Выберите ' + (level === 0 ? 'основную категорию' : 'подкатегорию') + '</option>';
-  
-  for (const [key, value] of Object.entries(categories)) {
-    const option = document.createElement('option');
-    const fullKey = parentPath ? `${parentPath}.${key}` : key;
-    option.value = fullKey;
-    option.textContent = value.label;
-    
-    // Если это текущее значение категории или его часть, делаем его выбранным
-    if (currentValue === fullKey || currentValue.startsWith(fullKey + '.')) {
-      option.selected = true;
-    }
-    
-    select.appendChild(option);
-  }
-  
-  container.appendChild(select);
-  parentElement.appendChild(container);
-  
-  select.addEventListener('change', function() {
-    const selectedValue = this.value;
-    if (selectedValue) {
-      // Обновляем скрытое поле категории
-      document.querySelector('input[name="category"], select[name="category"]').value = selectedValue;
-      
-      // Удаляем все дочерние селекторы
-      const childSelectors = parentElement.querySelectorAll(`.category-select[data-level]:not([data-level="${level}"])`);
-      childSelectors.forEach(child => {
-        if (parseInt(child.getAttribute('data-level')) > level) {
-          child.closest('div').remove();
-        }
-      });
-      
-      // Если у выбранной категории есть подкатегории, создаем новый селектор
-      const categoryPath = this.value.split('.');
-      let currentCategory = hierarchicalCategories;
-      
-      for (const path of categoryPath) {
-        if (currentCategory && currentCategory[path]) {
-          currentCategory = currentCategory[path].children;
+  // Блокировка/Разблокировка карточек (товары, услуги, баннеры)
+  const toggleBtns = document.querySelectorAll(".toggle-visibility-btn");
+  toggleBtns.forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      const currentStatus = btn.getAttribute("data-status");
+      const itemType = btn.getAttribute("data-type") || "product";
+      const action = (currentStatus === "approved" || currentStatus === "published") ? "заблокировать" : "разблокировать";
+      if (!confirm(`Вы уверены, что хотите ${action} эту карточку?`)) return;
+
+      try {
+        let endpoint;
+        if (itemType === "banner") {
+          endpoint = `/admin/banners/${id}/toggle-visibility`;
+        } else if (itemType === "service") {
+          endpoint = `/admin/services/${id}/toggle-visibility`;
         } else {
-          currentCategory = null;
-          break;
+          endpoint = `/admin/products/${id}/toggle-visibility`;
         }
+
+        const res = await postJSON(endpoint);
+        const data = await res.json();
+        if (data.success) {
+          alert(data.message || "Статус карточки изменен");
+          location.reload();
+        } else {
+          alert("Ошибка: " + (data.message || "Не удалось изменить статус"));
+        }
+      } catch (err) {
+        alert("Ошибка сети: " + err.message);
       }
-      
-      if (currentCategory) {
-        buildHierarchicalSelector(parentElement, currentCategory, level + 1, selectedValue, '');
+    });
+  });
+
+  // Модерация: одобрение
+  const approveBtns = document.querySelectorAll(".approve-btn");
+  approveBtns.forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const id = btn.getAttribute("data-id");
+      if (!confirm("Одобрить эту карточку?")) return;
+      try {
+        const itemType = btn.getAttribute("data-type") || "product";
+        let endpoint;
+        if (itemType === "banner") {
+          endpoint = `/admin/banners/${id}/approve`;
+        } else if (itemType === "service") {
+          endpoint = `/admin/services/${id}/approve`;
+        } else {
+          endpoint = `/admin/products/${id}/approve`;
+        }
+        const res = await postJSON(endpoint);
+        const data = await res.json();
+        if (data.success) {
+          alert("Карточка одобрена!");
+          location.reload();
+        } else {
+          alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+        }
+      } catch (err) {
+        alert("Ошибка сети: " + err.message);
       }
-    }
-  });
-}
-
-// Инициализация динамической загрузки категорий для админ-панели
-const adminCategorySelect = document.getElementById('adminCategorySelect');
-const adminSubcategorySelector = document.getElementById('adminSubcategorySelector');
-const adminSubcategorySelect = document.getElementById('adminSubcategorySelect');
-const adminBackToBlocksBtn = document.getElementById('adminBackToBlocks');
-const adminHierarchicalCategorySelector = document.getElementById('adminHierarchicalCategorySelector');
-const adminBackToMainBtn = document.getElementById('adminBackToMain');
-
-let adminCurrentCategories = [];
-
-// Загружаем блоки категорий при загрузке страницы
-loadAdminCategoryBlocks();
-
-async function loadAdminCategoryBlocks() {
-  try {
-    const response = await fetch('/api/categories/tree/all');
-    const data = await response.json();
-
-    if (data.success && data.categories) {
-      adminCurrentCategories = data.categories;
-      renderAdminCategoryBlocks(data.categories);
-    } else {
-      console.error('Ошибка загрузки блоков категорий:', data.message);
-    }
-  } catch (error) {
-    console.error('Ошибка сети при загрузке блоков:', error);
-  }
-}
-
-function renderAdminCategoryBlocks(blocks) {
-  if (!adminCategorySelect) return;
-
-  // Очищаем селект, оставляем только первую опцию
- adminCategorySelect.innerHTML = '<option value="">Выберите категорию</option>';
-
-  blocks.forEach(block => {
-    const option = document.createElement('option');
-    option.value = block._id;
-    option.textContent = `${block.icon || ''} ${block.name}`;
-    adminCategorySelect.appendChild(option);
-  });
-}
-
-async function loadAdminSubcategories(blockId, blockName) {
-  try {
-    const response = await fetch(`/api/categories/children/${blockId}`);
-    const data = await response.json();
-
-    if (data.success && data.categories) {
-      renderAdminSubcategories(data.categories, blockName);
-    } else {
-      console.error('Ошибка загрузки подкатегорий:', data.message);
-    }
-  } catch (error) {
-    console.error('Ошибка сети при загрузке подкатегорий:', error);
-  }
-}
-
-function renderAdminSubcategories(subcategories, blockName) {
-  if (!adminSubcategorySelector || !adminSubcategorySelect) return;
-
-  adminSubcategorySelect.innerHTML = '<option value="">Выберите подкатегорию</option>';
-
-  subcategories.forEach(sub => {
-    const option = document.createElement('option');
-    option.value = sub._id;
-    option.textContent = `${sub.icon || ''} ${sub.name}`;
-    adminSubcategorySelect.appendChild(option);
+    });
   });
 
-  // Показываем контейнер подкатегорий
-  adminSubcategorySelector.style.display = 'block';
-}
+  // Модерация: отклонение
+  const rejectModal = document.getElementById("rejectModal");
+  const rejectForm = document.getElementById("rejectForm");
+  let currentRejectId = null;
+  let currentRejectType = "product";
 
-function hideAdminSubcategories() {
-  if (adminSubcategorySelector) {
-    adminSubcategorySelector.style.display = 'none';
+  document.querySelectorAll(".reject-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      currentRejectId = btn.getAttribute("data-id");
+      currentRejectType = btn.getAttribute("data-type") || "product";
+      rejectModal.style.display = "block";
+      rejectModal.setAttribute("aria-hidden", "false");
+    });
+  });
+
+  const closeRejectBtn = document.querySelector("[data-close-reject]");
+  if (closeRejectBtn) {
+    closeRejectBtn.addEventListener("click", () => {
+      rejectModal.style.display = "none";
+      rejectModal.setAttribute("aria-hidden", "true");
+      rejectForm && rejectForm.reset();
+      currentRejectId = null;
+      currentRejectType = "product";
+    });
   }
-}
 
-function showAdminHierarchicalSelector() {
-  if (adminCategorySelect) adminCategorySelect.style.display = 'none';
-  if (adminSubcategorySelector) adminSubcategorySelector.style.display = 'none';
-  if (adminHierarchicalCategorySelector) {
-    adminHierarchicalCategorySelector.style.display = 'block';
-    // Создаем иерархический селектор
-    buildHierarchicalSelector(adminHierarchicalCategorySelector, hierarchicalCategories, 0, '');
-  }
-}
-
-function hideAdminHierarchicalSelector() {
-  if (adminHierarchicalCategorySelector) {
-    adminHierarchicalCategorySelector.style.display = 'none';
-  }
-  if (adminCategorySelect) adminCategorySelect.style.display = 'block';
-}
-
-// Обработчик выбора блока
-if (adminCategorySelect) {
-  adminCategorySelect.addEventListener('change', function() {
-    const selectedBlockId = this.value;
-    if (selectedBlockId) {
-      // Находим выбранный блок
-      const selectedBlock = adminCurrentCategories.find(block => block._id === selectedBlockId);
-      if (selectedBlock) {
-        loadAdminSubcategories(selectedBlockId, selectedBlock.name);
+  if (rejectForm) {
+    rejectForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!currentRejectId) return;
+      const reason = new FormData(rejectForm).get("reason") || "Несоответствие правилам публикации";
+      try {
+        let rejectEndpoint;
+        if (currentRejectType === "banner") {
+          rejectEndpoint = `/admin/banners/${currentRejectId}/reject`;
+        } else if (currentRejectType === "service") {
+          rejectEndpoint = `/admin/services/${currentRejectId}/reject`;
+        } else {
+          rejectEndpoint = `/admin/products/${currentRejectId}/reject`;
+        }
+        const res = await postJSON(rejectEndpoint, { reason });
+        const data = await res.json();
+        if (data.success) {
+          alert("Карточка отклонена");
+          location.reload();
+        } else {
+          alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+        }
+      } catch (err) {
+        alert("Ошибка сети: " + err.message);
       }
-    } else {
-      hideAdminSubcategories();
-    }
-  });
-}
-
-// Обработчик выбора подкатегории
-if (adminSubcategorySelect) {
-  adminSubcategorySelect.addEventListener('change', function() {
-    const selectedCategoryId = this.value;
-    // Обновляем скрытое поле основной формы
-    if (selectedCategoryId) {
-      adminCategorySelect.value = selectedCategoryId;
-    }
-  });
-}
-
-// Обработчик кнопки "Назад к блокам"
-if (adminBackToBlocksBtn) {
-  adminBackToBlocksBtn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    hideAdminSubcategories();
-    adminCategorySelect.value = '';
-  });
-}
-
-// Обработчик кнопки "Назад к основным категориям" (для иерархического выбора)
-if (adminBackToMainBtn) {
-  adminBackToMainBtn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    hideAdminHierarchicalSelector();
-    if (adminCategorySelect) adminCategorySelect.style.display = 'block';
-  });
-}
-
-// Создаем кнопку для переключения в иерархический режим
-const adminHierarchicalToggleBtn = document.createElement('button');
-adminHierarchicalToggleBtn.type = 'button';
-adminHierarchicalToggleBtn.textContent = 'Использовать иерархический выбор';
-adminHierarchicalToggleBtn.className = 'btn small outline';
-adminHierarchicalToggleBtn.style.marginTop = '10px';
-adminHierarchicalToggleBtn.style.display = 'block';
-
-// Добавляем кнопку после селектора категорий
-if (adminCategorySelect) {
-  adminCategorySelect.parentNode.appendChild(adminHierarchicalToggleBtn);
-}
-
-// Обработчик кнопки переключения в иерархический режим
-if (adminHierarchicalToggleBtn) {
-  adminHierarchicalToggleBtn.addEventListener('click', function() {
-    adminCategorySelect.value = ''; // Сбрасываем выбор обычной категории
-    hideAdminSubcategories(); // Скрываем подкатегории
-    showAdminHierarchicalSelector(); // Показываем иерархический селектор
-    adminHierarchicalToggleBtn.style.display = 'none'; // Скрываем кнопку переключения
-  });
-}
+    });
+  }
+});
 </script>
-
-
 
 <style>
 /* Status styles for product cards */
@@ -1473,3 +920,14 @@ color: #fff;
 </style>
 </body>
 </html>
+<task_progress>
+- [x] Провести полный аудит JavaScript кода в views/admin.ejs
+- [x] Найти все лишние и несоответствующие закрывающие скобки
+- [x] Удалить функциональность создания карточек
+- [x] Исправить синтаксические ошибки
+- [x] Структурировать код с одним DOMContentLoaded
+- [x] Защитить форму ALBA от GET запросов
+- [x] Убедиться в правильной передаче CSRF токена
+- [x] Проверить, что форма ALBA отправляет POST запрос
+</task_progress>
+</write_to_file>

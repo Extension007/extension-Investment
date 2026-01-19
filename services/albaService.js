@@ -17,6 +17,48 @@ async function grantAlba({ UserModel, userId, amount, reason, actorAdminId=null,
   return addTx(UserModel, { userId, amount, type: 'grant', reason, relatedUserId: actorAdminId, meta });
 }
 
+async function grantAlbaByUsername(login, amount, reason, adminId = null, comment = '') {
+  const User = require('../models/User');
+  const user = await User.findOne({ username: login });
+  if (!user) throw new Error("User not found");
+  if (!user.emailVerified) throw new Error("Email not verified");
+
+  const AlbaTransaction = require('../models/AlbaTransaction');
+  const AuditLog = require('../models/AuditLog');
+
+  const tx = await AlbaTransaction.create({
+    userId: user._id,
+    amount,
+    reason,
+    type: 'grant',
+    comment: comment,
+    createdAt: new Date()
+  });
+
+  await User.updateOne(
+    { _id: user._id },
+    { $inc: { albaBalance: amount } }
+  );
+
+  // Create audit log entry
+  await AuditLog.create({
+    action: 'alba_grant',
+    userId: user._id,
+    targetUserId: user._id,
+    adminId: adminId,
+    amount: amount,
+    reason: reason,
+    comment: comment,
+    details: {
+      originalBalance: user.albaBalance,
+      newBalance: user.albaBalance + amount,
+      login: login
+    }
+  });
+
+  return { user, tx };
+}
+
 async function earnReferralBonus({ UserModel, referrerUserId, referredUserId, amount=10 }) {
   return addTx(UserModel, { userId: referrerUserId, amount, type:'earn', reason:'referral_bonus', relatedUserId: referredUserId });
 }
@@ -195,5 +237,6 @@ module.exports = {
   purchaseEntitlement,
   getAvailableEntitlementsCount,
   getAvailableEntitlements,
-  consumeEntitlement
+  consumeEntitlement,
+  grantAlbaByUsername
 };

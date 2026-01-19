@@ -173,7 +173,6 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      console.log("🔧 Инициализация админ-панели контактов");
 
       // Обработка выхода
       const logoutForm = document.getElementById("logoutForm");
@@ -187,7 +186,6 @@
               window.location.href = "/";
             }
           } catch (err) {
-            console.error("Ошибка выхода:", err);
             window.location.href = "/";
           }
         });

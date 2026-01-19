@@ -77,7 +77,6 @@
           statusDiv.innerHTML = '<div class="error-message">' + response.data.message + '</div>';
         }
       } catch (error) {
-        console.error('Ошибка повторной отправки:', error);
         const statusDiv = document.getElementById('resendStatus');
         const errorMessage = error.response?.data?.message || 'Ошибка при отправке письма';
         statusDiv.innerHTML = '<div class="error-message">' + errorMessage + '</div>';

@@ -186,8 +186,6 @@ router.delete("/images/:productId/:index", apiLimiter, csrfProtection, async (re
     const { productId, index } = req.params;
     const imageIndex = parseInt(index);
     
-    console.log("🗑️ Удаление изображения", { productId, index: imageIndex, userId: req.user?._id });
-    
     if (!HAS_MONGO) return res.status(503).json({ success: false, message: 'Недоступно: нет БД' });
     
     if (!mongoose.Types.ObjectId.isValid(productId)) {
@@ -222,19 +220,18 @@ router.delete("/images/:productId/:index", apiLimiter, csrfProtection, async (re
 
     // Получаем URL изображения для удаления
     const imageUrl = images[imageIndex];
-    console.log(`🔄 Удаление изображения из хранилища: ${imageUrl}`);
 
     // Удалить из Cloudinary (или локального хранилища)
     // Функция deleteImage из utils/imageUtils.js автоматически определяет тип хранилища
     // и извлекает public_id из URL для Cloudinary
     const deleted = await deleteImage(imageUrl);
     
+    
     if (!deleted) {
-      console.warn(`⚠️  Не удалось удалить файл ${imageUrl}, но продолжаем удаление из БД`);
+      // Log warning for failed deletion but continue
     } else {
-      console.log(`✅ Файл успешно удален из хранилища: ${imageUrl}`);
+      // Successfully deleted from storage
     }
-
     // Удалить из массива в MongoDB
     images.splice(imageIndex, 1);
     product.images = images;
@@ -244,9 +241,8 @@ router.delete("/images/:productId/:index", apiLimiter, csrfProtection, async (re
     
     await product.save();
 
-    console.log(`✅ Изображение удалено из товара ${productId}, индекс ${imageIndex}, URL: ${imageUrl}`);
-    console.log(`📊 Осталось изображений: ${images.length}`);
-
+    
+        // Image removed successfully
     // Возвращаем успешный ответ (204 No Content - стандарт для DELETE)
     // Также можно вернуть JSON с success: true для совместимости
     return res.status(204).send();
@@ -276,7 +272,6 @@ router.delete("/products/:id", apiLimiter, requireUser, csrfProtection, async (r
     }
 
     const productId = req.params.id;
-    console.log("🗑️ Удаление карточки товара", { productId, userId: req.user._id });
 
     // Найти продукт в базе
     const product = await Product.findById(productId);
@@ -294,15 +289,11 @@ router.delete("/products/:id", apiLimiter, requireUser, csrfProtection, async (r
 
     // Удаляем изображения из Cloudinary (или локального хранилища)
     if (product.images && product.images.length > 0) {
-      console.log(`🔄 Удаление ${product.images.length} изображений из хранилища`);
       const deletedCount = await deleteImages(product.images);
-      console.log(`✅ Удалено ${deletedCount} из ${product.images.length} изображений`);
     }
 
     // Полное удаление из MongoDB
     await Product.findByIdAndDelete(productId);
-
-    console.log(`✅ Карточка товара ${productId} полностью удалена из БД`);
 
     return res.json({ success: true, message: "Карточка успешно удалена" });
   } catch (err) {
@@ -417,7 +408,6 @@ router.put("/products/:id", apiLimiter, requireUser, csrfProtection, async (req,
       product.status = status;
       await product.save();
       
-      console.log("✅ Статус товара обновлен:", { id: product._id, status: product.status });
       
       res.json({ success: true, product });
     } else {
@@ -525,7 +515,6 @@ router.post("/banners", apiLimiter, requireUser, csrfProtection, async (req, res
     
     const banner = await Banner.create(bannerData);
     
-    console.log("✅ Баннер создан:", { id: banner._id, title: banner.title });
     
     res.json({ success: true, banner });
   } catch (err) {
@@ -575,7 +564,6 @@ router.put("/banners/:id", apiLimiter, requireUser, csrfProtection, async (req, 
     
     const updated = await Banner.findByIdAndUpdate(req.params.id, updateData, { new: true });
     
-    console.log("✅ Баннер обновлен:", { id: updated._id, title: updated.title });
     
     res.json({ success: true, banner: updated });
   } catch (err) {
@@ -609,14 +597,12 @@ router.delete("/banners/:id", apiLimiter, requireUser, csrfProtection, async (re
     // Удаляем изображения из Cloudinary
     if (banner.images && banner.images.length > 0) {
       const deletedCount = await deleteImages(banner.images);
-      console.log(`✅ Удалено ${deletedCount} из ${banner.images.length} изображений баннера`);
     } else if (banner.image_url) {
       await deleteImage(banner.image_url);
     }
     
     await Banner.findByIdAndDelete(req.params.id);
     
-    console.log("✅ Баннер удален:", { id: req.params.id });
     
     res.json({ success: true, message: "Баннер удален" });
   } catch (err) {
@@ -803,7 +789,6 @@ router.post("/services", apiLimiter, requireUser, requireEmailVerification, csrf
     
     const service = await Product.create(serviceData);
     
-    console.log("✅ Услуга создана:", { id: service._id, name: service.name });
     
     res.json({ success: true, service });
   } catch (err) {
@@ -858,7 +843,6 @@ router.put("/services/:id", apiLimiter, requireUser, csrfProtection, async (req,
     
     const updated = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
     
-    console.log("✅ Услуга обновлена:", { id: updated._id, name: updated.name });
     
     res.json({ success: true, service: updated });
   } catch (err) {
@@ -897,7 +881,6 @@ router.delete("/services/:id", apiLimiter, requireUser, csrfProtection, async (r
     // Удаляем изображения из Cloudinary
     if (service.images && service.images.length > 0) {
       const deletedCount = await deleteImages(service.images);
-      console.log(`✅ Удалено ${deletedCount} из ${service.images.length} изображений услуги`);
     } else if (service.image_url) {
       await deleteImage(service.image_url);
     }
@@ -905,7 +888,6 @@ router.delete("/services/:id", apiLimiter, requireUser, csrfProtection, async (r
     // Soft delete
     await Product.findByIdAndUpdate(req.params.id, { deleted: true });
     
-    console.log("✅ Услуга удалена:", { id: req.params.id });
     
     res.json({ success: true, message: "Услуга удалена" });
   } catch (err) {
@@ -1041,6 +1023,6 @@ router.get("/contacts/:id", async (req, res) => {
 // =======================
 // P1 API Routes
 // =======================
-router.use(require('./api_p1'));
+router.use('/p1', require('./api_p1'));
 
 module.exports = router;

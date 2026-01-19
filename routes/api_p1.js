@@ -3,6 +3,7 @@ const router = express.Router();
 const { ensureGuestId, guestRateLimit, captchaHook } = require('../middleware/p1Guest');
 const { requireAuth, requireAdmin, requireUser } = require('../middleware/auth');
 const { csrfProtection } = require('../middleware/csrf');
+const { apiCsrfProtection } = require('../middleware/apiCsrf');
 const { httpError } = require('../utils/httpError');
 const { notifyUser } = require('../services/notify');
 const { redeemSlotCode, createCodes, issuePaymentActivationCode, consumePaymentActivationCode } = require('../services/codeService');
@@ -77,7 +78,7 @@ router.post('/alba/grant', requireAdmin, async (req, res, next) => {
 // Grant ALBA by login (username)
 router.post('/alba/grant-by-login', requireAdmin, async (req, res) => {
   try {
-    const { login, amount, reason } = req.body;
+    const { login, amount, reason, comment } = req.body;
     if (!login || !amount || !reason) {
       return res.status(400).json({
         success: false,
@@ -92,54 +93,47 @@ router.post('/alba/grant-by-login', requireAdmin, async (req, res) => {
       });
     }
 
-    const User = require('../models/User');
-
-    // Find user by login (username)
-    const user = await User.findOne({ username: login });
-    if (!user) {
-      return res.status(404).json({
+    // Validate that reason is one of the allowed enum values
+    const validReasons = ['referral_bonus', 'card_payment', 'admin_grant', 'manual_adjustment', 'upgrade_to_paid', 'card_entitlement_purchase'];
+    if (!validReasons.includes(reason)) {
+      return res.status(400).json({
         success: false,
-        message: 'User not found with this login'
+        message: `Invalid reason. Must be one of: ${validReasons.join(', ')}`
       });
     }
 
-    // Grant ALBA to the user
-    const updatedUser = await grantAlba({
-      UserModel: User,
-      userId: user._id,
-      amount,
-      reason,
-      actorAdminId: req.user._id
-    });
+    const { grantAlbaByUsername } = require('../services/albaService');
+
+    const result = await grantAlbaByUsername(login, amount, reason, req.user._id, comment);
 
     // Notify the user about the ALBA grant
-    await notifyUser(user._id, {
+    await notifyUser(result.user._id, {
       type: 'alba_granted',
       amount,
       reason,
+      comment,
       admin: req.user.username
     });
 
     res.json({
       success: true,
-      message: `Successfully granted ${amount} ALBA to user ${login}`,
       user: {
-        id: user._id,
-        username: user.username,
-        newBalance: updatedUser.albaBalance
-      }
+        login: result.user.username,
+        albaBalance: result.user.albaBalance
+      },
+      transactionId: result.tx._id.toString()
     });
   } catch (err) {
     console.error('Error granting ALBA by login:', err);
     res.status(500).json({
       success: false,
-      message: 'Error granting ALBA: ' + err.message
+      message: err.message || 'Error granting ALBA: ' + err.message
     });
   }
 });
 
 // ENTITLEMENTS API
-router.post('/entitlements/purchase', requireAuth, async (req, res) => {
+router.post('/entitlements/purchase', requireAuth, apiCsrfProtection(), async (req, res) => {
   try {
     const { type, idempotencyKey } = req.body;
     if (!type || !idempotencyKey) {
@@ -209,7 +203,7 @@ router.get('/entitlements/available', requireAuth, async (req, res) => {
 });
 
 // REFERRAL API
-router.post('/referrals/set-binding', requireAuth, async (req, res) => {
+router.post('/referrals/set-binding', requireAuth, apiCsrfProtection(), async (req, res) => {
   try {
     const { referrerId } = req.body;
     if (!referrerId) {

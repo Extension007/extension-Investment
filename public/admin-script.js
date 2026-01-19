@@ -1,6 +1,5 @@
 // Специальный скрипт для админ-панели
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("🔧 Инициализация админ-панели");
 
   // Обработка выхода
   const logoutForm = document.getElementById("logoutForm");
@@ -450,6 +449,5 @@ document.addEventListener("DOMContentLoaded", () => {
 // Загрузка YouTube IFrame API
 var tag = document.createElement('script');
 tag.src = "https://www.youtube.com/iframe_api";
-var firstScriptTag = document.getElementsByTagName('script')[0];
 var firstScriptTag = document.getElementsByTagName('script')[0];
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
