@@ -24,6 +24,7 @@ exports.register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    
     // Создаем пользователя с emailVerified: false по умолчанию
     const user = new User({
       username,
@@ -32,6 +33,20 @@ exports.register = async (req, res) => {
       role: "user",
       emailVerified: false // Новый пользователь не подтвержден
     });
+
+    // Save the user first to get the user ID
+    await user.save();
+
+    // Check for referral code in query parameters after user is created
+    const refCode = req.query.ref || req.body.ref || req.body.refCode;
+    
+    if (refCode) {
+      const referrer = await User.findOne({ refCode: refCode });
+      if (referrer && referrer._id.toString() !== user._id.toString()) { // Avoid self-referral
+        user.referredBy = referrer._id;
+        await user.save();
+      }
+    }
 
     try {
       await user.save();

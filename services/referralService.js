@@ -3,12 +3,26 @@ const AlbaTransaction = require('../models/AlbaTransaction');
 const { randomUUID } = require('crypto');
 
 // Get referral bonus amount from environment or use default
-const REFERRAL_BONUS_ALBA = parseInt(process.env.REFERRAL_BONUS_ALBA) || 10;
+const REFERRAL_BONUS_ALBA = parseInt(process.env.REFERRAL_BONUS_ALBA) || 30;
 
 async function grantReferralBonusIfEligible({ UserModel, user }) {
-  if (user.emailVerified !== true) return;
-  if (!user.referredBy) return;
-  if (user.refBonusGranted === true) return;
+  // Log referral bonus check
+  console.log(`Checking referral bonus eligibility for user ${user._id}`);
+
+  if (user.emailVerified !== true) {
+    console.log(`User ${user._id} is not email verified, skipping referral bonus`);
+    return;
+  }
+  
+  if (!user.referredBy) {
+    console.log(`User ${user._id} has no referrer, skipping referral bonus`);
+    return;
+  }
+  
+  if (user.refBonusGranted === true) {
+    console.log(`User ${user._id} already received referral bonus, skipping`);
+    return;
+  }
 
   // Check if referral bonus was already granted (idempotent check)
   const existingTransaction = await AlbaTransaction.findOne({
@@ -34,29 +48,36 @@ async function grantReferralBonusIfEligible({ UserModel, user }) {
   const eventId = randomUUID();
 
   // Grant referral bonus
-  await earnReferralBonus({
-    UserModel,
-    referrerUserId: user.referredBy,
-    referredUserId: user._id,
-    amount: REFERRAL_BONUS_ALBA
-  });
+  try {
+    await earnReferralBonus({
+      UserModel,
+      referrerUserId: user.referredBy,
+      referredUserId: user._id,
+      amount: REFERRAL_BONUS_ALBA
+    });
 
-  // Create transaction record with eventId
-  await AlbaTransaction.create({
-    userId: user.referredBy,
-    amount: REFERRAL_BONUS_ALBA,
-    type: 'earn',
-    reason: 'referral_bonus',
-    relatedUserId: user._id,
-    meta: {
-      eventId,
-      referralType: 'one-time',
-      referredUserId: user._id
-    }
-  });
+    // Create transaction record with eventId
+    await AlbaTransaction.create({
+      userId: user.referredBy,
+      amount: REFERRAL_BONUS_ALBA,
+      type: 'earn',
+      reason: 'referral_bonus',
+      relatedUserId: user._id,
+      meta: {
+        eventId,
+        referralType: 'one-time',
+        referredUserId: user._id
+      }
+    });
 
-  user.refBonusGranted = true;
-  await user.save();
+    console.log(`Referral bonus granted: referrer=${user.referredBy}, newUser=${user._id}, amount=${REFERRAL_BONUS_ALBA}, txId=${eventId}`);
+
+    user.refBonusGranted = true;
+    await user.save();
+  } catch (error) {
+    console.error(`Error granting referral bonus for user ${user._id}:`, error);
+    throw error;
+  }
 }
 
 /**
@@ -68,30 +89,38 @@ async function grantReferralBonusIfEligible({ UserModel, user }) {
  * @returns {Promise<Object>} - Result with success status
  */
 async function setReferralBinding({ UserModel, userId, referrerId }) {
+  console.log(`Setting referral binding: userId=${userId}, referrerId=${referrerId}`);
+
   const user = await UserModel.findById(userId);
   if (!user) {
+    console.log(`User not found: ${userId}`);
     return { ok: false, status: 404, message: 'User not found' };
   }
 
   // Check if referral is already set (immutable)
   if (user.referredBy) {
+    console.log(`Referral binding already set for user ${userId}, cannot change`);
     return { ok: false, status: 400, message: 'Referral binding already set and cannot be changed' };
   }
 
   // Check for self-referral
   if (referrerId.toString() === userId.toString()) {
+    console.log(`Self-referral attempt detected: userId=${userId}, referrerId=${referrerId}`);
     return { ok: false, status: 400, message: 'Self-referral is not allowed' };
   }
 
   // Check if referrer exists
   const referrer = await UserModel.findById(referrerId);
   if (!referrer) {
+    console.log(`Referrer not found: ${referrerId}`);
     return { ok: false, status: 404, message: 'Referrer not found' };
   }
 
   // Set referral binding
   user.referredBy = referrerId;
   await user.save();
+
+  console.log(`Referral binding set successfully: user=${userId}, referrer=${referrerId}`);
 
   return { ok: true, user };
 }

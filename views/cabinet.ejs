@@ -481,14 +481,14 @@
       <span class="close" id="closeReferralModal">&times;</span>
       <h2 style="color: #ff3333; margin-bottom: 20px;">Реферальная программа</h2>
       <p style="color: #ccc; margin-bottom: 20px; line-height: 1.6;">
-        Приглашайте друзей и получайте бонусы! За каждого приглашенного друга вы получаете 100 ALBA.
+        Приглашайте друзей и получайте бонусы! За каждого приглашенного друга вы получаете 30 ALBA.
       </p>
 
       <div style="margin-bottom: 20px;">
         <label style="display: block; color: #ff9999; margin-bottom: 8px; font-weight: 600;">Ваша реферальная ссылка:</label>
         <div style="display: flex; gap: 10px;">
-          <input type="text" id="referralLink" value="<%= 'https://albamount.com/register?ref=' + (user.referralCode || '') %>" readonly
-                 style="flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid rgba(255, 51, 51, 0.3); border-radius: 8px; color: #fff;">
+          <input type="text" id="referralLink" value="" readonly
+                 style="flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid rgba(255, 51, 51, 0.3); border-radius: 8px; color: white !important;">
           <button id="copyReferralLink" class="btn primary" style="white-space: nowrap;">Копировать</button>
         </div>
       </div>
@@ -496,8 +496,8 @@
       <div style="margin-bottom: 20px;">
         <label style="display: block; color: #ff9999; margin-bottom: 8px; font-weight: 600;">Ваш реферальный код:</label>
         <div style="display: flex; gap: 10px;">
-          <input type="text" id="referralCode" value="<%= user.referralCode || '' %>" readonly
-                 style="flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid rgba(255, 51, 51, 0.3); border-radius: 8px; color: #fff;">
+          <input type="text" id="referralCode" value="<%= user.refCode || '' %>" readonly
+                 style="flex: 1; padding: 12px; background: #2a2a2a; border: 1px solid rgba(255, 51, 51, 0.3); border-radius: 8px; color: white !important;">
           <button id="copyReferralCode" class="btn primary" style="white-space: nowrap;">Копировать</button>
         </div>
       </div>
@@ -784,6 +784,18 @@
 
       if (referralBtn && referralModal) {
         referralBtn.addEventListener('click', () => {
+          // Populate the referral link dynamically when modal opens
+          const referralLinkInput = document.getElementById('referralLink');
+          const referralCodeInput = document.getElementById('referralCode');
+          
+          if (referralLinkInput && referralCodeInput) {
+            const referralCode = referralCodeInput.value;
+            if (referralCode) {
+              const dynamicUrl = window.location.protocol + '//' + window.location.host + '/register?ref=' + referralCode;
+              referralLinkInput.value = dynamicUrl;
+            }
+          }
+          
           referralModal.style.display = 'block';
         });
       }

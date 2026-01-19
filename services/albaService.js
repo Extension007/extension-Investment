@@ -60,7 +60,7 @@ async function grantAlbaByUsername(login, amount, reason, adminId = null, commen
   return { user, tx };
 }
 
-async function earnReferralBonus({ UserModel, referrerUserId, referredUserId, amount=10 }) {
+async function earnReferralBonus({ UserModel, referrerUserId, referredUserId, amount=30 }) {
   return addTx(UserModel, { userId: referrerUserId, amount, type:'earn', reason:'referral_bonus', relatedUserId: referredUserId });
 }
 
