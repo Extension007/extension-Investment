@@ -38,8 +38,18 @@
         <div class="section-header">
           <h2>Каталог видео</h2>
           <% if (isAuth) { %>
+            <% if (isEmailVerified) { %>
+              <div class="video-actions">
+                <button id="addVideoBtn" class="btn primary">Добавить видео</button>
+              </div>
+            <% } else { %>
+              <div class="video-actions">
+                <button class="btn primary disabled" title="Подтвердите ваш email, чтобы добавлять видео">Добавить видео</button>
+              </div>
+            <% } %>
+          <% } else { %>
             <div class="video-actions">
-              <button id="addVideoBtn" class="btn primary">Добавить видео</button>
+              <button id="addVideoBtnUnauth" class="btn primary" onclick="openRegister()">Добавить видео</button>
             </div>
           <% } %>
         </div>
@@ -123,20 +133,7 @@
     </div>
 
     <!-- Модальное окно регистрации -->
-    <div id="registerModal" class="modal" aria-hidden="true" style="display:none;">
-      <div class="modal-content" role="dialog" aria-modal="true" aria-label="Регистрация">
-        <button class="close" data-close-register aria-label="Закрыть">&times;</button>
-        <h3>Регистрация</h3>
-        <form id="registerForm">
-          <input type="text" name="username" placeholder="Никнейм" autocomplete="username" required>
-          <input type="email" name="email" placeholder="Email" autocomplete="email" required>
-          <input type="password" name="password" placeholder="Пароль" autocomplete="new-password" minlength="6" required>
-          <button type="submit">Создать аккаунт</button>
-        </form>
-        <div id="registerError" class="error" style="color:#b00020;margin-top:10px;display:none;"></div>
-        <div id="registerSuccess" style="color:green;margin-top:10px;display:none;"></div>
-      </div>
-    </div>
+    <%- include('partials/register-modal') %>
 
     <!-- Bootstrap script for safe EJS → JS data transfer -->
     <script src="/utils/bootstrap.js"></script>
@@ -144,6 +141,7 @@
       window.AppBootstrap.init({
         isAuth: <%- JSON.stringify(typeof isAuth !== 'undefined' ? isAuth : false) %>,
         isAdmin: <%- JSON.stringify(typeof isAdmin !== 'undefined' ? isAdmin : false) %>,
+        isEmailVerified: <%- JSON.stringify(typeof isEmailVerified !== 'undefined' ? isEmailVerified : false) %>,
         socketIoAvailable: <%- JSON.stringify(typeof socket_io_available !== 'undefined' ? socket_io_available : false) %>,
         userRole: <%- JSON.stringify(typeof userRole !== 'undefined' ? userRole : null) %>,
         csrfToken: <%- JSON.stringify(typeof csrfToken !== 'undefined' ? csrfToken : '') %>
@@ -565,6 +563,29 @@
     <script>
       // Обработчик открытия модального окна добавления видео
       document.getElementById('addVideoBtn')?.addEventListener('click', function() {
+        // Проверяем, авторизован ли пользователь
+        const isAuth = window.IS_AUTH || false;
+        const isEmailVerified = window.IS_EMAIL_VERIFIED || false;
+        
+        // Дополнительная проверка: если хоть одна из этих переменных ложна,
+        // пользователь не должен был увидеть эту кнопку, но на всякий случай проверим
+        if (!isAuth) {
+          // Если не авторизован, открываем окно регистрации
+          console.error('Ошибка: кнопка добавления видео была показана неавторизованному пользователю');
+          console.error('Фактические значения: isAuth =', isAuth, ', isEmailVerified =', isEmailVerified);
+          openRegister();
+          return;
+        }
+        
+        if (!isEmailVerified) {
+          // Если email не подтвержден, показываем сообщение
+          console.error('Ошибка: кнопка добавления видео была показана пользователю с неподтвержденным email');
+          console.error('Фактические значения: isAuth =', isAuth, ', isEmailVerified =', isEmailVerified);
+          alert('Для добавления видео необходимо подтвердить ваш email. Проверьте вашу почту и пройдите процедуру подтверждения.');
+          return;
+        }
+        
+        // Если пользователь авторизован и подтвердил email, открываем форму добавления видео
         const modal = document.getElementById('addVideoModal');
         if (modal) {
           // Проверяем, есть ли уже сохраненный кастомный никнейм
@@ -595,6 +616,19 @@
           modal.style.display = "block";
           modal.setAttribute("aria-hidden", "false");
           document.body.style.overflow = 'hidden';
+        }
+      });
+
+      // Добавляем функцию для проверки статуса email подтверждения при загрузке страницы
+      document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем, соответствует ли состояние на клиенте состоянию на сервере
+        const isAuth = window.IS_AUTH || false;
+        const isEmailVerified = window.IS_EMAIL_VERIFIED || false;
+        
+        // Если пользователь авторизован, но email не подтвержден, можно дополнительно проверить статус
+        if (isAuth && !isEmailVerified) {
+          // В будущем можно добавить проверку через API
+          console.log('Пользователь авторизован, но email не подтвержден');
         }
       });
 
@@ -673,7 +707,7 @@
           submitBtn.textContent = 'Добавление...';
           submitBtn.disabled = true;
 
-          const response = await fetch('/api/videos', {
+          const response = await fetch('/api/p1/videos', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

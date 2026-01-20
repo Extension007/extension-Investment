@@ -1,9 +1,9 @@
-const { earnReferralBonus } = require('./albaService');
+const { earnReferralBonus, addTx } = require('./albaService');
 const AlbaTransaction = require('../models/AlbaTransaction');
 const { randomUUID } = require('crypto');
 
 // Get referral bonus amount from environment or use default
-const REFERRAL_BONUS_ALBA = parseInt(process.env.REFERRAL_BONUS_ALBA) || 30;
+const REFERRAL_BONUS_ALBA = parseInt(process.env.REFERRAL_BONUS_ALBA) || 10;
 
 async function grantReferralBonusIfEligible({ UserModel, user }) {
   // Log referral bonus check
@@ -56,7 +56,7 @@ async function grantReferralBonusIfEligible({ UserModel, user }) {
       amount: REFERRAL_BONUS_ALBA
     });
 
-    // Create transaction record with eventId
+    // Create transaction record for referrer
     await AlbaTransaction.create({
       userId: user.referredBy,
       amount: REFERRAL_BONUS_ALBA,
@@ -70,7 +70,31 @@ async function grantReferralBonusIfEligible({ UserModel, user }) {
       }
     });
 
-    console.log(`Referral bonus granted: referrer=${user.referredBy}, newUser=${user._id}, amount=${REFERRAL_BONUS_ALBA}, txId=${eventId}`);
+    // Grant bonus to the referred user (new user) as well
+    const REFERRED_USER_BONUS = 5; // Fixed amount for referred user
+    await addTx(UserModel, {
+      userId: user._id,
+      amount: REFERRED_USER_BONUS,
+      type: 'earn',
+      reason: 'referred_user_bonus',
+      relatedUserId: user.referredBy
+    });
+
+    // Create transaction record for referred user
+    await AlbaTransaction.create({
+      userId: user._id,
+      amount: REFERRED_USER_BONUS,
+      type: 'earn',
+      reason: 'referred_user_bonus',
+      relatedUserId: user.referredBy,
+      meta: {
+        eventId,
+        referralType: 'one-time',
+        referrerId: user.referredBy
+      }
+    });
+
+    console.log(`Referral bonus granted: referrer=${user.referredBy}, newUser=${user._id}, referrer_amount=${REFERRAL_BONUS_ALBA}, referred_amount=${REFERRED_USER_BONUS}, txId=${eventId}`);
 
     user.refBonusGranted = true;
     await user.save();

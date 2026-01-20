@@ -116,20 +116,7 @@
   </footer>
 
 <!-- Модальное окно регистрации -->
-<div id="registerModal" class="modal" aria-hidden="true" style="display:none;">
-  <div class="modal-content" role="dialog" aria-modal="true" aria-label="Регистрация">
-    <button class="close" data-close-register aria-label="Закрыть">&times;</button>
-    <h3>Регистрация</h3>
-    <form id="registerForm">
-      <input type="text" name="username" placeholder="Никнейм" required>
-      <input type="email" name="email" placeholder="Email" required>
-      <input type="password" name="password" placeholder="Пароль" minlength="6" required>
-      <button type="submit">Создать аккаунт</button>
-    </form>
-    <div id="registerError" class="error" style="color:#b00020;margin-top:10px;display:none;"></div>
-    <div id="registerSuccess" style="color:green;margin-top:10px;display:none;"></div>
-  </div>
-</div>
+<%- include('./partials/register-modal') %>
 
 <!-- Bootstrap script for safe EJS → JS data transfer -->
 <script src="/utils/bootstrap.js"></script>

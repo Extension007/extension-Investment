@@ -407,12 +407,12 @@
 
 
 
-  
-  
-  
-  
+
+
+
     
-  
+    
+
     
     
 
@@ -1185,85 +1185,7 @@
     });
   </script>
 
-      // Модальное окно реферальной программы
-      const referralBtn = document.getElementById('referralBtn');
-      const referralModal = document.getElementById('referralModal');
-      const closeReferralModal = document.getElementById('closeReferralModal');
-      const closeReferralModalBtn = document.getElementById('closeReferralModalBtn');
-      const copyReferralLink = document.getElementById('copyReferralLink');
-      const copyReferralCode = document.getElementById('copyReferralCode');
-
-      if (referralBtn && referralModal) {
-        referralBtn.addEventListener('click', () => {
-          // Populate the referral link dynamically when modal opens
-          const referralLinkInput = document.getElementById('referralLink');
-          const referralCodeInput = document.getElementById('referralCode');
-          
-          if (referralLinkInput && referralCodeInput) {
-            const referralCode = referralCodeInput.value;
-            if (referralCode) {
-              const dynamicUrl = window.location.protocol + '//' + window.location.host + '/register?ref=' + referralCode;
-              referralLinkInput.value = dynamicUrl;
-            }
-          }
-          
-          referralModal.style.display = 'block';
-        });
-      }
-
-      if (closeReferralModal) {
-        closeReferralModal.addEventListener('click', () => {
-          referralModal.style.display = 'none';
-        });
-      }
-
-      if (closeReferralModalBtn) {
-        closeReferralModalBtn.addEventListener('click', () => {
-          referralModal.style.display = 'none';
-        });
-      }
-
-      if (copyReferralLink) {
-        copyReferralLink.addEventListener('click', () => {
-          const referralLinkInput = document.getElementById('referralLink');
-          if (referralLinkInput) {
-            referralLinkInput.select();
-            document.execCommand('copy');
-            copyReferralLink.textContent = 'Скопировано!';
-            setTimeout(() => {
-              copyReferralLink.textContent = 'Копировать';
-            }, 2000);
-          }
-        });
-      }
-
-      if (copyReferralCode) {
-        copyReferralCode.addEventListener('click', () => {
-          const referralCodeInput = document.getElementById('referralCode');
-          if (referralCodeInput) {
-            referralCodeInput.select();
-            document.execCommand('copy');
-            copyReferralCode.textContent = 'Скопировано!';
-            setTimeout(() => {
-              copyReferralCode.textContent = 'Копировать';
-            }, 2000);
-          }
-        });
-      }
-
-      // Закрытие модальных окон при клике вне их
-      window.addEventListener('click', (event) => {
-        if (event.target === albaBalanceModal) {
-          albaBalanceModal.style.display = 'none';
-        }
-        if (event.target === referralModal) {
-          referralModal.style.display = 'none';
-        }
-      });
-    });
-  </script>
-
-<% if (!process.env.VERCEL) { %>
+ <% if (!process.env.VERCEL) { %>
 <!-- Socket.IO -->
 <script src="/socket.io/socket.io.js"></script>
 <% } %>

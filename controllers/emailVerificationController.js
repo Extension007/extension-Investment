@@ -32,6 +32,20 @@ exports.verifyEmail = async (req, res) => {
       console.error('Ошибка при начислении реферального бонуса:', referralError);
     }
 
+    // Обновляем сессию пользователя, чтобы отразить изменение статуса emailVerified
+    if (req.session && req.session.user) {
+      req.session.user.emailVerified = true;
+      req.session.save((err) => {
+        if (err) {
+          console.error('Ошибка сохранения сессии после подтверждения email:', err);
+        } else {
+          console.log('Сессия пользователя обновлена после подтверждения email');
+        }
+      });
+    }
+
+    // Если используется JWT токен, может потребоваться обновить его, но это зависит от реализации
+    
     // Рендерить шаблон успеха
     res.render('verification-success', {
       message: 'Ваш email успешно подтвержден!',

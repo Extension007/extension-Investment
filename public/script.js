@@ -963,6 +963,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const registerError = document.getElementById("registerError");
   const registerSuccess = document.getElementById("registerSuccess");
 
+  // Глобальная функция для открытия модального окна регистрации
+  window.openRegister = function() {
+    if (registerModal) {
+      registerModal.style.display = "block";
+      registerModal.setAttribute("aria-hidden", "false");
+    }
+  };
+
   if (openRegisterBtn && registerModal) {
     openRegisterBtn.addEventListener("click", () => {
       registerModal.style.display = "block";

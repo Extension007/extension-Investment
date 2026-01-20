@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const User = require('../models/User');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { requireEmailVerification: requireVerified } = require('../middleware/emailVerification');
 const { ensureGuestId, guestRateLimit, captchaHook } = require('../middleware/p1Guest');
@@ -13,10 +14,24 @@ router.get('/', async (req, res, next) => {
     const genres = req.query.genres?.split(',').filter(Boolean) || [];
     const videos = await listPublic({ genres });
 
+    // Получаем актуальные данные пользователя из базы данных
+    let isAuth = !!req.user;
+    let isAdmin = req.user?.role === 'admin';
+    let isEmailVerified = false;
+
+    if (req.user) {
+      // Получаем актуальные данные пользователя из базы данных
+      const userFromDb = await User.findById(req.user._id);
+      if (userFromDb) {
+        isEmailVerified = userFromDb.emailVerified || false;
+      }
+    }
+
     res.render('videos', {
       videos,
-      isAuth: !!req.user,
-      isAdmin: req.user?.role === 'admin',
+      isAuth,
+      isAdmin,
+      isEmailVerified,
       genres: genres.join(',')
     });
   } catch (err) {

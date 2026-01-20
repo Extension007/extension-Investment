@@ -38,6 +38,7 @@ window.AppBootstrap = {
     // Типобезопасная установка переменных
     this.setBoolean('IS_AUTH', config.isAuth);
     this.setBoolean('IS_ADMIN', config.isAdmin);
+    this.setBoolean('IS_EMAIL_VERIFIED', config.isEmailVerified);
     this.setBoolean('SOCKET_IO_AVAILABLE', config.socketIoAvailable);
 
     this.setString('USER_ROLE', config.userRole || null);
@@ -51,6 +52,7 @@ window.AppBootstrap = {
     console.log('AppBootstrap initialized:', {
       IS_AUTH: window.IS_AUTH,
       IS_ADMIN: window.IS_ADMIN,
+      IS_EMAIL_VERIFIED: window.IS_EMAIL_VERIFIED,
       SOCKET_IO_AVAILABLE: window.SOCKET_IO_AVAILABLE,
       USER_ROLE: window.USER_ROLE
     });
