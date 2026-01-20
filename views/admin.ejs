@@ -261,6 +261,170 @@
 </div>
 </section>
 
+<!-- Модерация видео -->
+<section class="section">
+<div class="section-header">
+<h2>Модерация видео</h2>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+<% if (pendingVideos && pendingVideos.length) { %>
+<%= pendingVideos.length %> на проверке
+<% } else { %>
+Нет видео на модерации
+<% } %>
+</span>
+</div>
+
+<% if (pendingVideos && pendingVideos.length) { %>
+<div class="product-grid">
+<% pendingVideos.forEach(v => { %>
+<div class="product-card" style="border:2px solid #ff9800;">
+<h3 class="product-title"><%= v.title || 'Без названия' %></h3>
+
+<div class="video-container">
+<button class="btn small outline" data-video="<%= v.videoUrl %>">▶️ Видео</button>
+</div>
+
+<div class="product-bottom">
+<p class="product-desc"><%= v.description || "—" %></p>
+
+<% if (v.genres && v.genres.length > 0) { %>
+<div class="video-genres">
+<span class="genre-label">Жанры:</span>
+<span class="genre-tags"><%= v.genres.join(', ') %></span>
+</div>
+<% } %>
+
+<div class="row" style="justify-content:center; gap:8px; margin-top: 10px;">
+<span class="muted">Рейтинг:</span>
+<strong class="price">👍 <%= v.rating_up %> | 👎 <%= v.rating_down %></strong>
+</div>
+
+<% if (v.userId) { %>
+<% if (typeof v.userId === 'object' && v.userId.username) { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">Автор: <%= v.userId.username %> | <%= v.nickname || '—' %></p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">Автор: пользователь ID <%= v.userId %></p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Автор не указан</p>
+<% } %>
+
+<div class="product-actions" style="flex-direction:column;gap:8px;">
+<button class="btn small approve-btn" data-id="<%= v._id %>" data-type="video">
+✅ Одобрить
+</button>
+<button class="btn small reject-btn" data-id="<%= v._id %>" data-type="video">
+❌ Отклонить
+</button>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Нет видео на модерации</p>
+<% } %>
+</section>
+
+<!-- Каталог видео -->
+<section class="section">
+<div class="section-header">
+<h2>Каталог видео</h2>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+Всего: <%= videos ? videos.length : 0 %>
+</span>
+</div>
+
+<% if (videos && videos.length) { %>
+<div class="product-grid">
+<% videos.forEach(v => { %>
+<div class="product-card status-<%= v.status || 'pending' %>">
+<h3 class="product-title"><%= v.title || 'Без названия' %></h3>
+
+<div class="video-container">
+<button class="btn small outline" data-video="<%= v.videoUrl %>">▶️ Видео</button>
+</div>
+
+<div class="product-bottom">
+<!-- Статус карточки -->
+<div style="text-align:center;margin-bottom:10px;">
+<% if (v.status === "pending") { %>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⏳ На модерации
+</span>
+<% } else if (v.status === "approved") { %>
+<span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+✅ Опубликовано
+</span>
+<% } else if (v.status === "rejected") { %>
+<span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+❌ Отклонено
+</span>
+<% } else if (v.status === "blocked") { %>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+🚫 Заблокировано
+</span>
+<% } else { %>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⚠️ Без статуса
+</span>
+<% } %>
+</div>
+
+<p class="product-desc"><%= v.description || "—" %></p>
+
+<% if (v.genres && v.genres.length > 0) { %>
+<div class="video-genres">
+<span class="genre-label">Жанры:</span>
+<span class="genre-tags"><%= v.genres.join(', ') %></span>
+</div>
+<% } %>
+
+<div class="row" style="justify-content:center; gap:8px; margin-top: 10px;">
+<span class="muted">Рейтинг:</span>
+<strong class="price">👍 <%= v.rating_up %> | 👎 <%= v.rating_down %></strong>
+</div>
+
+<!-- Автор -->
+<% if (v.userId) { %>
+<% if (typeof v.userId === 'object' && v.userId.username) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Автор: <%= v.userId.username %> | <%= v.nickname || '—' %>
+</p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Автор: ID <%= v.userId %>
+</p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
+⚠️ Автор не указан
+</p>
+<% } %>
+
+<div class="product-actions" style="flex-direction:column;gap:6px;margin-top:10px;">
+<!-- Блокировка/Разблокировка -->
+<button class="btn small toggle-visibility-btn status-<%= v.status %>"
+data-id="<%= v._id %>"
+data-status="<%= v.status %>"
+data-type="video">
+<%= v.status === 'approved' ? '🚫 Заблокировать' : '✅ Разблокировать' %>
+</button>
+
+<form method="POST" action="/admin/videos/<%= v._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить видео?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+<button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
+</form>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Пока нет видео</p>
+<% } %>
+</section>
+
 <!-- Каталог товаров -->
 <section class="section">
 <div class="section-header">
@@ -344,7 +508,7 @@ data-status="<%= p.status %>">
 <a class="btn small outline" href="/admin/products/<%= p._id %>/edit">✏️ Редактировать</a>
 
 <form method="POST" action="/admin/products/<%= p._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
-<input type="hidden" name="_csrf" value="<%- JSON.stringify(csrfToken || '') %>">
+<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
 <button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
 </form>
 
@@ -455,7 +619,7 @@ data-status="<%= s.status %>">
 <a class="btn small outline" href="/admin/services/<%= s._id %>/edit">✏️ Редактировать</a>
 
 <form method="POST" action="/admin/services/<%= s._id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
-<input type="hidden" name="_csrf" value="<%- JSON.stringify(csrfToken || '') %>">
+<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
 <button type="submit" class="btn small outline" style="width:100%;">🗑️ Удалить</button>
 </form>
 
@@ -603,16 +767,24 @@ data-type="banner">
 </footer>
 
 <!-- Модальное окно для отклонения -->
-<div id="rejectModal" class="modal" aria-hidden="true" style="display:none;">
-<div class="modal-content" role="dialog" aria-modal="true" aria-label="Отклонить карточку">
-<button class="close" data-close-reject aria-label="Закрыть">&times;</button>
-<h3>Отклонить карточку</h3>
-<form id="rejectForm">
-<textarea name="reason" placeholder="Причина отклонения (необязательно)" rows="4" style="width:100%;padding:8px;border-radius:6px;border:1px solid #444;background:#2b2b2b;color:#fff;resize:vertical;"></textarea>
-<button type="submit" class="btn" style="margin-top:10px;">Отклонить</button>
-</form>
-</div>
-</div>
+ <div id="rejectModal" class="modal" aria-hidden="true" style="display:none;">
+ <div class="modal-content" role="dialog" aria-modal="true" aria-label="Отклонить карточку">
+ <button class="close" data-close-reject aria-label="Закрыть">&times;</button>
+ <h3 id="rejectModalTitle">Отклонить карточку</h3>
+ <form id="rejectForm">
+ <!-- Поля для видео -->
+ <div id="videoRejectionFields" style="display:none;">
+   <textarea name="rejectionReason" placeholder="Причина отклонения" rows="4" required style="width:100%;padding:8px;border-radius:6px;border:1px solid #444;background:#2b2b2b;color:#fff;resize:vertical;"></textarea>
+   <textarea name="adminComment" placeholder="Комментарий администратора (необязательно)" rows="2" style="width:100%;padding:8px;border-radius:6px;border:1px solid #444;background:#2b2b2b;color:#fff;resize:vertical;margin-top:10px;"></textarea>
+ </div>
+ <!-- Поля для продуктов/услуг/баннеров -->
+ <div id="generalRejectionFields" style="display:block;">
+   <textarea name="reason" placeholder="Причина отклонения (необязательно)" rows="4" style="width:100%;padding:8px;border-radius:6px;border:1px solid #444;background:#2b2b2b;color:#fff;resize:vertical;"></textarea>
+ </div>
+ <button type="submit" class="btn" style="margin-top:10px;">Отклонить</button>
+ </form>
+ </div>
+ </div>
 
 <!-- FIX: Полноэкранный overlay для YouTube видео -->
 <div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
@@ -624,22 +796,27 @@ data-type="banner">
 </div>
 </div>
 
+
 <!-- Передаем информацию о доступности Socket.IO на клиент -->
- <!-- Bootstrap script for safe EJS → JS data transfer -->
-  <script src="/utils/bootstrap.js"></script>
-  <script>
-    // Safe initialization of global variables
-    window.AppBootstrap.init(<%- JSON.stringify({
-      isAuth: true,
-      isAdmin: true,
-      socketIoAvailable: typeof socket_io_available !== 'undefined' ? socket_io_available : false,
-      userRole: typeof userRole !== 'undefined' ? userRole : 'admin'
-    }) %>);
-  </script>
+<!-- Bootstrap script for safe EJS → JS data transfer -->
+ <script src="/utils/bootstrap.js"></script>
+ <script>
+   // Safe initialization of global variables
+   window.AppBootstrap.init({
+     isAuth: true,
+     isAdmin: true,
+     socketIoAvailable: typeof socket_io_available !== 'undefined' ? socket_io_available : false,
+     userRole: typeof userRole !== 'undefined' ? userRole : 'admin',
+     IS_CABINET_PAGE: false
+   });
+ </script>
+
+<!-- Подключаем основной скрипт для видео функциональности -->
+<script src="/script.js?v=1.0.1"></script>
 
 <script>
 // Глобальный CSRF токен
-const CSRF_TOKEN = <%- JSON.stringify(csrfToken || '') %>;
+const CSRF_TOKEN = '<%= csrfToken ? csrfToken : "" %>';
 
 // Helper функция для POST запросов с CSRF
 async function postJSON(url, data = {}) {
@@ -713,25 +890,27 @@ try {
 });
 }
 
-  // Обработка выхода
-  const logoutForm = document.getElementById("logoutForm");
-  if (logoutForm) {
-    logoutForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!confirm("Вы уверены, что хотите выйти?")) return;
-      try {
-        const res = await fetch("/logout", { method: "POST" });
-        if (res.ok) {
-          window.location.href = "/";
+  
+  
+        // Обработка выхода
+        const logoutForm = document.getElementById("logoutForm");
+        if (logoutForm) {
+          logoutForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!confirm("Вы уверены, что хотите выйти?")) return;
+            try {
+              const res = await fetch("/logout", { method: "POST" });
+              if (res.ok) {
+                window.location.href = "/";
+              }
+            } catch (err) {
+              window.location.href = "/";
+            }
+          });
         }
-      } catch (err) {
-        window.location.href = "/";
-      }
-    });
-  }
 
-  // Блокировка/Разблокировка карточек (товары, услуги, баннеры)
+  // Блокировка/Разблокировка карточек (товары, услуги, баннеры, видео)
   const toggleBtns = document.querySelectorAll(".toggle-visibility-btn");
   toggleBtns.forEach(btn => {
     btn.addEventListener("click", async (e) => {
@@ -749,6 +928,8 @@ try {
           endpoint = `/admin/banners/${id}/toggle-visibility`;
         } else if (itemType === "service") {
           endpoint = `/admin/services/${id}/toggle-visibility`;
+        } else if (itemType === "video") {
+          endpoint = `/admin/videos/${id}/toggle-visibility`;
         } else {
           endpoint = `/admin/products/${id}/toggle-visibility`;
         }
@@ -782,6 +963,8 @@ try {
           endpoint = `/admin/banners/${id}/approve`;
         } else if (itemType === "service") {
           endpoint = `/admin/services/${id}/approve`;
+        } else if (itemType === "video") {
+          endpoint = `/admin/videos/${id}/approve`;
         } else {
           endpoint = `/admin/products/${id}/approve`;
         }
@@ -809,6 +992,31 @@ try {
     btn.addEventListener("click", () => {
       currentRejectId = btn.getAttribute("data-id");
       currentRejectType = btn.getAttribute("data-type") || "product";
+      
+      // Update modal title based on type
+      const modalTitle = document.getElementById("rejectModalTitle");
+      if (modalTitle) {
+        if (currentRejectType === "video") {
+          modalTitle.textContent = "Отклонить видео";
+        } else {
+          modalTitle.textContent = "Отклонить карточку";
+        }
+      }
+      
+      // Show appropriate fields based on type
+      const videoFields = document.getElementById("videoRejectionFields");
+      const generalFields = document.getElementById("generalRejectionFields");
+      
+      if (videoFields && generalFields) {
+        if (currentRejectType === "video") {
+          videoFields.style.display = "block";
+          generalFields.style.display = "none";
+        } else {
+          videoFields.style.display = "none";
+          generalFields.style.display = "block";
+        }
+      }
+      
       rejectModal.style.display = "block";
       rejectModal.setAttribute("aria-hidden", "false");
     });
@@ -829,26 +1037,51 @@ try {
     rejectForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       if (!currentRejectId) return;
-      const reason = new FormData(rejectForm).get("reason") || "Несоответствие правилам публикации";
-      try {
-        let rejectEndpoint;
-        if (currentRejectType === "banner") {
-          rejectEndpoint = `/admin/banners/${currentRejectId}/reject`;
-        } else if (currentRejectType === "service") {
-          rejectEndpoint = `/admin/services/${currentRejectId}/reject`;
-        } else {
-          rejectEndpoint = `/admin/products/${currentRejectId}/reject`;
+      
+      // Для видео используем другую логику (с причиной и комментарием)
+      if (currentRejectType === "video") {
+        const formData = new FormData(rejectForm);
+        const rejectionReason = formData.get("rejectionReason") || "Несоответствие правилам публикации";
+        const adminComment = formData.get("adminComment") || "";
+        
+        try {
+          const res = await postJSON(`/admin/videos/${currentRejectId}/reject`, {
+            rejectionReason,
+            adminComment
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert("Видео отклонено");
+            location.reload();
+          } else {
+            alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+          }
+        } catch (err) {
+          alert("Ошибка сети: " + err.message);
         }
-        const res = await postJSON(rejectEndpoint, { reason });
-        const data = await res.json();
-        if (data.success) {
-          alert("Карточка отклонена");
-          location.reload();
-        } else {
-          alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+      } else {
+        // Для других типов (продукты, услуги, баннеры) используем старую логику
+        const reason = new FormData(rejectForm).get("reason") || "Несоответствие правилам публикации";
+        try {
+          let rejectEndpoint;
+          if (currentRejectType === "banner") {
+            rejectEndpoint = `/admin/banners/${currentRejectId}/reject`;
+          } else if (currentRejectType === "service") {
+            rejectEndpoint = `/admin/services/${currentRejectId}/reject`;
+          } else {
+            rejectEndpoint = `/admin/products/${currentRejectId}/reject`;
+          }
+          const res = await postJSON(rejectEndpoint, { reason });
+          const data = await res.json();
+          if (data.success) {
+            alert("Карточка отклонена");
+            location.reload();
+          } else {
+            alert("Ошибка: " + (data.message || "Неизвестная ошибка"));
+          }
+        } catch (err) {
+          alert("Ошибка сети: " + err.message);
         }
-      } catch (err) {
-        alert("Ошибка сети: " + err.message);
       }
     });
   }

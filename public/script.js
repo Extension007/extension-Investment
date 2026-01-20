@@ -78,6 +78,17 @@ function extractVideoId(url) {
   return match ? match[1] : null;
 }
 
+// Функция для получения URL постера YouTube
+function getYoutubePosterUrl(url) {
+  if (!url) return null;
+  
+  const videoId = extractVideoId(url);
+  if (!videoId) return null;
+  
+  // Пытаемся получить максимальное качество постера
+  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+}
+
 // Извлечение параметров из URL ВКонтакте (поддержка video и clip)
 function extractVKVideoParams(url) {
   if (!url) return null;

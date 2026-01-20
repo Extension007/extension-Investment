@@ -37,8 +37,16 @@
       <section id="videos" class="section">
         <div class="section-header">
           <h2>Каталог видео</h2>
-          <% if (isAuth) { %>
-            <% if (isEmailVerified) { %>
+          <%
+            const isAuthValue = typeof isAuth !== 'undefined' ? isAuth : false;
+            const isEmailVerifiedValue = typeof isEmailVerified !== 'undefined' ? isEmailVerified : false;
+            
+            // Преобразуем возможные строковые значения в булевые
+            const isAuthBool = (isAuthValue === true || isAuthValue === 'true' || isAuthValue === 1 || isAuthValue === '1');
+            const isEmailVerifiedBool = (isEmailVerifiedValue === true || isEmailVerifiedValue === 'true' || isEmailVerifiedValue === 1 || isEmailVerifiedValue === '1');
+          %>
+          <% if (isAuthBool) { %>
+            <% if (isEmailVerifiedBool) { %>
               <div class="video-actions">
                 <button id="addVideoBtn" class="btn primary">Добавить видео</button>
               </div>
@@ -64,7 +72,9 @@
                 </div>
 
                 <div class="video-container">
-                  <iframe width="100%" height="200" src="<%= video.videoUrl %>" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                  <button class="btn small video-btn" data-video="<%= video.videoUrl %>" type="button">
+                    ▶️ <%= video.videoUrl.length > 30 ? video.videoUrl.substring(0, 30) + '...' : video.videoUrl %>
+                  </button>
                 </div>
 
                 <% if (video.description) { %>
@@ -126,8 +136,8 @@
     <div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
       <div class="video-overlay-container">
         <button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
-        <div class="video-overlay-content">
-          <iframe id="videoOverlayFrame" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <div class="video-overlay-iframe-container" id="videoIframeContainer">
+          <!-- FIX: iframe создается динамически по клику -->
         </div>
       </div>
     </div>
@@ -135,17 +145,12 @@
     <!-- Модальное окно регистрации -->
     <%- include('partials/register-modal') %>
 
-    <!-- Bootstrap script for safe EJS → JS data transfer -->
-    <script src="/utils/bootstrap.js"></script>
+    <!-- Загрузка YouTube IFrame API -->
     <script>
-      window.AppBootstrap.init({
-        isAuth: <%- JSON.stringify(typeof isAuth !== 'undefined' ? isAuth : false) %>,
-        isAdmin: <%- JSON.stringify(typeof isAdmin !== 'undefined' ? isAdmin : false) %>,
-        isEmailVerified: <%- JSON.stringify(typeof isEmailVerified !== 'undefined' ? isEmailVerified : false) %>,
-        socketIoAvailable: <%- JSON.stringify(typeof socket_io_available !== 'undefined' ? socket_io_available : false) %>,
-        userRole: <%- JSON.stringify(typeof userRole !== 'undefined' ? userRole : null) %>,
-        csrfToken: <%- JSON.stringify(typeof csrfToken !== 'undefined' ? csrfToken : '') %>
-      });
+      var tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
     </script>
 
     <!-- FIX: Подключаем основной скрипт (включает весь JS: youtube init, модалки, рейтинг, категории, регистрация) -->
@@ -205,6 +210,38 @@
       .video-container iframe {
         background: #000;
         border-radius: 8px;
+      }
+      
+      .video-thumbnail-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      
+      .video-poster {
+        width: 100%;
+        display: block;
+        border-radius: 8px;
+      }
+      
+      .play-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: white;
+        border: none;
+        cursor: pointer;
       }
 
       .video-description {
@@ -469,7 +506,6 @@
         color: #b00020;
         display: block;
         margin-top: 5px;
-        font-size: 0.85rem;
       }
       
       #addVideoModal .error {
@@ -562,60 +598,75 @@
 
     <script>
       // Обработчик открытия модального окна добавления видео
-      document.getElementById('addVideoBtn')?.addEventListener('click', function() {
-        // Проверяем, авторизован ли пользователь
-        const isAuth = window.IS_AUTH || false;
-        const isEmailVerified = window.IS_EMAIL_VERIFIED || false;
-        
-        // Дополнительная проверка: если хоть одна из этих переменных ложна,
-        // пользователь не должен был увидеть эту кнопку, но на всякий случай проверим
-        if (!isAuth) {
-          // Если не авторизован, открываем окно регистрации
-          console.error('Ошибка: кнопка добавления видео была показана неавторизованному пользователю');
-          console.error('Фактические значения: isAuth =', isAuth, ', isEmailVerified =', isEmailVerified);
-          openRegister();
-          return;
-        }
-        
-        if (!isEmailVerified) {
-          // Если email не подтвержден, показываем сообщение
-          console.error('Ошибка: кнопка добавления видео была показана пользователю с неподтвержденным email');
-          console.error('Фактические значения: isAuth =', isAuth, ', isEmailVerified =', isEmailVerified);
-          alert('Для добавления видео необходимо подтвердить ваш email. Проверьте вашу почту и пройдите процедуру подтверждения.');
-          return;
-        }
-        
-        // Если пользователь авторизован и подтвердил email, открываем форму добавления видео
-        const modal = document.getElementById('addVideoModal');
-        if (modal) {
-          // Проверяем, есть ли уже сохраненный кастомный никнейм
-          const savedNickname = localStorage.getItem('customVideoNickname');
-          const nicknameField = document.getElementById('nicknameField');
-          const nicknameInput = document.getElementById('nickname');
-          
-          if (savedNickname) {
-            // Если никнейм уже сохранен, скрываем поле
-            if (nicknameField) {
-              nicknameField.style.display = 'none';
+      document.addEventListener('DOMContentLoaded', function() {
+        const addVideoBtn = document.getElementById('addVideoBtn');
+        if (addVideoBtn) {
+          addVideoBtn.addEventListener('click', function() {
+            // Проверяем глобальные переменные, установленные в AppBootstrap
+            // Используем несколько источников для проверки
+            
+            // Проверяем сначала переменные, установленные в AppBootstrap.init()
+            let isAuth = typeof window.IS_AUTH !== 'undefined' ? window.IS_AUTH : false;
+            let isEmailVerified = typeof window.IS_EMAIL_VERIFIED !== 'undefined' ? window.IS_EMAIL_VERIFIED : false;
+            
+            // В качестве резерва проверяем переменные из AppBootstrap объекта, если они не установлены напрямую
+            if ((typeof isAuth === 'undefined' || isAuth === null) && typeof window.AppBootstrap !== 'undefined' && typeof window.AppBootstrap.getState === 'function') {
+              const appState = window.AppBootstrap.getState();
+              isAuth = appState.isAuth || false;
+              isEmailVerified = appState.isEmailVerified || false;
             }
-            // Автоматически заполняем поле никнейма, чтобы значение передавалось в formData
-            if (nicknameInput) {
-              nicknameInput.value = savedNickname;
+            
+            // Дополнительная проверка: если пользователь не авторизован, но видит эту кнопку
+            if (!isAuth) {
+              // Если не авторизован, открываем окно регистрации
+              console.error('Ошибка: кнопка добавления видео была показана неавторизованному пользователю');
+              console.error('Фактические значения: isAuth =', isAuth, ', isEmailVerified =', isEmailVerified);
+              openRegister();
+              return;
             }
-          } else {
-            // Если никнейм не сохранен, показываем поле
-            if (nicknameField) {
-              nicknameField.style.display = 'block';
+            
+            // Если пользователь авторизован, но email не подтвержден
+            if (!isEmailVerified) {
+              // Показываем сообщение о необходимости подтверждения email
+              console.warn('Предупреждение: пользователь авторизован, но email не подтвержден');
+              console.info('Фактические значения: isAuth =', isAuth, ', isEmailVerified =', isEmailVerified);
+              alert('Для добавления видео необходимо подтвердить ваш email. Проверьте вашу почту и пройдите процедуру подтверждения.');
+              return;
             }
-            // Очищаем поле, если пользователь решит ввести новый никнейм
-            if (nicknameInput) {
-              nicknameInput.value = '';
+            
+            // Если пользователь авторизован и подтвердил email, открываем форму добавления видео
+            const modal = document.getElementById('addVideoModal');
+            if (modal) {
+              // Проверяем, есть ли уже сохраненный кастомный никнейм
+              const savedNickname = localStorage.getItem('customVideoNickname');
+              const nicknameField = document.getElementById('nicknameField');
+              const nicknameInput = document.getElementById('nickname');
+              
+              if (savedNickname) {
+                // Если никнейм уже сохранен, скрываем поле
+                if (nicknameField) {
+                  nicknameField.style.display = 'none';
+                }
+                // Автоматически заполняем поле никнейма, чтобы значение передавалось в formData
+                if (nicknameInput) {
+                  nicknameInput.value = savedNickname;
+                }
+              } else {
+                // Если никнейм не сохранен, показываем поле
+                if (nicknameField) {
+                  nicknameField.style.display = 'block';
+                }
+                // Очищаем поле, если пользователь решит ввести новый никнейм
+                if (nicknameInput) {
+                  nicknameInput.value = '';
+                }
+              }
+              
+              modal.style.display = "block";
+              modal.setAttribute("aria-hidden", "false");
+              document.body.style.overflow = 'hidden';
             }
-          }
-          
-          modal.style.display = "block";
-          modal.setAttribute("aria-hidden", "false");
-          document.body.style.overflow = 'hidden';
+          });
         }
       });
 
@@ -738,7 +789,7 @@
           }
         } catch (error) {
           document.getElementById('videoSubmitError').textContent = 'Ошибка сети при добавлении видео';
-          document.getElementById('videoSubmitError').style.display = 'block';
+          document.getElementById('videoSubmitError').style.display = 'none';
           document.getElementById('videoSubmitSuccess').style.display = 'none';
         } finally {
           // Восстанавливаем кнопку
@@ -747,6 +798,145 @@
             submitBtn.textContent = 'Добавить видео';
             submitBtn.disabled = false;
           }
+        }
+      });
+    </script>
+    
+    <script>
+      // Функция для извлечения ID YouTube видео из URL
+      function extractVideoId(url) {
+        if (!url) return null;
+
+        // Проверяем embed формат
+        if (url.includes('/embed/')) {
+          return url.split('/embed/')[1].split(/[?#]/)[0];
+        }
+
+        // Проверяем shorts формат (YouTube Shorts)
+        if (url.includes('/shorts/')) {
+          return url.split('/shorts/')[1].split(/[?#]/)[0];
+        }
+
+        // Проверяем короткий формат youtu.be
+        if (url.includes('youtu.be/')) {
+          return url.split('youtu.be/')[1].split(/[?#]/)[0];
+        }
+
+        // Проверяем стандартный формат watch?v=
+        const match = url.match(/[?&]v=([^&]+)/);
+        return match ? match[1] : null;
+      }
+
+      // Функция для получения URL постера YouTube
+      function getYoutubePosterUrl(url) {
+        if (!url) return null;
+        
+        const videoId = extractVideoId(url);
+        if (!videoId) return null;
+        
+        // Пытаемся получить максимальное качество постера
+        return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      }
+
+      // Добавляем функцию для автоматической подстановки постеров YouTube-видео на странице видео
+      document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем, что мы на странице видео
+        if (document.getElementById('videos')) {
+          // Ждем немного, чтобы все элементы загрузились
+          setTimeout(function() {
+            // Находим все контейнеры с видео
+            document.querySelectorAll('.video-container').forEach(container => {
+              const videoBtn = container.querySelector('.btn.small.video-btn');
+              if (videoBtn) {
+                const videoUrl = videoBtn.getAttribute('data-video');
+                // Проверяем, является ли видео YouTube
+                if (videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'))) {
+                  // Получаем ID видео
+                  const videoId = extractVideoId(videoUrl);
+                  if (videoId) {
+                    // Создаем контейнер для постера и кнопки
+                    const posterContainer = document.createElement('div');
+                    posterContainer.className = 'video-thumbnail-container';
+                    
+                    // Создаем элемент изображения для постера
+                    const posterImg = document.createElement('img');
+                    posterImg.className = 'video-poster';
+                    posterImg.alt = 'Постер видео';
+                    posterImg.style.width = '100%';
+                    posterImg.style.borderRadius = '8px';
+                    posterImg.style.display = 'block';
+                    
+                    // URL постера
+                    const posterUrl = getYoutubePosterUrl(videoUrl);
+                    
+                    // Устанавливаем fallback на случай ошибки загрузки
+                    posterImg.onerror = function() {
+                      // Если maxresdefault не доступен, пробуем hqdefault
+                      posterImg.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                    };
+                    posterImg.src = posterUrl;
+                    
+                    // Настраиваем кнопку воспроизведения
+                    videoBtn.style.position = 'absolute';
+                    videoBtn.style.top = '50%';
+                    videoBtn.style.left = '50%';
+                    videoBtn.style.transform = 'translate(-50%, -50%)';
+                    videoBtn.style.zIndex = '10';
+                    videoBtn.style.background = 'rgba(0, 0, 0, 0.7)';
+                    videoBtn.style.borderRadius = '50%';
+                    videoBtn.style.width = '50px';
+                    videoBtn.style.height = '50px';
+                    videoBtn.style.display = 'flex';
+                    videoBtn.style.alignItems = 'center';
+                    videoBtn.style.justifyContent = 'center';
+                    videoBtn.style.fontSize = '20px';
+                    videoBtn.style.color = 'white';
+                    videoBtn.style.border = 'none';
+                    videoBtn.style.cursor = 'pointer';
+                    
+                    // Убираем текст из кнопки, оставляем только значок
+                    const originalText = videoBtn.textContent.trim();
+                    const iconSpan = document.createElement('span');
+                    iconSpan.textContent = '▶';
+                    iconSpan.style.lineHeight = '1';
+                    videoBtn.innerHTML = '';
+                    videoBtn.appendChild(iconSpan);
+                    videoBtn.setAttribute('title', originalText || 'Воспроизвести видео');
+                    
+                    // Добавляем обработчик клика для кнопки
+                    videoBtn.addEventListener('click', function(e) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      // Вызываем существующую функцию воспроизведения видео
+                      const videoUrl = this.getAttribute('data-video');
+                      if (videoUrl) {
+                        // Имитируем клик по кнопке для вызова обработчика из основного скрипта
+                        const event = new MouseEvent('click', {
+                          bubbles: true,
+                          cancelable: true,
+                          view: window
+                        });
+                        this.dispatchEvent(event);
+                      }
+                    });
+                    
+                    // Добавляем элементы в контейнер
+                    posterContainer.appendChild(posterImg);
+                    posterContainer.appendChild(videoBtn);
+                    
+                    // Заменяем содержимое контейнера
+                    container.innerHTML = '';
+                    container.appendChild(posterContainer);
+                    
+                    // Добавляем стили для контейнера постера
+                    posterContainer.style.position = 'relative';
+                    posterContainer.style.overflow = 'hidden';
+                    posterContainer.style.cursor = 'pointer';
+                  }
+                }
+              }
+            });
+          }, 100);
         }
       });
     </script>

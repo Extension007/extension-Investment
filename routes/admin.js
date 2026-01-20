@@ -10,6 +10,7 @@ const { requireAdmin, requireAuth } = require("../middleware/auth");
 const { productLimiter } = require("../middleware/rateLimiter");
 const { validateProduct, validateProductId, validateService, validateServiceId, validateBanner, validateBannerId, validateModeration } = require("../middleware/validators");
 const { csrfToken } = require("../middleware/csrf");
+const VideoPost = require("../models/VideoPost");
 const csrfProtection = require('csurf')({ cookie: true });
 const { upload, mobileOptimization } = require("../utils/upload");
 const { createProduct, updateProduct, deleteProduct } = require("../services/productService");
@@ -45,7 +46,7 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
     if (!HAS_MONGO) return res.status(503).send("Админка недоступна: отсутствует подключение к БД");
     
     // Разделяем товары и услуги (исключаем удаленные)
-    const [allProducts, allServices, pendingProducts, pendingServices, allBanners, pendingBanners, visitors, users] = await Promise.all([
+    const [allProducts, allServices, pendingProducts, pendingServices, allBanners, pendingBanners, allVideos, pendingVideos, visitors, users] = await Promise.all([
       Product.find({
         deleted: { $ne: true },
         $or: [
@@ -123,6 +124,14 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
         .sort({ _id: -1 })
         .populate("owner", "username email"),
 
+      VideoPost.find()
+        .sort({ _id: -1 })
+        .populate("userId", "username email"),
+
+      VideoPost.find({ status: "pending" })
+        .sort({ _id: -1 })
+        .populate("userId", "username email"),
+
       Statistics.findOneAndUpdate(
         { key: "visitors" },
         { $inc: { value: 1 } },
@@ -152,6 +161,8 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
       pendingServices: pendingServices || [],
       banners: allBanners || [],
       pendingBanners: pendingBanners || [],
+      videos: allVideos || [],
+      pendingVideos: pendingVideos || [],
       visitorCount,
       userCount,
       categories: require("../config/categories").FLAT_CATEGORIES,
@@ -1153,5 +1164,142 @@ router.get("/categories", requireAdmin, conditionalCsrfToken, async (req, res) =
 // Подключаем маршруты для управления контактами
 const adminContactsRouter = require('./adminContacts');
 router.use('/contacts', adminContactsRouter);
+
+// Маршруты для модерации видео
+const { listPending, listAll, moderate } = require('../services/videoService');
+
+// Модерация видео: одобрить
+router.post('/videos/:id/approve', requireAdmin, conditionalCsrfProtection, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const { moderate } = require('../services/videoService');
+    const video = await moderate({ id: req.params.id, action: 'approve', adminComment: req.body.adminComment || '' });
+    if (!video) return res.status(404).json({ success: false, message: "Видео не найдено" });
+    
+    // Отправляем уведомление администратору о модерации
+    try {
+      const { notifyAdmin } = require('../services/adminNotificationService');
+      await notifyAdmin(
+        'Модерация видео - Одобрение',
+        `Администратор одобрил видео.`,
+        {
+          'ID видео': video._id.toString(),
+          'Название': video.title,
+          'Статус': 'approved',
+          'Одобрено администратором': req.user?.username || 'Неизвестно',
+          'Дата одобрения': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+    
+    res.json({ success: true, status: video.status });
+  } catch (err) {
+    console.error("❌ Ошибка одобрения видео:", err);
+    res.status(500).json({ success: false, message: "Ошибка одобрения видео" });
+  }
+});
+
+// Модерация видео: отклонить
+router.post('/videos/:id/reject', requireAdmin, conditionalCsrfProtection, validateModeration, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const { moderate } = require('../services/videoService');
+    const { adminComment, rejectionReason } = req.body;
+
+    // P1: Validate required fields for reject
+    if (!adminComment) {
+      return res.status(400).json({ success: false, message: "adminComment required" });
+    }
+    if (!rejectionReason) {
+      return res.status(400).json({ success: false, message: "rejectionReason required" });
+    }
+
+    const video = await moderate({ id: req.params.id, action: 'reject', adminComment, rejectionReason });
+    if (!video) return res.status(404).json({ success: false, message: "Видео не найдено" });
+
+    // Отправляем уведомление администратору о модерации
+    try {
+      const { notifyAdmin } = require('../services/adminNotificationService');
+      await notifyAdmin(
+        'Модерация видео - Отклонение',
+        `Администратор отклонил видео.`,
+        {
+          'ID видео': video._id.toString(),
+          'Название': video.title,
+          'Статус': 'rejected',
+          'Причина отклонения': rejectionReason,
+          'Комментарий администратора': adminComment,
+          'Отклонено администратором': req.user?.username || 'Неизвестно',
+          'Дата отклонения': new Date().toLocaleString('ru-RU')
+        }
+      );
+    } catch (notificationError) {
+      console.error('Ошибка при отправке уведомления администратору:', notificationError);
+    }
+
+    res.json({ success: true, status: video.status, rejection_reason: video.rejectionReason });
+  } catch (err) {
+    console.error("❌ Ошибка отклонения видео:", err);
+    res.status(500).json({ success: false, message: "Ошибка отклонения видео" });
+  }
+});
+
+// Блокировка видео (переключение статуса)
+router.post('/videos/:id/toggle-visibility', requireAdmin, conditionalCsrfProtection, async (req, res) => {
+  try {
+    if (!HAS_MONGO) return res.status(503).json({ success: false, message: "Нет БД" });
+    const video = await VideoPost.findById(req.params.id);
+    if (!video) return res.status(404).json({ success: false, message: "Видео не найдено" });
+    
+    const newStatus = video.status === "approved" ? "rejected" : "approved";
+    const updated = await VideoPost.findByIdAndUpdate(
+      req.params.id,
+      { status: newStatus, rejectionReason: newStatus === "rejected" ? "Заблокировано администратором" : "" },
+      { new: true }
+    );
+    
+    res.json({ success: true, status: updated.status, message: newStatus === "rejected" ? "Видео заблокировано" : "Видео разблокировано" });
+  } catch (err) {
+    console.error("❌ Ошибка блокировки видео:", err);
+    res.status(500).json({ success: false, message: "Ошибка блокировки видео" });
+  }
+});
+
+// Удаление видео
+router.post('/videos/:id/delete', requireAdmin, conditionalCsrfProtection, async (req, res) => {
+  try {
+    if (!HAS_MONGO) {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) return res.status(503).json({ success: false, message: "Недоступно: отсутствует подключение к БД" });
+      return res.status(503).send("Недоступно: отсутствует подключение к БД");
+    }
+
+    const videoId = req.params.id;
+    console.log("🗑️ Удаление видео", { videoId });
+
+    // Найти видео в базе
+    const video = await VideoPost.findById(videoId);
+    if (!video) {
+      const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+      if (wantsJson) return res.status(404).json({ success: false, message: "Видео не найдено" });
+      return res.status(404).send("Видео не найдено");
+    }
+
+    // Удалить видео из БД
+    await VideoPost.findByIdAndDelete(videoId);
+
+    console.log("✅ Видео удалено:", { videoId });
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) return res.json({ success: true, message: "Видео удалено" });
+    res.redirect("/admin/videos");
+  } catch (err) {
+    console.error("❌ Ошибка удаления видео:", err);
+    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    if (wantsJson) return res.status(500).json({ success: false, message: "Ошибка удаления видео: " + err.message });
+    res.status(500).send("Ошибка базы данных");
+  }
+});
 
 module.exports = router;

@@ -26,6 +26,18 @@ async function listPublic({ genres=[] }) {
   return VideoPost.find(q).sort({ createdAt:-1 }).limit(100).exec();
 }
 
+async function listPending() {
+  return VideoPost.find({ status: 'pending' }).sort({ createdAt: -1 }).populate('userId', 'username email').exec();
+}
+
+async function listAll() {
+  return VideoPost.find().sort({ createdAt: -1 }).populate('userId', 'username email').exec();
+}
+
+async function findById(id) {
+  return VideoPost.findById(id).populate('userId', 'username email').exec();
+}
+
 async function moderate({ id, action, adminComment, rejectionReason }) {
   const update = {};
   if (action === 'approve') { update.status='approved'; update.adminComment=adminComment||''; update.rejectionReason=''; }
@@ -47,4 +59,4 @@ async function vote({ id, voterKey, vote }) {
   return { ok:true, doc };
 }
 
-module.exports = { createVideo, listPublic, moderate, vote };
+module.exports = { createVideo, listPublic, listPending, listAll, findById, moderate, vote };
