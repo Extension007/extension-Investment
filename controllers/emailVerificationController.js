@@ -2,6 +2,7 @@ const { verifyEmail, resendVerificationEmail } = require('../services/emailVerif
 const User = require('../models/User');
 const { notifyAdmin } = require('../services/adminNotificationService');
 const { getUserFromRequest } = require('../middleware/auth');
+const { generateToken } = require('../config/jwt');
 
 exports.verifyEmail = async (req, res) => {
   try {
@@ -44,7 +45,20 @@ exports.verifyEmail = async (req, res) => {
       });
     }
 
-    // Если используется JWT токен, может потребоваться обновить его, но это зависит от реализации
+    // После успешной верификации обновляем JWT токен с новыми данными
+    const updatedUserData = {
+      _id: user._id.toString(),
+      username: user.username,
+      role: user.role,
+      emailVerified: true
+    };
+    const newToken = generateToken(updatedUserData);
+    res.cookie('exto_token', newToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 1000 * 60 * 60 * 24 // 24 часа
+    });
     
     // Рендерить шаблон успеха
     res.render('verification-success', {

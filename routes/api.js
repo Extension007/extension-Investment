@@ -1021,6 +1021,15 @@ router.get("/contacts/:id", async (req, res) => {
 });
 
 // =======================
+// User API Routes
+// =======================
+const userController = require('../controllers/userController');
+const { requireAuth } = require('../middleware/auth');
+
+// Protected route to get current user's data from database
+router.get('/me', requireAuth, userController.getMe);
+
+// =======================
 // P1 API Routes
 // =======================
 router.use('/p1', require('./api_p1'));

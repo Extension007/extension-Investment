@@ -223,7 +223,8 @@ exports.adminLogin = async (req, res) => {
     const userData = {
       _id: user._id.toString(),
       username: user.username,
-      role: user.role
+      role: user.role,
+      emailVerified: user.emailVerified
     };
 
     const isVercel = Boolean(process.env.VERCEL);

@@ -374,6 +374,7 @@
     isAdmin: <%- JSON.stringify(typeof isAdmin !== 'undefined' ? isAdmin : false) %>,
     socketIoAvailable: <%- JSON.stringify(typeof socket_io_available !== 'undefined' ? socket_io_available : false) %>,
     userRole: <%- JSON.stringify(typeof userRole !== 'undefined' ? userRole : null) %>,
+    isEmailVerified: <%- JSON.stringify(typeof emailVerified !== 'undefined' ? emailVerified : false) %>,
     csrfToken: <%- JSON.stringify(typeof csrfToken !== 'undefined' ? csrfToken : '') %>
   });
 </script>

@@ -39,15 +39,65 @@ window.AppBootstrap = {
     this.setBoolean('IS_AUTH', config.isAuth);
     this.setBoolean('IS_ADMIN', config.isAdmin);
     this.setBoolean('SOCKET_IO_AVAILABLE', config.socketIoAvailable);
+    this.setBoolean('IS_EMAIL_VERIFIED', config.isEmailVerified);
 
-    this.setString('USER_ROLE', config.userRole || null);
+    this.setString('USER_ROLE', config.userRole || '');
     this.setString('CSRF_TOKEN', config.csrfToken || '');
 
     console.log('AppBootstrap initialized:', {
       IS_AUTH: window.IS_AUTH,
       IS_ADMIN: window.IS_ADMIN,
       SOCKET_IO_AVAILABLE: window.SOCKET_IO_AVAILABLE,
-      USER_ROLE: window.USER_ROLE
+      USER_ROLE: window.USER_ROLE,
+      IS_EMAIL_VERIFIED: window.IS_EMAIL_VERIFIED
     });
+    
+    // Immediately fetch fresh user data from the database after initialization
+    // This ensures that USER_ROLE and IS_EMAIL_VERIFIED are updated with current database values
+    // regardless of JWT or template defaults
+    if (window.IS_AUTH) {
+      fetch('/api/me')
+        .then(response => {
+          if (!response.ok) {
+            // Handle 401 Unauthorized responses when token is expired or invalid
+            if (response.status === 401) {
+              console.warn('Authentication expired, redirecting to login');
+              // Optionally redirect to login page if token is invalid
+              // window.location.href = '/user/login';
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.success && data.user) {
+            // Update frontend variables with fresh data from database
+            this.setString('USER_ROLE', data.user.role || '');
+            this.setBoolean('IS_EMAIL_VERIFIED', Boolean(data.user.emailVerified));
+            
+            // Log the updated state to show when IS_EMAIL_VERIFIED changes
+            console.log('AppBootstrap updated from API:', {
+              IS_AUTH: window.IS_AUTH,
+              IS_ADMIN: window.IS_ADMIN,
+              SOCKET_IO_AVAILABLE: window.SOCKET_IO_AVAILABLE,
+              USER_ROLE: window.USER_ROLE,
+              IS_EMAIL_VERIFIED: window.IS_EMAIL_VERIFIED
+            });
+          }
+        })
+        .catch(error => {
+          console.warn('Could not fetch fresh user data from /api/me:', error);
+          // Continue with initial values if API call fails
+        });
+    } else {
+      // Even if not authenticated, log the initial state for debugging
+      console.log('AppBootstrap initialized (not authenticated):', {
+        IS_AUTH: window.IS_AUTH,
+        IS_ADMIN: window.IS_ADMIN,
+        SOCKET_IO_AVAILABLE: window.SOCKET_IO_AVAILABLE,
+        USER_ROLE: window.USER_ROLE,
+        IS_EMAIL_VERIFIED: window.IS_EMAIL_VERIFIED
+      });
+    }
   }
 };
