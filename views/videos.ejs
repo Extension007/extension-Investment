@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css?v=1.0.1">
   <link rel="stylesheet" href="/header-tabs.css?v=1.0.1">
+  <script src="/utils/bootstrap.js"></script>
 </head>
 <body>
     <div id="bg-animated" aria-hidden="true"></div>
@@ -153,8 +154,23 @@
       firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
     </script>
 
+    <script>
+      const bootstrapConfig = {
+        isAuth: <%- JSON.stringify(isAuth || false) %>,
+        isAdmin: <%- JSON.stringify(isAdmin || false) %>,
+        userRole: <%- JSON.stringify(userRole || null) %>,
+        isEmailVerified: <%- JSON.stringify(isEmailVerified || false) %>,
+        userEmail: <%- JSON.stringify((user && user.email) || '') %>,
+        userAlbaBalance: <%- JSON.stringify((user && user.albaBalance) || 0) %>,
+        userRefBonusGranted: <%- JSON.stringify((user && user.refBonusGranted) || false) %>,
+        csrfToken: <%- JSON.stringify(csrfToken || '') %>
+      };
+
+      window.AppBootstrap.init(bootstrapConfig);
+    </script>
     <!-- FIX: Подключаем основной скрипт (включает весь JS: youtube init, модалки, рейтинг, категории, регистрация) -->
     <script src="/script.js?v=1.0.1"></script>
+    <script src="/js/videos.js"></script>
 
     <!-- Подключаем скрипт для предотвращения перекрытия контента футером -->
     <script src="/fix-footer-overlap.js?v=1.0.1"></script>

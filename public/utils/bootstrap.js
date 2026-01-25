@@ -42,6 +42,11 @@ window.AppBootstrap = {
     this.setBoolean('SOCKET_IO_AVAILABLE', config.socketIoAvailable);
 
     this.setString('USER_ROLE', config.userRole || null);
+    this.setString('USER_EMAIL', config.userEmail || '');
+    this.setString('USER_CREATED_AT', config.userCreatedAt || '');
+    this.setString('USER_UPDATED_AT', config.userUpdatedAt || '');
+    this.setNumber('USER_ALBA_BALANCE', config.userAlbaBalance || 0);
+    this.setBoolean('USER_REF_BONUS_GRANTED', config.userRefBonusGranted || false);
     this.setString('CSRF_TOKEN', config.csrfToken || '');
 
     // Специальные случаи
@@ -54,7 +59,50 @@ window.AppBootstrap = {
       IS_ADMIN: window.IS_ADMIN,
       IS_EMAIL_VERIFIED: window.IS_EMAIL_VERIFIED,
       SOCKET_IO_AVAILABLE: window.SOCKET_IO_AVAILABLE,
-      USER_ROLE: window.USER_ROLE
+      USER_ROLE: window.USER_ROLE,
+      USER_EMAIL: window.USER_EMAIL,
+      USER_ALBA_BALANCE: window.USER_ALBA_BALANCE,
+      USER_REF_BONUS_GRANTED: window.USER_REF_BONUS_GRANTED
     });
+
+    // Fetch fresh data from /api/me to ensure sync with DB/JWT/session
+    if (window.IS_AUTH) {
+      fetch('/api/me')
+        .then(response => {
+          if (!response.ok) {
+            if (response.status === 401) {
+              console.warn('Authentication expired, /api/me returned 401');
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.success && data.user) {
+            this.setString('USER_ROLE', data.user.role || '');
+            this.setBoolean('IS_EMAIL_VERIFIED', Boolean(data.user.emailVerified));
+            this.setString('USER_EMAIL', data.user.email || '');
+            this.setString('USER_CREATED_AT', data.user.createdAt || '');
+            this.setString('USER_UPDATED_AT', data.user.updatedAt || '');
+            this.setNumber('USER_ALBA_BALANCE', Number(data.user.albaBalance) || 0);
+            this.setBoolean('USER_REF_BONUS_GRANTED', Boolean(data.user.refBonusGranted));
+
+            console.log('AppBootstrap updated from /api/me:', {
+              IS_AUTH: window.IS_AUTH,
+              IS_ADMIN: window.IS_ADMIN,
+              IS_EMAIL_VERIFIED: window.IS_EMAIL_VERIFIED,
+              USER_ROLE: window.USER_ROLE,
+              USER_EMAIL: window.USER_EMAIL,
+              USER_CREATED_AT: window.USER_CREATED_AT,
+              USER_UPDATED_AT: window.USER_UPDATED_AT,
+              USER_ALBA_BALANCE: window.USER_ALBA_BALANCE,
+              USER_REF_BONUS_GRANTED: window.USER_REF_BONUS_GRANTED
+            });
+          }
+        })
+        .catch(error => {
+          console.warn('Could not fetch /api/me for state sync:', error);
+        });
+    }
   }
 };

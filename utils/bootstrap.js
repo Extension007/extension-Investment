@@ -42,6 +42,11 @@ window.AppBootstrap = {
     this.setBoolean('IS_EMAIL_VERIFIED', config.isEmailVerified);
 
     this.setString('USER_ROLE', config.userRole || '');
+    this.setString('USER_EMAIL', config.userEmail || '');
+    this.setString('USER_CREATED_AT', config.userCreatedAt || '');
+    this.setString('USER_UPDATED_AT', config.userUpdatedAt || '');
+    this.setNumber('USER_ALBA_BALANCE', config.userAlbaBalance || 0);
+    this.setBoolean('USER_REF_BONUS_GRANTED', config.userRefBonusGranted || false);
     this.setString('CSRF_TOKEN', config.csrfToken || '');
 
     console.log('AppBootstrap initialized:', {
@@ -49,6 +54,9 @@ window.AppBootstrap = {
       IS_ADMIN: window.IS_ADMIN,
       SOCKET_IO_AVAILABLE: window.SOCKET_IO_AVAILABLE,
       USER_ROLE: window.USER_ROLE,
+      USER_EMAIL: window.USER_EMAIL,
+      USER_ALBA_BALANCE: window.USER_ALBA_BALANCE,
+      USER_REF_BONUS_GRANTED: window.USER_REF_BONUS_GRANTED,
       IS_EMAIL_VERIFIED: window.IS_EMAIL_VERIFIED
     });
     
@@ -74,6 +82,11 @@ window.AppBootstrap = {
             // Update frontend variables with fresh data from database
             this.setString('USER_ROLE', data.user.role || '');
             this.setBoolean('IS_EMAIL_VERIFIED', Boolean(data.user.emailVerified));
+            this.setString('USER_EMAIL', data.user.email || '');
+            this.setString('USER_CREATED_AT', data.user.createdAt || '');
+            this.setString('USER_UPDATED_AT', data.user.updatedAt || '');
+            this.setNumber('USER_ALBA_BALANCE', Number(data.user.albaBalance) || 0);
+            this.setBoolean('USER_REF_BONUS_GRANTED', Boolean(data.user.refBonusGranted));
             
             // Log the updated state to show when IS_EMAIL_VERIFIED changes
             console.log('AppBootstrap updated from API:', {
@@ -81,6 +94,9 @@ window.AppBootstrap = {
               IS_ADMIN: window.IS_ADMIN,
               SOCKET_IO_AVAILABLE: window.SOCKET_IO_AVAILABLE,
               USER_ROLE: window.USER_ROLE,
+              USER_EMAIL: window.USER_EMAIL,
+              USER_ALBA_BALANCE: window.USER_ALBA_BALANCE,
+              USER_REF_BONUS_GRANTED: window.USER_REF_BONUS_GRANTED,
               IS_EMAIL_VERIFIED: window.IS_EMAIL_VERIFIED
             });
           }

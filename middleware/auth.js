@@ -1,5 +1,6 @@
 // Middleware для авторизации
 const { verifyToken } = require("../config/jwt");
+const logger = require("../utils/logger");
 
 // Функция для получения пользователя из различных источников
 // NOTE: This function remains synchronous for Express middleware compatibility
@@ -53,7 +54,12 @@ async function getUserFromRequestAsync(req) {
         
         // Если есть рассинхронизация, обновляем JWT
         if (tokenOutOfSync || sessionOutOfSync) {
-          console.log(`🔍 Detected desync for user ${userId}: token=${tokenOutOfSync}, session=${sessionOutOfSync}`);
+          logger.info({
+            msg: 'auth_desync_detected',
+            userId: userId.toString(),
+            tokenOutOfSync,
+            sessionOutOfSync
+          });
           
           // Генерируем новый JWT с актуальными данными из базы
           const { generateToken } = require('../config/jwt');
@@ -84,7 +90,10 @@ async function getUserFromRequestAsync(req) {
         };
       }
     } catch (error) {
-      console.error('❌ Error fetching fresh user data from database:', error);
+      logger.error({
+        msg: 'auth_fetch_user_error',
+        error: error.message
+      });
       // В случае ошибки возвращаем данные из токена или сессии как fallback
       return tokenData || sessionUser;
     }

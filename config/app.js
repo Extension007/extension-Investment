@@ -146,18 +146,22 @@ app.use((req, res, next) => {
 });
 
 // Глобальные переменные для шаблонов
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   // Используем вспомогательную функцию из middleware/auth для получения пользователя
-  const { getUserFromRequest } = require("../middleware/auth");
-  const user = getUserFromRequest(req);
-  
-  res.locals.user = user;
-  req.user = user; // Для удобства в контроллерах и middleware
-  
-  // Передаем информацию о доступности Socket.IO в шаблоны
-  res.locals.socket_io_available = !isVercel; // Socket.IO доступен только не на Vercel
-  
-  next();
+  try {
+    const { getUserFromRequestAsync } = require("../middleware/auth");
+    const user = await getUserFromRequestAsync(req);
+    
+    res.locals.user = user;
+    req.user = user; // Для удобства в контроллерах и middleware
+    
+    // Передаем информацию о доступности Socket.IO в шаблоны
+    res.locals.socket_io_available = !isVercel; // Socket.IO доступен только не на Vercel
+    
+    next();
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Статика

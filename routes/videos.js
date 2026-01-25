@@ -18,12 +18,14 @@ router.get('/', async (req, res, next) => {
     let isAuth = !!req.user;
     let isAdmin = req.user?.role === 'admin';
     let isEmailVerified = false;
+    let userRole = req.user?.role || null;
 
     if (req.user) {
       // Получаем актуальные данные пользователя из базы данных
       const userFromDb = await User.findById(req.user._id);
       if (userFromDb) {
         isEmailVerified = userFromDb.emailVerified || false;
+        userRole = userFromDb.role || userRole;
       }
     }
 
@@ -32,6 +34,7 @@ router.get('/', async (req, res, next) => {
       isAuth,
       isAdmin,
       isEmailVerified,
+      userRole,
       genres: genres.join(',')
     });
   } catch (err) {

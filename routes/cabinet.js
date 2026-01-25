@@ -78,7 +78,9 @@ router.get("/", requireUser, conditionalCsrfToken, async (req, res) => {
     const categoryFlat = await Category.getFlatList('all');
 
     // Получаем свежие данные пользователя и актуальный ALBA баланс
-    const freshUser = await User.findById(req.user._id).select('username email role albaBalance refCode referredBy refBonusGranted').lean();
+    const freshUser = await User.findById(req.user._id)
+      .select('username email role emailVerified albaBalance refCode referredBy refBonusGranted createdAt updatedAt')
+      .lean();
     
     // Вычисляем баланс как сумму транзакций, чтобы обеспечить согласованность
     const actualBalance = await getUserAlbaBalance(req.user._id);

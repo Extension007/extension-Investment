@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const logger = require('../utils/logger');
 
 /**
  * Get current user data from database
@@ -17,7 +18,8 @@ exports.getMe = async (req, res) => {
     }
 
     // Fetch fresh user data from database
-    const user = await User.findById(userFromRequest._id).select('_id username role emailVerified');
+    const user = await User.findById(userFromRequest._id)
+      .select('_id username email role emailVerified createdAt updatedAt albaBalance refBonusGranted');
     
     if (!user) {
       return res.status(404).json({ 
@@ -26,18 +28,38 @@ exports.getMe = async (req, res) => {
       });
     }
 
+    logger.info({
+      msg: 'api_me_success',
+      userId: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      emailVerified: user.emailVerified === true,
+      albaBalance: user.albaBalance,
+      refBonusGranted: user.refBonusGranted === true,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    });
+
     // Return fresh user data from database
     res.json({
       success: true,
       user: {
         _id: user._id,
         username: user.username,
+        email: user.email,
         role: user.role,
-        emailVerified: user.emailVerified
+        emailVerified: user.emailVerified,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        albaBalance: user.albaBalance,
+        refBonusGranted: user.refBonusGranted
       }
     });
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    logger.error({
+      msg: 'api_me_error',
+      error: error.message
+    });
     res.status(500).json({ 
       success: false, 
       message: 'Server error while fetching user data' 

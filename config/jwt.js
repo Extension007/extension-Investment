@@ -1,5 +1,6 @@
 // Конфигурация JWT
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
 
 // Секретный ключ для подписи JWT токенов
 const JWT_SECRET = process.env.JWT_SECRET || 'exto-jwt-secret-change-in-production';
@@ -34,7 +35,11 @@ const verifyToken = (token) => {
   try {
     return jwt.verify(token, JWT_SECRET);
   } catch (error) {
-    console.error('❌ Ошибка проверки JWT токена:', error.message);
+    logger.warn({
+      msg: 'jwt.verify_failed',
+      error: error.message,
+      name: error.name
+    });
     return null;
   }
 };

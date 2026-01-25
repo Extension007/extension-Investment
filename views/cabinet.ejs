@@ -533,6 +533,12 @@
       isAdmin: typeof isAdmin !== 'undefined' ? isAdmin : false,
       socketIoAvailable: typeof socket_io_available !== 'undefined' ? socket_io_available : false,
       userRole: typeof userRole !== 'undefined' ? userRole : null,
+      isEmailVerified: typeof user !== 'undefined' && user ? user.emailVerified : false,
+      userEmail: typeof user !== 'undefined' && user ? user.email : '',
+      userCreatedAt: typeof user !== 'undefined' && user ? user.createdAt : '',
+      userUpdatedAt: typeof user !== 'undefined' && user ? user.updatedAt : '',
+      userAlbaBalance: typeof user !== 'undefined' && user ? user.albaBalance : 0,
+      userRefBonusGranted: typeof user !== 'undefined' && user ? user.refBonusGranted : false,
       csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : ''
     }) %>);
   </script>
