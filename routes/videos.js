@@ -4,7 +4,7 @@ const User = require('../models/User');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { requireEmailVerification: requireVerified } = require('../middleware/emailVerification');
 const { ensureGuestId, guestRateLimit, captchaHook } = require('../middleware/p1Guest');
-const { createVideo, listPublic, moderate, vote } = require('../services/videoService');
+const { createVideo, listPublic, moderate, vote: voteVideo } = require('../services/videoService');
 const { notifyUser } = require('../services/notify');
 const { csrfProtection } = require('../middleware/csrf');
 
@@ -67,7 +67,7 @@ router.post('/:id/vote', ensureGuestId, guestRateLimit(), captchaHook, async (re
     }
 
     const voterKey = req.user ? `u:${req.user._id}` : `g:${req.guestId}`;
-    const result = await vote({ id: req.params.id, voterKey, vote });
+    const result = await voteVideo({ id: req.params.id, voterKey, vote });
 
     if (!result.ok) return res.status(result.status).json({ success: false, message: result.message });
 
