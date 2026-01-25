@@ -32,4 +32,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Re-apply after async /api/me sync completes
   setTimeout(applyState, 1200);
+
+  // Voting handlers
+  document.querySelectorAll('.vote-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const videoId = btn.dataset.videoId;
+      const vote = btn.dataset.vote;
+      if (!videoId || !vote) return;
+
+      try {
+        const res = await fetch(`/videos/${videoId}/vote`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]')?.getAttribute('content') || ''
+          },
+          body: JSON.stringify({ vote })
+        });
+        const data = await res.json();
+        if (data.success && data.video) {
+          const container = btn.closest('.video-rating');
+          if (container) {
+            const upBtn = container.querySelector('[data-vote=\"up\"]');
+            const downBtn = container.querySelector('[data-vote=\"down\"]');
+            if (upBtn) upBtn.textContent = `👍 ${data.video.rating_up}`;
+            if (downBtn) downBtn.textContent = `👎 ${data.video.rating_down}`;
+          }
+        } else {
+          alert(data.message || 'Ошибка голосования');
+        }
+      } catch (err) {
+        console.error('vote error', err);
+        alert('Ошибка соединения');
+      }
+    });
+  });
 });

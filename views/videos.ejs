@@ -319,43 +319,6 @@
       }
     </style>
 
-    <script>
-        document.querySelectorAll('.vote-btn').forEach(btn => {
-            btn.addEventListener('click', async function() {
-                const videoId = this.getAttribute('data-video-id');
-                const vote = this.getAttribute('data-vote');
-
-                try {
-                    const response = await fetch(`/api/videos/${videoId}/vote`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ vote })
-                    });
-
-                    const result = await response.json();
-                    if (result.success) {
-                        // Update UI
-                        const upBtn = this.parentElement.querySelector('[data-vote="up"]');
-                        const downBtn = this.parentElement.querySelector('[data-vote="down"]');
-                        upBtn.textContent = `👍 ${result.video.rating_up}`;
-                        downBtn.textContent = `👎 ${result.video.rating_down}`;
-
-                        // Disable buttons after voting
-                        upBtn.disabled = true;
-                        downBtn.disabled = true;
-                    } else {
-                        alert(result.message || 'Ошибка голосования');
-                    }
-                } catch (error) {
-                    alert('Ошибка голосования');
-                }
-            });
-        });
-    </script>
-
     <!-- Модальное окно для добавления видео -->
     <div id="addVideoModal" class="modal" aria-hidden="true" style="display: none;">
       <div class="modal-content" role="dialog" aria-modal="true" aria-label="Добавить видео">
