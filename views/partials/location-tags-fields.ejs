@@ -1,0 +1,26 @@
+<div class="form-section location-fields" id="locationFields">
+  <h3 style="margin-bottom:10px;"><%= typeof t === 'function' ? t('search.locationRequired') : 'Локация *' %></h3>
+  <label for="countrySelect"><%= typeof t === 'function' ? t('search.country') : 'Страна' %></label>
+  <select name="country" id="countrySelect" required data-selected="<%= typeof product !== 'undefined' && product.country ? product.country : '' %>" data-ph="<%= typeof t === 'function' ? t('search.selectCountry') : 'Выберите страну' %>">
+    <option value=""><%= typeof t === 'function' ? t('search.selectCountry') : 'Выберите страну' %></option>
+  </select>
+  <label for="citySelect"><%= typeof t === 'function' ? t('search.city') : 'Город' %></label>
+  <select name="city" id="citySelect" required disabled data-selected="<%= typeof product !== 'undefined' && product.city ? product.city : '' %>" data-ph="<%= typeof t === 'function' ? t('search.selectCity') : 'Выберите город' %>">
+    <option value=""><%= typeof t === 'function' ? t('search.selectCity') : 'Выберите город' %></option>
+  </select>
+</div>
+
+<div class="form-section tags-fields" id="tagsFields">
+  <h3 style="margin-bottom:10px;"><%= typeof t === 'function' ? t('search.hashtagsRequired') : 'Хештеги *' %></h3>
+  <input type="hidden" name="tags" id="tagsHidden" value='<%= typeof product !== "undefined" && product.tags ? JSON.stringify(product.tags) : "[]" %>'>
+  <div class="tags-input-wrap">
+    <div class="tags-input-row">
+      <input type="text" id="tagsInput" class="tags-input" placeholder="<%= typeof t === 'function' ? t('search.tagInputPlaceholder') : 'например: ремонт' %>" maxlength="40" autocomplete="off" enterkeyhint="done" aria-autocomplete="list" aria-controls="tagsSuggest" aria-describedby="tagsHint">
+      <button type="button" id="tagsAddBtn" class="btn small outline tags-add-btn"><%= typeof t === 'function' ? t('search.tagAddButton') : 'Добавить' %></button>
+    </div>
+    <div id="tagsSuggest" class="catalog-suggest tags-suggest" hidden></div>
+  </div>
+  <div id="tagsChips" class="tags-chips"></div>
+  <small id="tagsHint" class="form-hint"><%= typeof t === 'function' ? t('search.tagHint') : 'Напишите слово, например ремонт или #кофе, и нажмите «Добавить». Решётка не обязательна.' %></small>
+  <small id="tagsStatus" class="form-hint tags-status" hidden></small>
+</div>

@@ -1,0 +1,145 @@
+<%
+  const item = typeof card !== 'undefined' ? card : {};
+  const itemId = String(item._id || item.id || '');
+  const itemName = item.name || '';
+  const attr = function (value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  };
+  const images = (item.images && Array.isArray(item.images) && item.images.length)
+    ? item.images
+    : (item.image_url ? [item.image_url] : []);
+  const contacts = item.contacts || {};
+  const hasContacts = Boolean(contacts.phone || contacts.email || contacts.telegram || contacts.whatsapp || contacts.contact_method);
+  const priceLabel = (typeof formatPriceDisplay === 'function')
+    ? formatPriceDisplay(item.price)
+    : (item.price ? String(item.price) : '');
+  const likes = item.likes || 0;
+  const dislikes = item.dislikes || 0;
+  const ratingKind = typeof ratingClass !== 'undefined' ? ratingClass : 'product-rating';
+  const descLabel = typeof descriptionLabel !== 'undefined' ? descriptionLabel : t('catalog.description');
+  const locationLabel = (typeof formatLocation === 'function' && (item.city || item.region || item.country))
+    ? formatLocation(item.country, item.region, item.city)
+    : '';
+  const telegramHandle = contacts.telegram ? String(contacts.telegram).replace('@', '') : '';
+  const whatsappNumber = contacts.whatsapp ? String(contacts.whatsapp).replace(/[^0-9]/g, '') : '';
+  const glyph = function (d) {
+    return '<svg class="catalog-tile__glyph" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
+  };
+%>
+<div class="product-card-wrapper">
+  <article class="product-card catalog-tile" data-product-id="<%= itemId %>">
+    <div class="catalog-tile__media">
+      <div class="product-images-slider" data-product-id="<%= itemId %>">
+        <% if (images.length > 0) { %>
+          <div class="product-images-container">
+            <% images.forEach((img, idx) => { %>
+              <img
+                src="<%= img %>"
+                alt="<%= itemName %> - <%= t('catalog.imageOf') %> <%= idx + 1 %>"
+                class="product-image-slide <%= idx === 0 ? 'active' : '' %> image-clickable"
+                data-image-index="<%= idx %>"
+                data-image-src="<%= img %>"
+                data-product-images='<%= JSON.stringify(images) %>'
+                data-product-name="<%= attr(itemName) %>"
+                loading="<%= idx === 0 ? 'eager' : 'lazy' %>"
+              >
+            <% }) %>
+            <% if (images.length > 1) { %>
+              <div class="slider-indicators">
+                <% images.forEach((img, idx) => { %>
+                  <span class="slider-indicator <%= idx === 0 ? 'active' : '' %>" data-slide-index="<%= idx %>"></span>
+                <% }) %>
+              </div>
+            <% } %>
+          </div>
+        <% } else { %>
+          <div class="no-image catalog-tile__empty"><%= t('catalog.noImage') %></div>
+        <% } %>
+        <div class="catalog-tile__rail">
+          <% if (item.video_url) { %>
+            <button class="btn small video-btn catalog-tile__video catalog-tile__pulse" data-video="<%= attr(item.video_url) %>" type="button" aria-label="<%= t('catalog.review') %>"><%- glyph('M8 5v14l11-7z') %></button>
+          <% } %>
+          <% if (item.description) { %>
+            <div
+              class="product-info-icon catalog-tile__pulse"
+              data-description-modal="<%= itemId %>"
+              data-description="<%= attr(item.description) %>"
+              data-product-name="<%= attr(itemName) %>"
+              role="button"
+              tabindex="0"
+              aria-label="<%= descLabel %>"
+            ><%- glyph('M11 7h2v2h-2V7zm0 4h2v6h-2v-6zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z') %></div>
+          <% } %>
+          <% if (item.link) { %>
+            <a class="btn small outline catalog-tile__link catalog-tile__pulse" href="<%= item.link %>" target="_blank" rel="noopener" aria-label="<%= t('catalog.openLink') %>"><%- glyph('M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z') %></a>
+          <% } %>
+          <button class="chat-btn btn small outline catalog-tile__chat catalog-tile__pulse" data-card-id="<%= itemId %>" type="button" aria-label="<%= t('catalog.chat') %>"><%- glyph('M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z') %><span class="chat-unread-badge" aria-hidden="true"></span></button>
+          <% if (images.length > 1) { %>
+            <button class="slider-arrow slider-arrow-prev catalog-tile__pulse" type="button" aria-label="<%= t('catalog.prevImage') %>"><%- glyph('M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z') %></button>
+            <button class="slider-arrow slider-arrow-next catalog-tile__pulse" type="button" aria-label="<%= t('catalog.nextImage') %>"><%- glyph('M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z') %></button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <div class="catalog-tile__body">
+      <h3 class="product-title catalog-tile__title"><%= itemName %></h3>
+      <% if (locationLabel) { %>
+        <p class="catalog-tile__place"><%= locationLabel %></p>
+      <% } %>
+
+      <% if (hasContacts) { %>
+        <div class="product-contacts catalog-tile__contacts">
+          <div class="contacts-list catalog-tile__contact-row">
+            <% if (contacts.phone) { %>
+              <a href="tel:<%= contacts.phone %>" class="contact-item"><%= contacts.phone %></a>
+            <% } %>
+            <% if (contacts.telegram) { %>
+              <a href="https://t.me/<%= telegramHandle %>" target="_blank" rel="noopener" class="contact-item"><%= contacts.telegram %></a>
+            <% } %>
+            <% if (contacts.whatsapp) { %>
+              <a href="https://wa.me/<%= whatsappNumber %>" target="_blank" rel="noopener" class="contact-item"><%= contacts.whatsapp %></a>
+            <% } %>
+            <% if (contacts.email) { %>
+              <a href="mailto:<%= contacts.email %>" class="contact-item"><%= contacts.email %></a>
+            <% } %>
+          </div>
+          <% if (contacts.contact_method) { %>
+            <p class="contact-method catalog-tile__method"><%= contacts.contact_method %></p>
+          <% } %>
+        </div>
+      <% } %>
+      <% if (priceLabel) { %>
+        <span class="price catalog-tile__price"><%= priceLabel %></span>
+      <% } %>
+    </div>
+
+    <div class="product-bottom catalog-tile__bar">
+      <div class="<%= ratingKind %>" data-id="<%= itemId %>" data-voted="false">
+        <button class="like-btn btn icon catalog-tile__vote" type="button" aria-label="<%= t('catalog.like') %>">
+          <svg class="catalog-tile__thumb" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M2 21h4V9H2v12zm20-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L13.17 1 7.59 6.59C7.22 6.95 7 7.45 7 8v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
+          </svg>
+        </button>
+        <span class="result"><%= likes - dislikes %></span>
+        <button class="dislike-btn btn icon catalog-tile__vote" type="button" aria-label="<%= t('catalog.dislike') %>">
+          <svg class="catalog-tile__thumb" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill="currentColor" d="M22 3h-4v12h4V3zM2.14 14c0 1.1.9 2 2 2h6.31l-.95 4.57-.03.32c0 .41.17.79.44 1.06L10.83 23l5.58-5.59C16.78 17.05 17 16.55 17 16V6c0-1.1-.9-2-2-2H6c-.83 0-1.54.5-1.84 1.22L1.14 12.27c-.09.23-.14.47-.14.73v1z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </article>
+
+  <% if (item.description) { %>
+    <div class="product-description-block" data-product-id="<%= itemId %>" style="display: none;">
+      <div class="product-description-content">
+        <h4 class="product-description-title"><%= descLabel %></h4>
+        <p class="product-description-text"><%= item.description %></p>
+      </div>
+    </div>
+  <% } %>
+</div>

@@ -1,0 +1,61 @@
+<% 
+  const sm = typeof searchMeta !== 'undefined' && searchMeta ? searchMeta : {};
+  const tr = typeof t === 'function' ? t : function (k) { return k; };
+  const categoryValue = typeof selectedCategoryValue !== 'undefined' ? selectedCategoryValue : (typeof selectedCategory !== 'undefined' ? selectedCategory : 'all');
+%>
+<form class="catalog-search" id="catalogSearchForm" method="GET" action="<%= typeof searchAction !== 'undefined' ? searchAction : (typeof activeTab !== 'undefined' && activeTab === 'services' ? '/services' : '/ad') %>" autocomplete="off">
+  <% if (categoryValue && categoryValue !== 'all') { %>
+    <input type="hidden" name="category" value="<%= categoryValue %>">
+  <% } %>
+  <div class="catalog-search__row">
+    <div class="catalog-search__query-wrap">
+      <input
+        type="search"
+        name="q"
+        id="catalogSearchInput"
+        class="catalog-search__input"
+        placeholder="<%= tr('search.placeholder') %>"
+        value="<%= sm.q || '' %>"
+        maxlength="120"
+        aria-autocomplete="list"
+        aria-controls="catalogSuggest"
+      >
+      <div id="catalogSuggest" class="catalog-suggest" hidden></div>
+    </div>
+    <button type="submit" class="btn primary catalog-search__submit"><%= tr('search.find') %></button>
+    <button type="button" class="btn outline catalog-search__toggle" id="toggleCatalogFilters" aria-expanded="false"><%= tr('search.filters') %></button>
+  </div>
+
+  <div class="catalog-search__filters" id="catalogFiltersPanel" hidden>
+    <div class="catalog-search__grid">
+      <label>
+        <span><%= tr('search.country') %></span>
+        <select name="country" id="filterCountry" data-selected="<%= sm.country || '' %>" data-ph-all="<%= tr('search.allCountries') %>">
+          <option value=""><%= tr('search.allCountries') %></option>
+        </select>
+      </label>
+      <label>
+        <span><%= tr('search.city') %></span>
+        <select name="city" id="filterCity" data-selected="<%= sm.city || '' %>" data-ph-all="<%= tr('search.allCities') %>" <%= sm.country ? '' : 'disabled' %>>
+          <option value=""><%= tr('search.allCities') %></option>
+        </select>
+      </label>
+      <label>
+        <span><%= tr('search.tag') %></span>
+        <input type="text" name="tag" id="filterTag" value="<%= sm.tag || '' %>" placeholder="<%= tr('search.tagPlaceholder') %>" maxlength="40">
+      </label>
+      <label>
+        <span><%= tr('search.priceFrom') %></span>
+        <input type="number" name="priceMin" value="<%= sm.priceMin || '' %>" min="0" step="1" placeholder="0">
+      </label>
+      <label>
+        <span><%= tr('search.priceTo') %></span>
+        <input type="number" name="priceMax" value="<%= sm.priceMax || '' %>" min="0" step="1" placeholder="∞">
+      </label>
+    </div>
+    <div class="catalog-search__filter-actions">
+      <button type="submit" class="btn primary"><%= tr('search.apply') %></button>
+      <a class="btn outline" href="<%= typeof searchAction !== 'undefined' ? searchAction : (typeof activeTab !== 'undefined' && activeTab === 'services' ? '/services' : '/ad') %>"><%= tr('search.reset') %></a>
+    </div>
+  </div>
+</form>

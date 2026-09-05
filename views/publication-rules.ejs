@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <title><%= t('meta.rulesTitle') %></title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=1.3.9">
+  <style>
+    .rules-doc {
+      max-width: 820px;
+      margin: 0 auto;
+      color: #eee;
+      line-height: 1.65;
+    }
+    .rules-doc h1 {
+      margin: 0 0 8px;
+      font-size: 1.7rem;
+    }
+    .rules-doc .rules-updated {
+      opacity: .7;
+      font-size: .9rem;
+      margin-bottom: 22px;
+    }
+    .rules-doc h2 {
+      margin: 28px 0 10px;
+      font-size: 1.15rem;
+      color: #e8d5a3;
+    }
+    .rules-doc p,
+    .rules-doc li {
+      margin: 0 0 12px;
+    }
+    .rules-doc ul {
+      margin: 0 0 12px;
+      padding-left: 1.2rem;
+    }
+    .rules-doc .rules-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 28px;
+    }
+  </style>
+</head>
+<body>
+  <div id="bg-animated" aria-hidden="true"></div>
+  <header class="main-header">
+    <div class="container header-inner">
+      <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+      <div class="header-actions">
+        <%- include('partials/lang-switcher') %>
+        <a class="btn outline" href="/cabinet"><%= t('nav.cabinet') %></a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="section">
+      <article class="rules-doc">
+        <h1><%= t('rules.title') %></h1>
+        <p class="rules-updated"><%= t('rules.updated') %></p>
+        <p><%= t('rules.intro') %></p>
+
+        <h2>1. <%= t('rules.sectionAllowed') %></h2>
+        <ul>
+          <li><%= t('rules.allowed1') %></li>
+          <li><%= t('rules.allowed2') %></li>
+          <li><%= t('rules.allowed3') %></li>
+        </ul>
+
+        <h2>2. <%= t('rules.sectionForbidden') %></h2>
+        <p><%= t('rules.forbiddenLead') %></p>
+        <ul>
+          <li><%= t('rules.forbiddenRights') %></li>
+          <li><%= t('rules.forbiddenAlcohol') %></li>
+          <li><%= t('rules.forbiddenTobacco') %></li>
+          <li><%= t('rules.forbiddenIndecent') %></li>
+          <li><%= t('rules.forbiddenOther') %></li>
+        </ul>
+
+        <h2>3. <%= t('rules.sectionConsequences') %></h2>
+        <p><%= t('rules.consequences') %></p>
+
+        <h2>4. <%= t('rules.sectionLifetime') %></h2>
+        <ul>
+          <li><%= t('rules.lifetimeFree') %></li>
+          <li><%= t('rules.lifetimePaid') %></li>
+          <li><%= t('rules.lifetimeEdit') %></li>
+        </ul>
+
+        <h2>5. <%= t('rules.sectionResponsibility') %></h2>
+        <p><%= t('rules.responsibility') %></p>
+
+        <h2>6. <%= t('rules.sectionContact') %></h2>
+        <p><%= t('rules.contact') %></p>
+
+        <div class="rules-actions">
+          <a class="btn outline" href="/cabinet"><%= t('rules.backToCabinet') %></a>
+          <a class="btn" href="/contacts"><%= t('nav.contactUs') %></a>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<%
+  const origin = (typeof siteOrigin !== 'undefined' && siteOrigin) ? String(siteOrigin).replace(/\/+$/, '') : 'https://www.albamount.xyz';
+  const path = typeof canonicalPath !== 'undefined' ? canonicalPath : '/';
+  const canonical = origin + (path.startsWith('/') ? path : '/' + path);
+  const robots = typeof seoRobots !== 'undefined' ? seoRobots : 'index,follow';
+  const description = typeof seoDescription !== 'undefined' ? seoDescription : '';
+  const ogTitle = typeof seoTitle !== 'undefined' ? seoTitle : '';
+%>
+<link rel="canonical" href="<%= canonical %>">
+<meta name="robots" content="<%= robots %>">
+<% if (description) { %>
+<meta name="description" content="<%= description %>">
+<meta property="og:type" content="website">
+<meta property="og:url" content="<%= canonical %>">
+<meta property="og:title" content="<%= ogTitle || description %>">
+<meta property="og:description" content="<%= description %>">
+<meta property="og:image" content="<%= origin %>/albamount.png">
+<meta name="twitter:card" content="summary">
+<% } %>

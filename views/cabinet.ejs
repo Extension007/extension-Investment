@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <title><%= t('meta.cabinetTitle') %></title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=1.3.9">
+  <style>
+    html, body.cabinet-page {
+      overflow-x: hidden;
+    }
+
+    body.cabinet-page {
+      padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    }
+
+    body.cabinet-page .header-inner {
+      flex-wrap: wrap;
+      overflow: visible;
+      white-space: normal;
+      gap: 8px;
+      row-gap: 8px;
+    }
+
+    body.cabinet-page .header-actions {
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    body.cabinet-page .header-actions form {
+      display: inline-flex;
+      margin: 0;
+    }
+
+    body.cabinet-page .user-chip {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 8px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid rgba(31, 138, 90, 0.25);
+    }
+
+    .tab {
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #bbb;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab:hover {
+      color: #e8d5a3;
+    }
+
+    .tab.active {
+      color: #e8d5a3;
+      border-bottom-color: #1f8a5a;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #aaa;
+    }
+
+    .alba-balance-card {
+      background: rgba(31, 138, 90, 0.08);
+      border: 1px solid rgba(31, 138, 90, 0.25);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .alba-balance-card h3 {
+      color: #e8d5a3;
+      margin-bottom: 10px;
+    }
+
+    .alba-balance-card p {
+      color: #ccc;
+      margin-bottom: 0;
+      line-height: 1.5;
+    }
+
+    #tab-alba h2,
+    #tab-alba h3 {
+      color: #e8d5a3;
+    }
+
+    .alba-tx-list {
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    body.cabinet-page .item-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    body.cabinet-page .item-actions button,
+    body.cabinet-page .item-actions a {
+      flex: 1 1 calc(50% - 8px);
+      min-width: 120px;
+      height: auto;
+      min-height: 36px;
+      white-space: normal;
+      line-height: 1.2;
+      padding: 8px 10px;
+    }
+
+    body.cabinet-page .form-grid,
+    body.cabinet-page .form-grid input,
+    body.cabinet-page .form-grid textarea,
+    body.cabinet-page .form-grid select {
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    .cabinet-copy-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .cabinet-copy-row input {
+      flex: 1 1 180px;
+      min-width: 0;
+    }
+
+    .cabinet-copy-row .btn {
+      flex: 0 0 auto;
+    }
+
+    .cabinet-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to bottom, transparent, rgba(8, 12, 10, 0.92));
+      border-top: 1px solid rgba(31, 138, 90, 0.25);
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+      padding: 10px 0 calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .footer-buttons {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding: 0 12px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .footer-btn {
+      min-height: 44px;
+      padding: 10px 8px;
+      border: 2px solid transparent;
+      color: #fff;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      text-align: center;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(31, 138, 90, 0.35), 0 0 22px rgba(31, 138, 90, 0.2);
+      background:
+        linear-gradient(#0a1f16, #0a1f16) padding-box,
+        linear-gradient(45deg, var(--color-accent-strong), #e6c96a) border-box;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    a.footer-btn {
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+
+    .footer-btn:hover {
+      color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 0 14px rgba(31, 138, 90, 0.55), 0 0 28px rgba(31, 138, 90, 0.28);
+    }
+
+    .footer-btn:active {
+      transform: translateY(0);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      overflow-y: auto;
+    }
+
+    .modal-content {
+      background: rgba(10, 10, 14, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      margin: 2% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 95%;
+      max-width: 900px;
+      box-shadow: 0 0 20px #1f8a5a;
+      position: relative;
+      box-sizing: border-box;
+    }
+
+    .modal .close {
+      color: #fff;
+      font-size: 28px;
+      cursor: pointer;
+      background: transparent;
+      border: none;
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      z-index: 10;
+    }
+
+    .modal .close:hover {
+      color: #1f8a5a;
+    }
+
+    body.cabinet-page .section {
+      margin-top: 24px;
+      margin-bottom: 24px;
+    }
+
+    body.cabinet-page main {
+      margin-top: 72px;
+      margin-bottom: 0;
+      padding-bottom: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .footer-buttons {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      body.cabinet-page {
+        padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+      }
+    }
+
+    @media (max-width: 768px) {
+      .tab {
+        padding: 8px 12px;
+        font-size: 0.88rem;
+      }
+
+      .footer-btn {
+        font-size: 0.82rem;
+        padding: 8px 6px;
+      }
+
+      .modal-content {
+        width: 96%;
+        margin: 12px auto;
+        padding: 16px;
+      }
+
+      body.cabinet-page .user-chip {
+        max-width: 110px;
+      }
+
+      body.cabinet-page .item-actions button,
+      body.cabinet-page .item-actions a {
+        flex: 1 1 100%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .tabs {
+        gap: 0;
+      }
+
+      .tab {
+        flex: 1 1 auto;
+        padding: 8px 8px;
+        font-size: 0.8rem;
+      }
+
+      .footer-btn {
+        font-size: 0.78rem;
+        min-height: 42px;
+      }
+
+      .modal-content {
+        width: 100%;
+        margin: 0;
+        padding: 14px 12px 20px;
+        border-radius: 0;
+      }
+
+      body.cabinet-page .header-inner {
+        padding: 10px 8px;
+        min-height: 52px;
+      }
+
+      body.cabinet-page main {
+        margin-top: 64px;
+      }
+
+      body.cabinet-page .section {
+        width: 100%;
+        padding: 16px 10px;
+        margin: 12px auto 20px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .modal .close {
+        font-size: 24px;
+        top: 8px;
+        right: 10px;
+      }
+
+      .footer-btn {
+        font-size: 0.72rem;
+        padding: 8px 4px;
+      }
+    }
+  </style>
+</head>
+<body class="cabinet-page" data-logged-in="1">
+  <script>
+    window.IS_AUTH = true;
+    window.IS_CABINET_PAGE = true;
+  </script>
+  <div id="bg-animated" aria-hidden="true"></div>
+  <header class="main-header">
+    <div class="container header-inner">
+      <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+      <nav class="nav" style="display:none;">
+        <!-- Навигация скрыта -->
+      </nav>
+      <div class="header-actions">
+        <%- include('partials/lang-switcher') %>
+        <span class="user-chip header-account-link">👤 <%= user.username %><span class="chat-unread-badge header-chat-badge" aria-hidden="true"></span></span>
+        <form id="logoutForm" method="POST" action="/logout">
+          <button type="submit" class="btn outline small"><%= t('cabinet.logout') %></button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="section">
+      <h1><%= t('cabinet.heading') %></h1>
+      
+      <!-- Вкладки -->
+      <div class="tabs">
+        <% if (user.isShowcaseAccount) { %>
+          <button class="tab active" data-tab="products"><%= t('cabinet.myAds') %></button>
+        <% } else { %>
+          <button class="tab active" data-tab="services"><%= t('cabinet.myServices') %></button>
+        <% } %>
+        <button class="tab" data-tab="alba"><%= t('cabinet.albaTab') %></button>
+        <button class="tab" data-tab="create"><%= t('cabinet.createCard') %></button>
+      </div>
+
+      <% if (user.isShowcaseAccount) { %>
+      <div class="tab-content active" id="tab-products">
+        <h2><%= t('cabinet.myAds') %></h2>
+        <% if (products && products.length > 0) { %>
+          <div class="product-grid">
+            <% products.forEach(product => { %>
+              <%- include('partials/card', { product, itemType: 'product', mode: 'user', user }) %>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p><%= t('cabinet.noItems') %></p>
+            <button class="tab btn primary" data-tab="create" style="margin-top: 20px;"><%= t('cabinet.createCard') %></button>
+          </div>
+        <% } %>
+      </div>
+      <% } %>
+
+      <% if (!user.isShowcaseAccount) { %>
+      <div class="tab-content active" id="tab-services">
+        <h2><%= t('cabinet.myServices') %></h2>
+        <% if (services && services.length > 0) { %>
+          <div class="product-grid">
+            <% services.forEach(service => { %>
+              <%- include('partials/card', { service, itemType: 'service', mode: 'user', user }) %>
+            <% }) %>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <p><%= t('cabinet.noItems') %></p>
+            <button class="tab btn primary" data-tab="create" style="margin-top: 20px;"><%= t('cabinet.createCard') %></button>
+          </div>
+        <% } %>
+      </div>
+      <% } %>
+
+      <div class="tab-content" id="tab-alba">
+        <h2><%= t('cabinet.albaBalance') %></h2>
+        <div class="alba-balance-card">
+          <h3><%= t('cabinet.albaBalance') %></h3>
+          <% if (typeof user.albaBalance !== 'undefined') { %>
+            <div id="albaBalanceDisplay" style="font-size: 2rem; font-weight: bold; color: #ff6666; margin-bottom: 10px;">
+              <%= user.albaBalance %> ALBA
+            </div>
+          <% } else { %>
+            <div id="albaBalanceDisplay" style="font-size: 1.5rem; color: #ccc; margin-bottom: 10px;">
+              <%= t('common.loading') %>
+            </div>
+          <% } %>
+          <p>
+            ALBA
+          </p>
+        </div>
+      
+        <div>
+          <h3 style="margin-bottom: 15px;"><%= t('cabinet.albaHistory') %></h3>
+          <button type="button" id="refreshAlbaBtn" class="btn small" style="margin-bottom: 15px;"><%= t('common.refresh') || '↻' %></button>
+          <div id="albaTransactionsContainer">
+            <% if (typeof albaTransactions !== 'undefined' && albaTransactions.length > 0) { %>
+              <div class="alba-tx-list" style="max-height: 420px; overflow-y: auto; border: 1px solid rgba(31,138,90,0.25); border-radius: 8px; padding: 12px;">
+                <% albaTransactions.forEach(function(tx) {
+                  const amountNum = Number(tx.amount);
+                  const isCredit = amountNum > 0;
+                  const amountText = (isCredit ? '+' : '') + amountNum + ' ALBA';
+                  const when = tx.createdAt ? new Date(tx.createdAt).toLocaleString(typeof locale !== 'undefined' ? locale : 'en') : '';
+                %>
+                  <div class="alba-tx-item" data-amount="<%= amountNum %>"
+                       style="padding: 12px; margin-bottom: 8px; border-radius: 8px; background: <%= isCredit ? 'rgba(76,175,80,0.12)' : 'rgba(244,67,54,0.12)' %>; border: 1px solid <%= isCredit ? 'rgba(76,175,80,0.25)' : 'rgba(244,67,54,0.25)' %>;">
+                    <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+                      <div>
+                        <strong class="alba-amount" style="color: <%= isCredit ? '#66bb6a' : '#ef5350' %>;"><%= amountText %></strong>
+                        <div style="font-size: 0.95rem; color: #ddd; margin-top: 4px;"><%= tx.reasonLabel || tx.reason %></div>
+                        <% if (tx.comment) { %>
+                          <div style="font-size: 0.85rem; color: #aaa; margin-top: 4px;"><%= tx.comment %></div>
+                        <% } %>
+                        <div style="font-size: 0.8rem; color: #888; margin-top: 6px;"><%= when %></div>
+                      </div>
+                      <div style="font-size: 0.8rem; color: #999; white-space: nowrap;"><%= tx.typeLabel || tx.type %></div>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+            <% } else { %>
+              <div style="text-align: center; padding: 40px 20px; color: #999;">
+                <p><%= t('cabinet.noItems') %></p>
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-create">
+        <h2><%= t('cabinet.createCard') %></h2>
+        <p style="opacity:.85;margin-bottom:16px;"><%= t('cabinet.publishRules') %></p>
+        <p style="opacity:.85;margin-bottom:16px;"><%= t('cabinet.editWindowHint') %></p>
+        <p style="margin-bottom:20px;">
+          <a class="btn outline small" href="/cabinet/rules"><%= t('cabinet.publicationRules') %></a>
+        </p>
+        
+        <div id="createProductSection">
+          <h3><%= user.isShowcaseAccount ? t('form.addProduct') : t('form.addService') %></h3>
+          <form id="createProductForm" class="form-grid" enctype="multipart/form-data" method="POST" action="/cabinet/product">
+            <div class="form-section">
+              <label><%= t('js.typeProduct') %>:</label>
+              <% if (user.isShowcaseAccount) { %>
+                <input type="hidden" name="type" value="product">
+                <p><%= t('auth.accountTypeAds') %></p>
+              <% } else { %>
+                <input type="hidden" name="type" value="service">
+                <p><%= t('auth.accountTypeServices') %></p>
+              <% } %>
+            </div>
+            
+            <input type="text" name="name" placeholder="<%= t('cabinet.name') %>" required>
+            <textarea name="description" placeholder="<%= t('cabinet.description') %>" rows="4"></textarea>
+            <input type="url" name="link" placeholder="<%= t('cabinet.link') %>">
+            <input type="url" name="video_url" placeholder="<%= t('cabinet.video') %>">
+            <div class="form-section">
+              <label for="price"><%= t('cabinet.price') %>:</label>
+              <input type="text" id="price" name="price" placeholder="<%= t('cabinet.price') %>" required maxlength="80" autocomplete="off">
+            </div>
+            
+            <div class="form-section">
+              <label for="images"><%= t('cabinet.images') %>:</label>
+              <input type="file" id="images" name="images" accept="image/png,image/jpeg,image/jpg,image/webp" multiple data-max-files="5">
+              <div id="imagePreview" class="image-preview-container" style="display: none; margin-top: 10px;"></div>
+              <small class="form-hint"><%= t('form.maxImages') %></small>
+            </div>
+            
+                        <div class="form-section">
+              <label><%= t('cabinet.category') %>:</label>
+              <div id="categorySelectorContainer">
+                <select name="category" id="categorySelect" required>
+              <option value=""><%= t('form.selectCategory') %></option>
+              <option value="home"><%= t('categories:home', { defaultValue: 'home', keySeparator: false }) %></option>
+              <option value="beauty"><%= t('categories:beauty', { defaultValue: 'beauty', keySeparator: false }) %></option>
+              <option value="auto"><%= t('categories:auto', { defaultValue: 'auto', keySeparator: false }) %></option>
+              <option value="electronics"><%= t('categories:electronics', { defaultValue: 'electronics', keySeparator: false }) %></option>
+              <option value="household"><%= t('categories:household', { defaultValue: 'household', keySeparator: false }) %></option>
+                            </select>
+                <div id="subcategorySelector" style="margin-top: 10px; display: none;">
+                  <button class="btn small outline" id="backToBlocks" style="margin-bottom: 10px;">&larr; <%= t('catalog.backToBlocks') %></button>
+                  <select id="subcategorySelect" style="width: 100%;">
+                    <option value=""><%= t('form.selectCategory') %></option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <%- include('partials/location-tags-fields') %>
+            
+            <div class="form-section">
+              <h3 style="margin-bottom: 10px;"><%= t('catalog.contacts') %></h3>
+              <input type="tel" name="phone" placeholder="<%= t('cabinet.phone') %>">
+              <input type="email" name="email" placeholder="<%= t('cabinet.email') %>">
+              <input type="text" name="telegram" placeholder="<%= t('cabinet.telegram') %>">
+              <input type="text" name="whatsapp" placeholder="<%= t('cabinet.whatsapp') %>">
+              <label for="contact_method"><%= t('cabinet.contactMethod') %>:</label>
+              <textarea id="contact_method" name="contact_method" placeholder="<%= t('cabinet.contactMethod') %>" rows="2"></textarea>
+            </div>
+            
+            <button type="submit" class="btn primary"><%= t('cabinet.sendToModeration') %></button>
+          </form>
+          <div id="createProductMsg" class="note" style="margin-top:10px;"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+
+
+
+
+
+    
+    
+
+    
+    
+
+  <!-- Модальное окно для баланса ALBA -->
+  <div id="albaBalanceModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeAlbaModal">&times;</span>
+      <h2 style="color: #1f8a5a; margin-bottom: 20px;"><%= t('cabinet.albaBalance') %></h2>
+      <% if (typeof user.albaBalance !== 'undefined') { %>
+        <div id="modalAlbaBalance" style="font-size: 2.5rem; font-weight: bold; color: #1f8a5a; margin-bottom: 20px; text-align: center;">
+          <%= user.albaBalance %> ALBA
+        </div>
+      <% } else { %>
+        <div id="modalAlbaBalance" style="font-size: 1.8rem; color: #ccc; margin-bottom: 20px; text-align: center;">
+          <%= t('common.loading') %>
+        </div>
+      <% } %>
+
+      <div style="margin-bottom: 20px; padding: 15px; background: rgba(31, 138, 90, 0.05); border-radius: 10px; border: 1px solid rgba(31, 138, 90, 0.2);">
+        <h3 style="color: #e8d5a3; margin-bottom: 10px; font-size: 1.1rem;"><%= t('cabinet.buyCardRight') %></h3>
+        <p style="color: #ccc; margin-bottom: 15px; font-size: 0.95rem; line-height: 1.5;">
+          ALBA
+        </p>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; color: #e8d5a3; margin-bottom: 8px; font-weight: 600;"><%= t('js.typeCard') %>:</label>
+          <select id="cardType" style="width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid rgba(31, 138, 90, 0.3); border-radius: 8px; color: #fff;">
+            <% if (user.isShowcaseAccount) { %>
+              <option value="product" data-cost="30"><%= t('js.typeProduct') %> (30 ALBA)</option>
+            <% } else { %>
+              <option value="service" data-cost="30"><%= t('js.typeService') %> (30 ALBA)</option>
+            <% } %>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 15px;">
+          <label style="display: block; color: #e8d5a3; margin-bottom: 8px; font-weight: 600;">#</label>
+          <input type="number" id="cardsToBuy" min="1" max="10" value="1"
+                 style="width: 100%; padding: 12px; background: #2a2a2a; border: 1px solid rgba(31, 138, 90, 0.3); border-radius: 8px; color: #fff; text-align: center;">
+        </div>
+
+        <div style="margin-bottom: 15px; padding: 12px; background: rgba(31, 138, 90, 0.1); border-radius: 8px; border: 1px solid rgba(31, 138, 90, 0.2);">
+          <strong style="color: #e8d5a3;"><%= t('cabinet.price') %>:</strong>
+          <span id="totalCostDisplay" style="color: #fff; font-weight: bold; margin-left: 10px;">30 ALBA</span>
+        </div>
+
+        <button id="buyEntitlementBtn" class="btn primary" style="width: 100%; padding: 14px;"><%= t('cabinet.buyCardRight') %></button>
+        <div id="purchaseStatus" style="text-align: center; font-size: 0.9rem; color: #e8d5a3; min-height: 24px; margin-top: 10px;"></div>
+      </div>
+
+      <p style="color: #ccc; margin-bottom: 20px; text-align: center; line-height: 1.6;">
+        ALBA
+      </p>
+
+      <div id="entitlementsInfo" style="margin-bottom: 20px;"></div>
+
+      <div style="margin: 20px 0;">
+        <h3 style="color: #e8d5a3; margin-bottom: 12px; font-size: 1.05rem;"><%= t('cabinet.albaHistory') %></h3>
+        <div id="albaModalTransactions">
+          <% if (typeof albaTransactions !== 'undefined' && albaTransactions.length > 0) { %>
+            <div class="alba-tx-list" style="max-height: 240px; overflow-y: auto;">
+              <% albaTransactions.slice(0, 20).forEach(function(tx) {
+                const amountNum = Number(tx.amount);
+                const isCredit = amountNum > 0;
+              %>
+                <div style="padding: 10px; margin-bottom: 6px; border-radius: 8px; background: <%= isCredit ? 'rgba(76,175,80,0.12)' : 'rgba(244,67,54,0.12)' %>;">
+                  <strong style="color: <%= isCredit ? '#66bb6a' : '#ef5350' %>;"><%= (isCredit ? '+' : '') + amountNum %> ALBA</strong>
+                  <div style="font-size: 0.85rem; color: #ccc;"><%= tx.reasonLabel || tx.reason %></div>
+                  <div style="font-size: 0.75rem; color: #888;"><%= tx.createdAt ? new Date(tx.createdAt).toLocaleString(typeof locale !== 'undefined' ? locale : 'en') : '' %></div>
+                </div>
+              <% }); %>
+            </div>
+          <% } else { %>
+            <p style="color:#999; text-align:center;"><%= t('cabinet.noItems') %></p>
+          <% } %>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px;">
+        <button id="refreshAlbaModalBtn" class="btn primary" style="margin-right: 10px;"><%= t('cabinet.albaBalance') %></button>
+        <button id="closeAlbaModalBtn" class="btn outline"><%= t('auth.close') %></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="referralModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeReferralModal">&times;</span>
+      <h2 style="color: #1f8a5a; margin-bottom: 20px;"><%= t('cabinet.referralCode') %></h2>
+      <p style="color: #ccc; margin-bottom: 20px; line-height: 1.6;">
+        <%= typeof referralBonusAlba !== 'undefined' ? referralBonusAlba : 10 %> ALBA
+      </p>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; color: #e8d5a3; margin-bottom: 8px; font-weight: 600;"><%= t('cabinet.referralCode') %>:</label>
+        <div class="cabinet-copy-row">
+          <input type="text" id="referralLink" value="" readonly
+                 style="padding: 12px; background: #2a2a2a; border: 1px solid rgba(31, 138, 90, 0.3); border-radius: 8px; color: white !important;">
+          <button id="copyReferralLink" class="btn primary"><%= t('cabinet.copyReferral') %></button>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label style="display: block; color: #e8d5a3; margin-bottom: 8px; font-weight: 600;"><%= t('cabinet.referralCode') %>:</label>
+        <div class="cabinet-copy-row">
+          <input type="text" id="referralCode" value="<%= user.refCode || '' %>" readonly
+                 style="padding: 12px; background: #2a2a2a; border: 1px solid rgba(31, 138, 90, 0.3); border-radius: 8px; color: white !important;">
+          <button id="copyReferralCode" class="btn primary"><%= t('cabinet.copyReferral') %></button>
+        </div>
+      </div>
+
+      <div style="text-align: center;">
+        <button id="closeReferralModalBtn" class="btn outline"><%= t('auth.close') %></button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="cabinet-footer">
+    <div class="footer-buttons">
+      <% if (typeof user.albaBalance !== 'undefined') { %>
+        <button id="albaBalanceBtn" class="footer-btn">
+          <%= t('cabinet.footerAlba') %> <span id="footerAlbaBalance"><%= user.albaBalance %></span>
+        </button>
+      <% } else { %>
+        <button id="albaBalanceBtn" class="footer-btn">
+          <%= t('cabinet.footerAlba') %> <span id="footerAlbaBalance"><%= t('common.loading') %></span>
+        </button>
+      <% } %>
+      <button id="referralBtn" class="footer-btn"><%= t('cabinet.footerReferral') %></button>
+      <a href="/faq" class="footer-btn"><%= t('nav.faq') %></a>
+      <a href="/cabinet/rules" class="footer-btn"><%= t('cabinet.footerRules') %></a>
+    </div>
+  </footer>
+
+  <!-- Загрузка YouTube IFrame API -->
+    <!-- Bootstrap script for safe EJS to JS data transfer -->
+  <script src="/utils/bootstrap.js?v=1.0.3"></script>
+  <script>
+    window.__I18N__ = <%- JSON.stringify(typeof i18nBundle !== 'undefined' ? i18nBundle : { locale: 'en', js: {} }) %>;
+  </script>
+  <script src="/js/i18n-client.js"></script>
+  <script id="bootstrap-data" type="application/json"><%- JSON.stringify({
+      isAuth: true,
+      isAdmin: typeof isAdmin !== 'undefined' ? isAdmin : false,
+      socketIoAvailable: typeof socket_io_available !== 'undefined' ? socket_io_available : false,
+      userRole: typeof userRole !== 'undefined' ? userRole : null,
+      userId: typeof user !== 'undefined' && user && (user.id || user._id) ? String(user.id || user._id) : '',
+      isEmailVerified: typeof user !== 'undefined' && user ? user.emailVerified : false,
+      userEmail: typeof user !== 'undefined' && user ? user.email : '',
+      userCreatedAt: typeof user !== 'undefined' && user ? user.createdAt : '',
+      userUpdatedAt: typeof user !== 'undefined' && user ? user.updatedAt : '',
+      userAlbaBalance: typeof user !== 'undefined' && user ? user.albaBalance : 0,
+      userRefCode: typeof user !== 'undefined' && user ? (user.refCode || '') : '',
+      userRefBonusGranted: typeof user !== 'undefined' && user ? user.refBonusGranted : false,
+      referralBonusAlba: typeof referralBonusAlba !== 'undefined' ? referralBonusAlba : 10,
+      csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : '',
+      locale: typeof locale !== 'undefined' ? locale : 'en'
+    }) %></script>
+  <script>
+    (function(){
+      try {
+        const el = document.getElementById('bootstrap-data');
+        const cfg = el ? JSON.parse(el.textContent || el.innerText || '{}') : {};
+        if (window.AppBootstrap && typeof window.AppBootstrap.init === 'function') {
+          window.AppBootstrap.init(cfg);
+        } else {
+          window.AppBootstrap = window.AppBootstrap || {};
+          window.AppBootstrap._pending = cfg;
+        }
+      } catch (e) {
+        console.error('Error parsing bootstrap data', e);
+        try { window.AppBootstrap.init({}); } catch (err) {}
+      }
+    })();
+  </script>
+
+  <script src="/js/location-tags.js?v=1.0.2"></script>
+  <script src="/js/compress-images.js?v=1.0.2"></script>
+  <script src="/js/cabinet.js?v=1.0.8"></script>
+  <script src="/script.js?v=1.1.3"></script>
+
+<script>
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  </script>
+
+  <script>
+    function renderAlbaTransactions(transactions) {
+      if (!transactions || !transactions.length) {
+        return '<div style="text-align:center;padding:40px 20px;color:#999;">' +
+          '<p>' + (window.i18nT ? window.i18nT('noItems', '—') : '—') + '</p>' +
+          '</div>';
+      }
+
+      var html = '<div class="alba-tx-list" style="max-height:420px;overflow-y:auto;border:1px solid rgba(31,138,90,0.25);border-radius:8px;padding:12px;">';
+      transactions.forEach(function (tx) {
+        var amountNum = Number(tx.amount);
+        var isCredit = amountNum > 0;
+        var amountText = (isCredit ? '+' : '') + amountNum + ' ALBA';
+        var label = tx.reasonLabel || tx.reason || 'ALBA';
+        var typeLabel = tx.typeLabel || tx.type || '';
+        var comment = tx.comment ? '<div style="font-size:0.85rem;color:#aaa;margin-top:4px;">' + String(tx.comment).replace(/[<>&]/g, '') + '</div>' : '';
+        var when = tx.createdAt ? new Date(tx.createdAt).toLocaleString((window.__I18N__ && window.__I18N__.locale) || 'en') : '';
+        html += '<div class="alba-tx-item" style="padding:12px;margin-bottom:8px;border-radius:8px;background:' +
+          (isCredit ? 'rgba(76,175,80,0.12)' : 'rgba(244,67,54,0.12)') + ';border:1px solid ' +
+          (isCredit ? 'rgba(76,175,80,0.25)' : 'rgba(244,67,54,0.25)') + ';">' +
+          '<div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">' +
+          '<div><strong style="color:' + (isCredit ? '#66bb6a' : '#ef5350') + ';">' + amountText + '</strong>' +
+          '<div style="font-size:0.95rem;color:#ddd;margin-top:4px;">' + label + '</div>' +
+          comment +
+          '<div style="font-size:0.8rem;color:#888;margin-top:6px;">' + when + '</div></div>' +
+          '<div style="font-size:0.8rem;color:#999;white-space:nowrap;">' + typeLabel + '</div>' +
+          '</div></div>';
+      });
+      html += '</div>';
+      return html;
+    }
+
+    async function refreshAlbaData() {
+      try {
+        const response = await fetch('/api/p1/alba/transactions', {
+          credentials: 'same-origin',
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await response.json();
+        if (!data.success) return;
+
+        const balance = data.balance != null ? data.balance : 0;
+        const balanceElement = document.getElementById('albaBalanceDisplay');
+        if (balanceElement) {
+          balanceElement.textContent = balance + ' ALBA';
+          balanceElement.style.fontSize = '2rem';
+          balanceElement.style.fontWeight = 'bold';
+          balanceElement.style.color = '#1f8a5a';
+        }
+        const footerBal = document.getElementById('footerAlbaBalance');
+        if (footerBal) footerBal.textContent = String(balance);
+        const modalBal = document.getElementById('modalAlbaBalance');
+        if (modalBal) modalBal.textContent = balance + ' ALBA';
+
+        const container = document.getElementById('albaTransactionsContainer');
+        if (container) container.innerHTML = renderAlbaTransactions(data.transactions || []);
+
+        const modalHistory = document.getElementById('albaModalTransactions');
+        if (modalHistory) modalHistory.innerHTML = renderAlbaTransactions(data.transactions || []);
+      } catch (error) {
+        console.error('refreshAlbaData failed', error);
+      }
+    }
+    window.refreshAlbaData = refreshAlbaData;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const refreshBtn = document.getElementById('refreshAlbaBtn');
+      if (refreshBtn) refreshBtn.addEventListener('click', refreshAlbaData);
+
+      document.querySelectorAll('.tab-btn[data-tab="alba"], [data-tab="alba"]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          refreshAlbaData();
+        });
+      });
+    });
+  </script>
+
+  <% if (!process.env.VERCEL) { %>
+  <!-- Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+  <% } %>
+
+</body>
+</html>

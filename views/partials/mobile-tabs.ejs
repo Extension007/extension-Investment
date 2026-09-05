@@ -1,0 +1,16 @@
+<footer class="mobile-tabs-footer">
+  <div class="mobile-tabs-container">
+    <a href="/" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'services' ? 'active' : '' %>">
+      <%= typeof t === 'function' ? t('nav.services') : 'Услуги' %>
+    </a>
+    <a href="/ad" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && (activeTab === 'products' || activeTab === 'ad') ? 'active' : '' %>">
+      <%= typeof t === 'function' ? t('nav.ads') : 'Купи/продай' %>
+    </a>
+    <a href="/contacts" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'contacts' ? 'active' : '' %>">
+      <%= typeof t === 'function' ? t('nav.contactUs') : 'Напишите нам' %>
+    </a>
+    <a href="/faq" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'faq' ? 'active' : '' %>">
+      <%= typeof t === 'function' ? t('nav.faq') : 'FAQ' %>
+    </a>
+  </div>
+</footer>

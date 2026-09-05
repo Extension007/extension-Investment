@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Админка — Напишите нам</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=1.3.9">
+</head>
+<body class="admin-page">
+  <div id="bg-animated" aria-hidden="true"></div>
+  <header class="main-header">
+    <div class="container header-inner">
+      <div class="header-top">
+        <div class="header-left">
+          <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+        </div>
+        <div class="header-actions">
+          <span class="user-chip">Напишите нам</span>
+          <a href="/admin" class="btn outline small">Назад</a>
+          <form id="logoutForm" method="POST" action="/logout">
+            <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+            <button type="submit" class="btn outline small">Выход</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="section">
+      <div class="section-header">
+        <h2>Напишите нам</h2>
+        <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;">
+          Всего: <%= messages ? messages.length : 0 %> · непрочитанных: <%= unreadCount || 0 %>
+        </span>
+      </div>
+
+      <% if (messages && messages.length) { %>
+        <div class="inbox-list">
+          <% messages.forEach(m => { %>
+            <article class="inbox-item <%= m.isRead ? '' : 'inbox-unread' %>">
+              <div class="inbox-meta">
+                <strong><%= m.name %></strong>
+                <a href="mailto:<%= m.email %>"><%= m.email %></a>
+                <span><%= m.subject || 'Без темы' %></span>
+                <time><%= new Date(m.createdAt).toLocaleString('ru-RU') %></time>
+              </div>
+              <p class="inbox-body"><%= m.message %></p>
+              <div class="inbox-actions">
+                <% if (!m.isRead) { %>
+                  <form method="POST" action="/admin/contacts/messages/<%= m.id %>/read" style="display:inline;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn small">Прочитано</button>
+                  </form>
+                <% } %>
+                <form method="POST" action="/admin/contacts/messages/<%= m.id %>/delete" style="display:inline;" onsubmit="return confirm('Удалить сообщение?');">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="btn small outline">Удалить</button>
+                </form>
+              </div>
+            </article>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <p class="empty-state">Пока нет сообщений с формы «Напишите нам»</p>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

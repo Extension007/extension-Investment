@@ -1,0 +1,12 @@
+{
+  "terminal.integrated.env.windows": {
+    "PATH": "C:\\Users\\nephi\\AppData\\Local\\Microsoft\\WinGet\\Packages\\OpenJS.NodeJS.22_Microsoft.Winget.Source_8wekyb3d8bbwe\\node-v22.23.2-win-x64;C:\\Users\\nephi\\AppData\\Local\\Programs\\Git\\cmd;${env:PATH}"
+  },
+  "terminal.integrated.profiles.windows": {
+    "PowerShell": {
+      "source": "PowerShell",
+      "args": ["-NoExit", "-Command", "Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force"]
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "PowerShell"
+}

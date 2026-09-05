@@ -1,0 +1,297 @@
+<% 
+  /**
+   * Унифицированный шаблон карточки для всех типов (товары, услуги, баннеры)
+   * 
+   * Параметры:
+   * - product, service, banner: объект карточки (один из них должен быть передан)
+   * - itemType: явно указанный тип ('product', 'service', 'banner')
+   * - mode: режим отображения ('admin', 'user', 'public')
+   * - user: объект текущего пользователя (для проверки владельца)
+   * 
+   * Использует локальную переменную 'type' вместо 'itemType', чтобы не переопределять параметр
+   */
+  
+  // Унифицированные переменные для всех типов карточек
+  const item = typeof product !== 'undefined' ? product : (typeof service !== 'undefined' ? service : banner);
+  
+  // Используем переданный itemType или определяем автоматически (используем type вместо itemType, чтобы не переопределять параметр)
+  const type = (typeof itemType !== 'undefined')
+    ? itemType
+    : (typeof product !== 'undefined' ? 'product' : (typeof service !== 'undefined' ? 'service' : 'banner'));
+  const itemId = (item._id || item.id).toString();
+  const itemName = item.name || item.title || `Карточка ${itemId.substring(0, 8)}`;
+  const itemDescription = item.description || '';
+  const itemPrice = item.price != null && String(item.price).trim() !== '' ? String(item.price).trim() : '';
+  const priceLabel = (typeof formatPriceDisplay === 'function')
+    ? formatPriceDisplay(itemPrice)
+    : itemPrice;
+  const itemLink = item.link || '';
+  const itemVideoUrl = item.video_url || '';
+  const itemCategory = item.category || '';
+  const itemStatus = item.status || 'pending';
+  const itemOwner = item.owner || null;
+  const itemOwnerId = item.ownerId != null ? item.ownerId : (itemOwner && (itemOwner.id || itemOwner._id || itemOwner));
+  const itemImages = item.images || [];
+  const itemImageUrl = item.image_url || (itemImages.length > 0 ? itemImages[0] : null);
+
+  // Передаем информацию о доступности Socket.IO на клиент
+  // socket_io_available передается как параметр
+  
+  // Контакты (для товаров и услуг)
+  const contacts = item.contacts || {};
+  const phone = contacts.phone || '';
+  const email = contacts.email || '';
+  const telegram = contacts.telegram || '';
+  const whatsapp = contacts.whatsapp || '';
+  const contactMethod = contacts.contact_method || '';
+  
+  // Рейтинг (разные поля для разных типов)
+  const ratingUp = item.rating_up || item.likes || 0;
+  const ratingDown = item.rating_down || item.dislikes || 0;
+  const ratingResult = ratingUp - ratingDown;
+  const ratingTotal = ratingUp + ratingDown;
+  
+  // Режим отображения (admin, user, public)
+  const displayMode = typeof mode !== 'undefined' ? mode : 'public';
+  const isAdmin = displayMode === 'admin';
+  const isUser = displayMode === 'user';
+  const isPublic = displayMode === 'public';
+  
+  // Проверка владельца (для пользовательского режима)
+  const isOwner = isUser && itemOwnerId && typeof user !== 'undefined' && user && String(itemOwnerId) === String(user._id || user.id);
+  const pub = typeof cardPublication !== 'undefined' ? cardPublication : null;
+  const publicationExpired = Boolean(pub && pub.isExpired(item));
+  const userMayEdit = isAdmin || (isOwner && (!pub || pub.canUserEditCard(item)));
+  const canEdit = userMayEdit;
+  const canDelete = isAdmin || isOwner;
+  
+  // CSS классы для карточки
+  const cardClass = displayMode === 'admin' ? 'catalog-item' : 'product-card';
+  const cardDataAttr = `data-${type}-id="${itemId}"`;
+%>
+
+<!-- Передаем информацию о доступности Socket.IO на клиент -->
+<script>
+  window.SOCKET_IO_AVAILABLE = <%- socket_io_available ? 'true' : 'false' %>;
+</script>
+
+<div class="<%= cardClass %>" <%= cardDataAttr %>>
+  <!-- Статус карточки -->
+  <% if (isAdmin || isUser) { %>
+    <div class="item-status-container">
+      <% if (publicationExpired) { %>
+        <span class="item-status status-blocked">⏱ <%= t('cabinet.statusExpired') %></span>
+      <% } else if (itemStatus === 'published' || itemStatus === 'approved') { %>
+        <span class="item-status status-published">✅ <%= t('cabinet.statusPublished') %></span>
+        <% if (item.expiresAt || item.expires_at) { %>
+          <p class="publication-until" style="font-size:0.85rem;margin-top:5px;opacity:.85;"><%= t('cabinet.publishedUntil') %>: <%= new Date(item.expiresAt || item.expires_at).toLocaleString() %></p>
+        <% } %>
+        <% if (isOwner && userMayEdit && pub && pub.resolveEditUntil) { %>
+          <% const editUntilAt = pub.resolveEditUntil(item); %>
+          <% if (editUntilAt) { %>
+            <p class="publication-until" style="font-size:0.85rem;margin-top:5px;opacity:.85;"><%= t('cabinet.editableUntil') %>: <%= new Date(editUntilAt).toLocaleString() %></p>
+          <% } %>
+        <% } else if (isOwner && !userMayEdit) { %>
+          <p class="publication-until" style="font-size:0.85rem;margin-top:5px;opacity:.85;"><%= t('cabinet.editWindowClosed') %></p>
+        <% } %>
+      <% } else if (itemStatus === 'blocked' || itemStatus === 'rejected') { %>
+        <span class="item-status status-blocked">🚫 <%= itemStatus === 'rejected' ? t('cabinet.statusRejected') : t('catalog.blocked') %></span>
+        <% if (item.rejection_reason && item.rejection_reason !== 'publication_expired') { %>
+          <p class="rejection-reason" style="color:#f44336;font-size:0.85rem;margin-top:5px;"><%= item.rejection_reason %></p>
+        <% } %>
+      <% } else if (itemStatus === 'draft') { %>
+        <span class="item-status status-draft">⏳ <%= t('cabinet.statusDraft') %></span>
+      <% } else { %>
+        <span class="item-status status-pending">⏳ <%= t('cabinet.statusPending') %></span>
+      <% } %>
+    </div>
+  <% } %>
+
+  <!-- Название -->
+  <h3 class="item-title"><%= itemName %></h3>
+
+  <!-- Описание (краткое) -->
+  <% if (itemDescription) { %>
+    <p class="item-description">
+      <%= itemDescription.length > 100 ? itemDescription.substring(0, 100) + '...' : itemDescription %>
+    </p>
+  <% } %>
+
+  <!-- Изображения -->
+  <% if (itemImages && itemImages.length > 0) { %>
+    <div class="item-images">
+      <% itemImages.slice(0, 3).forEach((img, idx) => { %>
+        <% if (img && img.startsWith('https://res.cloudinary.com')) { %>
+          <!-- Используем безопасный URL для Cloudinary изображений -->
+          <img src="<%= img %>?f_auto,q_auto,c_limit,w_800,h_600" alt="<%= itemName %>" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.png';" referrerpolicy="no-referrer">
+        <% } else { %>
+          <img src="<%= img %>" alt="<%= itemName %>" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.png';" referrerpolicy="no-referrer">
+        <% } %>
+      <% }) %>
+      <% if (itemImages.length > 3) { %>
+        <span class="images-count">+<%= itemImages.length - 3 %> <%= t('common.more') || 'more' %></span>
+      <% } %>
+    </div>
+  <% } else if (itemImageUrl) { %>
+    <div class="item-images">
+      <% if (itemImageUrl && itemImageUrl.startsWith('https://res.cloudinary.com')) { %>
+        <!-- Используем безопасный URL для Cloudinary изображений -->
+        <img src="<%= itemImageUrl %>?f_auto,q_auto,c_limit,w_800,h_600" alt="<%= itemName %>" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.png';" referrerpolicy="no-referrer">
+      <% } else { %>
+        <img src="<%= itemImageUrl %>" alt="<%= itemName %>" loading="lazy" onerror="this.onerror=null; this.src='/images/placeholder.png';" referrerpolicy="no-referrer">
+      <% } %>
+    </div>
+  <% } else { %>
+    <!-- Показываем placeholder, если изображения отсутствуют -->
+    <div class="item-images">
+      <img src="/images/placeholder.png" alt="<%= t('catalog.noImage') %>" loading="lazy" referrerpolicy="no-referrer">
+    </div>
+  <% } %>
+
+  <!-- Мета-информация -->
+  <div class="item-meta">
+    <% if (itemLink) { %>
+      <p class="meta-link">
+        <span class="meta-label"><%= t('cabinet.link') %>:</span>
+        <a href="<%= itemLink %>" target="_blank" rel="noopener" class="item-link">
+          <%= itemLink.length > 30 ? itemLink.substring(0, 30) + '...' : itemLink %>
+        </a>
+      </p>
+    <% } %>
+
+    <% if (itemVideoUrl) { %>
+      <p class="meta-video">
+        <span class="meta-label"><%= t('cabinet.video') %>:</span>
+        <button class="btn-video-link" data-video="<%= itemVideoUrl %>" type="button">
+          ▶️ <%= itemVideoUrl.length > 30 ? itemVideoUrl.substring(0, 30) + '...' : itemVideoUrl %>
+        </button>
+      </p>
+    <% } %>
+
+    <% if (isAdmin && itemOwner) { %>
+      <p class="meta-owner">
+        <span class="meta-label"><%= typeof t === 'function' ? t('catalog.owner') : 'Владелец' %>:</span>
+        <%= itemOwner.username || itemOwner.email || 'Admin' %>
+      </p>
+    <% } %>
+
+    <% if (itemCategory) { %>
+      <p class="meta-category">
+        <span class="meta-label"><%= t('cabinet.category') %>:</span>
+        <%= itemCategory %>
+      </p>
+    <% } %>
+
+    <!-- Контакты (для товаров и услуг) -->
+    <% if ((type === 'product' || type === 'service') && (phone || email || telegram || whatsapp || contactMethod)) { %>
+      <div class="item-contacts">
+        <% if (phone) { %>
+          <p class="contact-item">
+            <span class="meta-label"><%= t('cabinet.phone') %>:</span>
+            <a href="tel:<%= phone %>"><%= phone %></a>
+          </p>
+        <% } %>
+        <% if (email) { %>
+          <p class="contact-item">
+            <span class="meta-label">Email:</span>
+            <a href="mailto:<%= email %>"><%= email %></a>
+          </p>
+        <% } %>
+        <% if (telegram) { %>
+          <p class="contact-item">
+            <span class="meta-label">Telegram:</span>
+            <a href="https://t.me/<%= telegram.replace('@', '') %>" target="_blank" rel="noopener"><%= telegram %></a>
+          </p>
+        <% } %>
+        <% if (whatsapp) { %>
+          <p class="contact-item">
+            <span class="meta-label">WhatsApp:</span>
+            <a href="https://wa.me/<%= whatsapp.replace(/[^0-9]/g, '') %>" target="_blank" rel="noopener"><%= whatsapp %></a>
+          </p>
+        <% } %>
+        <% if (contactMethod) { %>
+          <p class="contact-method">
+            <span class="meta-label"><%= t('cabinet.contactMethod') %>:</span>
+            <span class="contact-method-text"><%= contactMethod %></span>
+          </p>
+        <% } %>
+      </div>
+    <% } %>
+
+    <!-- Цена -->
+    <% if (itemPrice) { %>
+      <p class="item-price">
+        <span class="meta-label"><%= t('cabinet.price') %>:</span>
+        <strong><%= priceLabel %></strong>
+      </p>
+    <% } %>
+  </div>
+
+  <!-- Рейтинг (голосование) -->
+  <div class="item-rating <%= type %>-rating" data-id="<%= itemId %>" data-type="<%= type %>" data-voted="false">
+    <button class="<%= type %>-like-btn btn-rating" type="button" aria-label="<%= t('catalog.like') %>">▲</button>
+    <span class="<%= type %>-result rating-result" style="font-weight: 600;"><%= ratingResult %></span>
+    <button class="<%= type %>-dislike-btn btn-rating" type="button" aria-label="<%= t('catalog.dislike') %>">▼</button>
+  </div>
+
+  <div class="item-actions">
+    <% if (isAdmin) { %>
+      <% if (itemStatus === 'published' || itemStatus === 'approved') { %>
+        <button class="block-<%= type %>-btn btn-block" data-id="<%= itemId %>" type="button">🚫 <%= t('catalog.blocked') %></button>
+      <% } else { %>
+        <button class="publish-<%= type %>-btn btn-publish" data-id="<%= itemId %>" type="button">✅ <%= t('common.published') %></button>
+      <% } %>
+      <button class="edit-<%= type %>-btn btn-edit btn-outline" data-id="<%= itemId %>" type="button">✏️ <%= t('cabinet.editCard') %></button>
+      <button class="delete-<%= type %>-btn btn-delete" data-id="<%= itemId %>" type="button">🗑️ <%= t('common.delete') %></button>
+    <% } else if (isUser && isOwner) { %>
+      <% if (userMayEdit) { %>
+      <button class="edit-<%= type %>-btn btn-edit btn-outline" data-id="<%= itemId %>" type="button">✏️ <%= t('cabinet.editCard') %></button>
+      <% } %>
+      <% if (publicationExpired) { %>
+      <button class="republish-card-btn btn-publish btn-outline" data-id="<%= itemId %>" type="button"><%= t('cabinet.republishCard') %></button>
+      <% } %>
+      <% const autoRenewOn = Boolean(item.autoRenew || item.auto_renew); %>
+      <button
+        class="auto-renew-btn <%= autoRenewOn ? 'btn-publish' : 'btn-outline' %>"
+        data-id="<%= itemId %>"
+        data-enabled="<%= autoRenewOn ? 'true' : 'false' %>"
+        type="button"
+      ><%= autoRenewOn ? t('cabinet.autoRenewOn') : t('cabinet.autoRenewOff') %></button>
+      <p class="publication-until" style="font-size:0.85rem;margin-top:5px;opacity:.85;"><%= t('cabinet.autoRenewHint') %></p>
+      <button class="delete-<%= type %>-btn btn-delete" data-id="<%= itemId %>" type="button">🗑️ <%= t('cabinet.deleteCard') %></button>
+      <button class="chat-btn btn-outline" data-card-id="<%= itemId %>" type="button">💬 <%= t('catalog.chat') %><span class="chat-unread-badge" aria-hidden="true"></span></button>
+      <% if (itemLink) { %>
+        <a class="btn-link btn-outline" href="<%= itemLink %>" target="_blank" rel="noopener">🔗 <%= t('cabinet.link') %></a>
+      <% } %>
+  <% } else if (isPublic) { %>
+    <% if (itemLink) { %>
+      <a class="btn-link btn-outline" href="<%= itemLink %>" target="_blank" rel="noopener"><%= t('catalog.openLink') %></a>
+    <% } %>
+    <% if (typeof user !== 'undefined' && user) { %>
+      <button class="chat-btn btn-outline" data-card-id="<%= itemId %>" type="button">💬 <%= t('catalog.chat') %><span class="chat-unread-badge" aria-hidden="true"></span></button>
+    <% } %>
+  <% } %>
+  </div>
+
+  <div class="chat-modal" id="chat-modal-<%= itemId %>" style="display: none;">
+    <div class="chat-modal-overlay" onclick="closeChatModal('<%= itemId %>')"></div>
+    <div class="chat-modal-content">
+      <div class="chat-modal-header">
+        <h3><%= t('catalog.chatTitle') %></h3>
+        <button class="chat-close-btn" onclick="closeChatModal('<%= itemId %>')" type="button">×</button>
+      </div>
+      <div class="chat-messages" id="chat-messages-<%= itemId %>">
+      </div>
+      <div class="chat-input-container">
+        <textarea
+          class="chat-input"
+          id="chat-input-<%= itemId %>"
+          placeholder="<%= t('catalog.messagePlaceholder') %>"
+          maxlength="1000"
+          rows="2"
+        ></textarea>
+        <button class="chat-send-btn" onclick="sendChatMessage('<%= itemId %>')" type="button"><%= t('catalog.send') %></button>
+      </div>
+    </div>
+  </div>
+</div>

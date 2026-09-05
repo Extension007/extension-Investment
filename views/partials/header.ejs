@@ -1,0 +1,23 @@
+<header class="main-header">
+  <div class="container header-inner">
+    <a class="logo" href="/">
+      <span class="logo-mark">
+        <img src="/albamount.png" alt="ALBAMOUNT" class="logo-img">
+        <span class="logo-version">v<%= typeof appVersion !== 'undefined' && appVersion ? appVersion : '1.0.0' %></span>
+      </span>
+    </a>
+    <div class="header-actions">
+      <%- include('lang-switcher') %>
+      <% if (typeof isAuth !== 'undefined' && isAuth) { %>
+        <% if (typeof isAdmin !== 'undefined' && isAdmin) { %>
+          <a class="btn outline header-account-link" href="/admin"><%= t('nav.admin') %><span class="chat-unread-badge header-chat-badge" aria-hidden="true"></span></a>
+        <% } else { %>
+          <a class="btn outline header-account-link" href="/cabinet"><%= t('nav.cabinet') %><span class="chat-unread-badge header-chat-badge" aria-hidden="true"></span></a>
+        <% } %>
+      <% } else { %>
+        <a class="btn outline" href="/user/login"><%= t('nav.login') %></a>
+        <button id="openRegister" type="button" class="btn outline"><%= t('nav.register') %></button>
+      <% } %>
+    </div>
+  </div>
+</header>

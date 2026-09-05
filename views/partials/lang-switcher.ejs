@@ -1,0 +1,41 @@
+<%
+  const currentLang = typeof locale !== 'undefined' ? locale : 'en';
+  const langs = typeof languages !== 'undefined' ? languages : [];
+  const displayCode = { en: 'EN', ru: 'RU', kk: 'KZ', zh: 'ZH' };
+  const codeOf = function (l) {
+    if (!l) return 'EN';
+    if (displayCode[l.code]) return displayCode[l.code];
+    return String(l.label || l.code || '').toUpperCase().slice(0, 2);
+  };
+  const currentMeta = langs.find(function (l) { return l.code === currentLang; })
+    || { code: currentLang, label: displayCode[currentLang] || String(currentLang).toUpperCase(), name: currentLang };
+  const nextPath = (typeof currentPath !== 'undefined' && currentPath) ? currentPath : '/';
+  const langAria = typeof t === 'function' ? t('nav.language') : 'Language';
+  const currentCode = codeOf(currentMeta);
+%>
+<div class="lang-switcher" data-lang-switcher role="navigation" aria-label="<%= langAria %>">
+  <button
+    type="button"
+    class="btn small outline lang-switcher__toggle"
+    aria-expanded="false"
+    aria-haspopup="listbox"
+    aria-label="<%= langAria %>: <%= currentCode %>"
+    title="<%= currentMeta.name || currentCode %>"
+  ><%= currentCode %></button>
+  <div class="lang-switcher__menu dropdown-menu" role="listbox" aria-hidden="true" hidden>
+    <% langs.forEach(function (l) {
+      const code = codeOf(l);
+    %>
+      <a
+        href="/lang/<%= l.code %>?next=<%= encodeURIComponent(nextPath) %>"
+        class="dropdown-item lang-switcher__item<%= currentLang === l.code ? ' is-active' : '' %>"
+        role="option"
+        hreflang="<%= l.code %>"
+        title="<%= l.name %>"
+        aria-current="<%= currentLang === l.code ? 'true' : 'false' %>"
+        aria-selected="<%= currentLang === l.code ? 'true' : 'false' %>"
+      ><%= code %></a>
+    <% }) %>
+  </div>
+</div>
+<script src="/js/lang-switcher.js?v=1.0.1"></script>

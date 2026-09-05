@@ -1,0 +1,851 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Админка — Управление товарами</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="csrf-token" content=<%- JSON.stringify((typeof csrfToken !== 'undefined' && csrfToken) ? String(csrfToken) : '') %>>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css?v=1.3.9">
+</head>
+<body class="admin-page">
+
+  <div id="bg-animated" aria-hidden="true"></div>
+<header class="main-header">
+  <div class="container header-inner">
+    <div class="header-top">
+      <div class="header-left">
+        <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+        <div class="header-stats">
+          <div class="stat-item">
+            <span style="opacity: 0.8;">👥</span>
+            <strong style="color: #4caf50;"><%= typeof visitorCount !== 'undefined' ? visitorCount : 0 %></strong>
+          </div>
+          <div class="stat-item">
+            <span style="opacity: 0.8;">👤</span>
+            <strong style="color: #2196f3;"><%= typeof userCount !== 'undefined' ? userCount : 0 %></strong>
+          </div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span class="user-chip">Админ-панель</span>
+        <a href="/admin/contacts" class="btn outline small">Напишите нам</a>
+        <form id="logoutForm" method="POST" action="/logout">
+          <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+          <button type="submit" class="btn outline small">Выход</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</header>
+
+<script>
+(function () {
+  var key = 'adminScrollTop';
+  var restore = function () {
+    try {
+      var saved = sessionStorage.getItem(key);
+      if (saved === null) return;
+      var pos = parseInt(saved, 10);
+      var main = document.getElementById('admin-main');
+      if (main) main.scrollTop = pos; else window.scrollTo(0, pos);
+    } catch (e) {}
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', restore);
+  } else {
+    restore();
+  }
+  window.addEventListener('beforeunload', function () {
+    try {
+      sessionStorage.setItem(key, (document.getElementById('admin-main')?.scrollTop || window.scrollY).toString());
+    } catch (e) {}
+  });
+})();
+</script>
+
+<main id="admin-main" class="container">
+
+<!-- Модерация товаров -->
+<section class="section">
+<div class="section-header">
+<h2>Модерация товаров</h2>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+<% if (pendingProducts && pendingProducts.length) { %>
+<%= pendingProducts.length %> на проверке
+<% } else { %>
+Нет товаров на модерации
+<% } %>
+</span>
+</div>
+
+<% if (pendingProducts && pendingProducts.length) { %>
+<div class="product-grid">
+<% pendingProducts.forEach(p => { %>
+<div class="product-card" style="border:2px solid #ff9800;">
+<h3 class="product-title"><%= p.name %></h3>
+<%- include('partials/admin-card-images', { item: p }) %>
+
+<div class="product-bottom">
+<p class="product-desc"><%= p.description || "—" %></p>
+<div class="row" style="justify-content:center; gap:8px;">
+<span class="muted">Цена:</span>
+<strong class="price"><%= p.price %></strong>
+</div>
+
+<% if (p.owner) { %>
+<% if (typeof p.owner === 'object' && p.owner.username) { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= p.owner.username %></p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= p.owner %></p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
+<% } %>
+
+<div class="product-actions admin-card-actions">
+<form method="POST" action="/admin/products/<%= p.id %>/approve">
+<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
+<button type="submit" class="btn small">Одобрить</button>
+</form>
+<button type="button" class="btn small reject-btn" data-id="<%= p.id %>" data-type="product">Отклонить</button>
+<% if (p.link) { %>
+<a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
+<% } %>
+<% if (p.video_url) { %>
+<button type="button" class="btn small outline" data-video="<%= p.video_url %>">Видео</button>
+<% } %>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Нет товаров на модерации</p>
+<% } %>
+</section>
+
+<!-- Модерация услуг -->
+<section class="section">
+<div class="section-header">
+<h2>Модерация услуг</h2>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+<% if (pendingServices && pendingServices.length) { %>
+<%= pendingServices.length %> на проверке
+<% } else { %>
+Нет услуг на модерации
+<% } %>
+</span>
+</div>
+
+<% if (pendingServices && pendingServices.length) { %>
+<div class="product-grid">
+<% pendingServices.forEach(s => { %>
+<div class="product-card" style="border:2px solid #ff9800;">
+<h3 class="product-title"><%= s.name %></h3>
+<%- include('partials/admin-card-images', { item: s }) %>
+
+<div class="product-bottom">
+<p class="product-desc"><%= s.description || "—" %></p>
+<div class="row" style="justify-content:center; gap:8px;">
+<span class="muted">Цена:</span>
+<strong class="price"><%= s.price %></strong>
+</div>
+
+<% if (s.owner) { %>
+<% if (typeof s.owner === 'object' && s.owner.username) { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= s.owner.username %></p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= s.owner %></p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">⚠️ Владелец не указан</p>
+<% } %>
+
+<div class="product-actions admin-card-actions">
+<form method="POST" action="/admin/services/<%= s.id %>/approve">
+<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
+<button type="submit" class="btn small">Одобрить</button>
+</form>
+<button type="button" class="btn small reject-btn" data-id="<%= s.id %>" data-type="service">Отклонить</button>
+<% if (s.link) { %>
+<a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">Ссылка</a>
+<% } %>
+<% if (s.video_url) { %>
+<button type="button" class="btn small outline" data-video="<%= s.video_url %>">Видео</button>
+<% } %>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Нет услуг на модерации</p>
+<% } %>
+</section>
+
+<!-- Управление ALBA -->
+<section class="section">
+<div class="section-header">
+<h2>Управление ALBA</h2>
+</div>
+<form id="adminGrantAlbaForm"
+      method="POST"
+      action="/api/p1/alba/grant-by-login"
+      class="form-grid admin-grant-form"
+      novalidate>
+
+  <input type="hidden" name="_csrf" id="albaCsrfField" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
+  <input type="hidden" name="reason" value="admin_grant">
+
+  <input type="text" id="albaUsername" name="login" placeholder="Логин пользователя" required autocomplete="username">
+  <input type="number" id="albaAmount" name="amount" placeholder="Количество ALBA" required min="1" step="1">
+  <input type="text" id="albaComment" name="comment" placeholder="Комментарий" required>
+
+  <button type="submit" id="albaSubmitBtn" class="btn primary">
+    Начислить ALBA
+  </button>
+</form>
+<div id="albaGrantMsg" class="note" style="margin-top:10px; min-height:1.5em; color:#fff;"></div>
+<script src="/js/admin-alba-grant.js?v=1.0.3"></script>
+
+<!-- История транзакций ALBA -->
+<div class="section-header" style="margin-top: 30px;">
+<h2>История транзакций ALBA</h2>
+</div>
+<button type="button" id="loadTransactionsBtn" class="btn small admin-refresh-btn">Обновить историю</button>
+<div id="albaTransactionsContainer">
+<% if (typeof albaTransactions !== 'undefined' && albaTransactions && albaTransactions.length) { %>
+<div class="admin-table-wrap">
+<table class="admin-data-table" id="albaHistoryTable">
+<thead>
+<tr>
+<th>ID</th>
+<th>Пользователь</th>
+<th>Тип</th>
+<th>Причина</th>
+<th>Сумма</th>
+<th>Комментарий</th>
+<th>Дата</th>
+</tr>
+</thead>
+<tbody>
+<% albaTransactions.forEach(function(tx) { %>
+<tr>
+<td data-label="ID"><%= tx.id %></td>
+<td data-label="Пользователь"><%= tx.username || '—' %></td>
+<td data-label="Тип"><%= tx.typeLabel || tx.type %></td>
+<td data-label="Причина"><%= tx.reasonLabel || tx.reason %></td>
+<td data-label="Сумма"><%= tx.amount %></td>
+<td data-label="Комментарий"><%= tx.comment || '—' %></td>
+<td data-label="Дата"><%= tx.createdAt ? new Date(tx.createdAt).toLocaleString('ru-RU') : '—' %></td>
+</tr>
+<% }) %>
+</tbody>
+</table>
+</div>
+<% } else { %>
+<p class="empty-state">Пока нет записей. Начислите ALBA или нажмите «Обновить историю».</p>
+<% } %>
+</div>
+</section>
+
+
+<!-- Зарегистрированные пользователи -->
+<section class="section">
+<div class="section-header">
+<h2>Пользователи</h2>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+Всего: <%= typeof registeredUsers !== 'undefined' && registeredUsers ? registeredUsers.length : 0 %>
+</span>
+</div>
+<% if (typeof registeredUsers !== 'undefined' && registeredUsers && registeredUsers.length) { %>
+<div class="admin-table-wrap">
+<table class="admin-data-table">
+<thead>
+<tr>
+<th>ID</th>
+<th>Логин</th>
+<th>Email</th>
+<th>Тип</th>
+<th>Роль</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<% registeredUsers.forEach(function (u) {
+  const uid = u.id;
+  const isSelf = String(uid) === String(typeof currentAdminId !== 'undefined' ? currentAdminId : '');
+%>
+<tr>
+<td data-label="ID"><%= uid %></td>
+<td data-label="Логин"><%= u.username %></td>
+<td data-label="Email"><%= u.email %></td>
+<td data-label="Тип"><%= u.accountType === 'services' ? 'Услуги' : 'Купи/продай' %></td>
+<td data-label="Роль"><%= u.role %></td>
+<td data-label="Действие" class="admin-table-actions">
+<% if (!isSelf) { %>
+<form method="POST" action="/admin/users/<%= uid %>/delete" onsubmit="return confirm('Удалить пользователя <%= (u.username || '').replace(/'/g, '') %> из базы? Карточки будут скрыты.');">
+<input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
+<button type="submit" class="btn small outline">Удалить</button>
+</form>
+<% } else { %>
+<span class="muted">это вы</span>
+<% } %>
+</td>
+</tr>
+<% }); %>
+</tbody>
+</table>
+</div>
+<% } else { %>
+<p class="empty-state">Нет пользователей</p>
+<% } %>
+</section>
+
+
+<!-- Каталог товаров -->
+<section class="section">
+<div class="section-header">
+<h2>Каталог «Купи/продай»</h2>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+Всего: <%= products ? products.length : 0 %>
+</span>
+</div>
+
+<% if (products && products.length) { %>
+<div class="product-grid">
+<% products.forEach(p => { %>
+<div class="product-card status-<%= p.status || 'pending' %>">
+<h3 class="product-title"><%= p.name %></h3>
+<%- include('partials/admin-card-images', { item: p }) %>
+
+<div class="product-bottom">
+<!-- Статус карточки -->
+<div style="text-align:center;margin-bottom:10px;">
+<% if (p.status === "pending") { %>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⏳ На модерации
+</span>
+<% } else if (p.status === "approved") { %>
+<span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+✅ Опубликовано
+</span>
+<% } else if (p.status === "rejected") { %>
+<span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+❌ Заблокировано
+</span>
+<% } else { %>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⚠️ Без статуса
+</span>
+<% } %>
+</div>
+
+<p class="product-desc"><%= p.description || "—" %></p>
+<div class="row" style="justify-content:center; gap:8px;">
+<span class="muted">Цена:</span>
+<strong class="price"><%= p.price %></strong>
+</div>
+
+<!-- Владелец -->
+<% if (p.owner) { %>
+<% if (typeof p.owner === 'object' && p.owner.username) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Владелец: <%= p.owner.username %>
+</p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Владелец: ID <%= p.owner %>
+</p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
+⚠️ Владелец не указан (создано админом)
+</p>
+<% } %>
+
+<!-- Категория -->
+<% if (categories && p.category) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+📁 <%= categories[p.category] || p.category %>
+</p>
+<% } %>
+
+<div class="product-actions admin-card-actions">
+<form method="POST" action="/admin/products/<%= p.id %>/toggle-visibility" onsubmit="return confirm('Изменить видимость этой карточки?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+<button type="submit" class="btn small status-<%= p.status %>">
+<%= p.status === 'approved' ? 'Заблокировать' : 'Разблокировать' %>
+</button>
+</form>
+
+<a class="btn small outline" href="/admin/products/<%= p.id %>/edit">✏️ Редактировать</a>
+
+<form method="POST" action="/admin/products/<%= p.id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+<button type="submit" class="btn small outline">🗑️ Удалить</button>
+</form>
+
+<% if (p.link) { %>
+<a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">🔗 Ссылка</a>
+<% } %>
+<% if (p.video_url) { %>
+<button type="button" class="btn small outline" data-video="<%= p.video_url %>">Видео</button>
+<% } %>
+</div>
+
+<!-- Рейтинг (только отображение) -->
+<div class="product-rating" data-id="<%= p.id %>" style="margin-top:10px;">
+<button class="btn icon" type="button" disabled aria-label="Лайк">▲</button>
+<span class="result"><%= (p.likes || 0) - (p.dislikes || 0) %></span>
+<button class="btn icon" type="button" disabled aria-label="Дизлайк">▼</button>
+<span class="votes">(<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)</span>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Пока нет товаров</p>
+<% } %>
+</section>
+
+<!-- Каталог услуг -->
+<section class="section">
+<div class="section-header">
+<h2>Каталог услуг</h2>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+Всего: <%= services ? services.length : 0 %>
+</span>
+</div>
+
+<% if (services && services.length) { %>
+<div class="product-grid">
+<% services.forEach(s => { %>
+<div class="product-card status-<%= s.status || 'pending' %>">
+<h3 class="product-title"><%= s.name %></h3>
+<%- include('partials/admin-card-images', { item: s }) %>
+
+<div class="product-bottom">
+<!-- Статус карточки -->
+<div style="text-align:center;margin-bottom:10px;">
+<% if (s.status === "pending") { %>
+<span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⏳ На модерации
+</span>
+<% } else if (s.status === "approved") { %>
+<span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+✅ Опубликовано
+</span>
+<% } else if (s.status === "rejected") { %>
+<span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+❌ Заблокировано
+</span>
+<% } else { %>
+<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
+⚠️ Без статуса
+</span>
+<% } %>
+</div>
+
+<p class="product-desc"><%= s.description || "—" %></p>
+<div class="row" style="justify-content:center; gap:8px;">
+<span class="muted">Цена:</span>
+<strong class="price"><%= s.price %></strong>
+</div>
+
+<!-- Владелец -->
+<% if (s.owner) { %>
+<% if (typeof s.owner === 'object' && s.owner.username) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Владелец: <%= s.owner.username %>
+</p>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+👤 Владелец: ID <%= s.owner %>
+</p>
+<% } %>
+<% } else { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
+⚠️ Владелец не указан (создано админом)
+</p>
+<% } %>
+
+<!-- Категория -->
+<% if (categories && s.category) { %>
+<p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
+📁 <%= categories[s.category] || s.category %>
+</p>
+<% } %>
+
+<div class="product-actions admin-card-actions">
+<form method="POST" action="/admin/services/<%= s.id %>/toggle-visibility" onsubmit="return confirm('Изменить видимость этой карточки?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+<button type="submit" class="btn small status-<%= s.status %>">
+<%= s.status === 'approved' ? 'Заблокировать' : 'Разблокировать' %>
+</button>
+</form>
+
+<a class="btn small outline" href="/admin/services/<%= s.id %>/edit">✏️ Редактировать</a>
+
+<form method="POST" action="/admin/services/<%= s.id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
+<input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
+<button type="submit" class="btn small outline">🗑️ Удалить</button>
+</form>
+
+<% if (s.link) { %>
+<a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">🔗 Ссылка</a>
+<% } %>
+<% if (s.video_url) { %>
+<button type="button" class="btn small outline" data-video="<%= s.video_url %>">Видео</button>
+<% } %>
+</div>
+
+<!-- Рейтинг (только отображение) -->
+<div class="product-rating" data-id="<%= s.id %>" style="margin-top:10px;">
+<button class="btn icon" type="button" disabled aria-label="Лайк">▲</button>
+<span class="result"><%= (s.likes || 0) - (s.dislikes || 0) %></span>
+<button class="btn icon" type="button" disabled aria-label="Дизлайк">▼</button>
+<span class="votes">(<%= (s.likes || 0) + (s.dislikes || 0) %> голосов)</span>
+</div>
+</div>
+</div>
+<% }) %>
+</div>
+<% } else { %>
+<p class="empty-state">Пока нет услуг</p>
+<% } %>
+</section>
+
+</main>
+
+<footer class="footer">
+  <p></p>
+</footer>
+
+<!-- Модальное окно для отклонения -->
+<dialog id="rejectModal" class="reject-dialog">
+  <form id="rejectForm" method="POST">
+    <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
+    <h3 id="rejectModalTitle">Отклонить карточку</h3>
+    <textarea name="rejectionReason" placeholder="Причина отклонения" rows="4" required></textarea>
+    <textarea name="adminComment" placeholder="Комментарий администратора (необязательно)" rows="2"></textarea>
+    <div class="reject-dialog-actions">
+      <button type="submit" class="btn">Отклонить</button>
+      <button type="button" class="btn outline" data-close-reject>Отмена</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- FIX: Полноэкранный overlay для YouTube видео -->
+<div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
+<div class="video-overlay-container">
+<button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
+<div class="video-overlay-iframe-container" id="videoIframeContainer">
+<!-- FIX: iframe создается динамически по клику -->
+</div>
+</div>
+</div>
+
+
+<!-- Передаем информацию о доступности Socket.IO на клиент -->
+<!-- Bootstrap script for safe EJS → JS data transfer -->
+ <script src="/utils/bootstrap.js?v=1.0.3"></script>
+  <script>
+    window.AppBootstrap.init({
+      isAuth: true,
+      isAdmin: true,
+      socketIoAvailable: typeof socket_io_available !== 'undefined' ? socket_io_available : false,
+      userRole: typeof userRole !== 'undefined' ? userRole : 'admin',
+      userId: <%- JSON.stringify(typeof user !== 'undefined' && user && (user.id || user._id) ? String(user.id || user._id) : '') %>,
+      csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : ''
+    });
+  </script>
+
+  <script src="/script.js?v=1.1.3"></script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.__ADMIN_BOOTSTRAP_DONE) return;
+    window.__ADMIN_BOOTSTRAP_DONE = true;
+
+    const CSRF_TOKEN = <%- JSON.stringify(csrfToken ? String(csrfToken) : '') %>;
+
+    async function postJSON(url, data) {
+      const payload = Object.assign({ _csrf: CSRF_TOKEN }, data || {});
+      const res = await fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-CSRF-Token': CSRF_TOKEN
+        },
+        body: JSON.stringify(payload)
+      });
+      const text = await res.text();
+      let json = {};
+      try { json = text ? JSON.parse(text) : {}; } catch (e) { json = {}; }
+      return { ok: res.ok, status: res.status, json: json, text: text };
+    }
+
+    const logoutForm = document.getElementById('logoutForm');
+    if (logoutForm) {
+      logoutForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm('Вы уверены, что хотите выйти?')) return;
+        try {
+          const csrf = (typeof CSRF_TOKEN !== 'undefined' && CSRF_TOKEN)
+            || document.querySelector('input[name="_csrf"]')?.value
+            || '';
+          const res = await fetch('/logout', {
+            method: 'POST',
+            headers: {
+              'X-CSRF-Token': csrf,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: '_csrf=' + encodeURIComponent(csrf)
+          });
+          if (res.ok) {
+            window.location.href = '/';
+          }
+        } catch (err) {
+          window.location.href = '/';
+        }
+      });
+    }
+
+    document.querySelectorAll('button[data-video]').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var url = btn.getAttribute('data-video');
+        if (!url) return;
+        if (typeof window.openVideoOverlay === 'function') {
+          window.openVideoOverlay(url);
+          return;
+        }
+        var overlay = document.getElementById('videoOverlay');
+        var box = document.getElementById('videoIframeContainer');
+        if (!url || !overlay || !box) return;
+        var id = null;
+        var m = url.match(/[?&]v=([^&]+)/) || url.match(/youtu\.be\/([^?&/]+)/) || url.match(/\/embed\/([^?&/]+)/) || url.match(/\/shorts\/([^?&/]+)/);
+        if (m) id = m[1];
+        box.innerHTML = '';
+        var iframe = document.createElement('iframe');
+        if (id) {
+          iframe.src = 'https://www.youtube.com/embed/' + encodeURIComponent(id) + '?rel=0&modestbranding=1&playsinline=1&origin=' + encodeURIComponent(window.location.origin);
+          iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+          iframe.referrerPolicy = 'strict-origin-when-cross-origin';
+        } else {
+          iframe.src = url;
+        }
+        iframe.setAttribute('allow', 'accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen');
+        iframe.setAttribute('allowfullscreen', '');
+        iframe.style.cssText = 'position:absolute;left:0;top:0;width:100%;height:100%;border:0;';
+        box.appendChild(iframe);
+        overlay.classList.add('show');
+        overlay.style.display = 'flex';
+        overlay.setAttribute('aria-hidden', 'false');
+      });
+    });
+
+    const approveBtns = document.querySelectorAll('.approve-btn');
+    approveBtns.forEach(function(btn) {
+      btn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        if (!confirm('Одобрить эту карточку?')) return;
+        try {
+          const itemType = btn.getAttribute('data-type') || 'product';
+          const endpoint = '/admin/' + itemType + 's/' + id + '/approve';
+
+          const result = await postJSON(endpoint);
+          if (result.json.success) {
+            alert('Карточка одобрена!');
+            location.reload();
+          } else {
+            alert('Ошибка: ' + (result.json.message || ('HTTP ' + result.status)));
+          }
+        } catch (err) {
+          alert('Ошибка сети: ' + err.message);
+        }
+      });
+    });
+
+    const toggleBtns = document.querySelectorAll('.toggle-visibility-btn');
+    toggleBtns.forEach(function(btn) {
+      btn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.getAttribute('data-id');
+        const currentStatus = btn.getAttribute('data-status');
+        const itemType = btn.getAttribute('data-type') || 'product';
+        const action = (currentStatus === 'approved' || currentStatus === 'published') ? 'заблокировать' : 'разблокировать';
+        if (!confirm('Вы уверены, что хотите ' + action + ' эту карточку?')) return;
+
+        try {
+          const endpoint = '/admin/' + itemType + 's/' + id + '/toggle-visibility';
+          const result = await postJSON(endpoint);
+          if (result.json.success) {
+            alert(result.json.message || 'Статус карточки изменен');
+            location.reload();
+          } else {
+            alert('Ошибка: ' + (result.json.message || ('HTTP ' + result.status)));
+          }
+        } catch (err) {
+          alert('Ошибка сети: ' + err.message);
+        }
+      });
+    });
+
+    const rejectModal = document.getElementById('rejectModal');
+    const rejectForm = document.getElementById('rejectForm');
+
+    document.querySelectorAll('.reject-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!rejectModal || !rejectForm) return;
+        const id = btn.getAttribute('data-id');
+        const itemType = btn.getAttribute('data-type') === 'service' ? 'services' : 'products';
+        rejectForm.action = '/admin/' + itemType + '/' + id + '/reject';
+        const title = document.getElementById('rejectModalTitle');
+        if (title) title.textContent = 'Отклонить карточку';
+        if (typeof rejectModal.showModal === 'function') {
+          if (!rejectModal.open) rejectModal.showModal();
+        } else {
+          rejectModal.style.display = 'block';
+        }
+      });
+    });
+
+    const closeRejectBtn = document.querySelector('[data-close-reject]');
+    if (closeRejectBtn) {
+      closeRejectBtn.addEventListener('click', function() {
+        if (rejectModal && typeof rejectModal.close === 'function') rejectModal.close();
+        else if (rejectModal) rejectModal.style.display = 'none';
+        if (rejectForm) rejectForm.reset();
+      });
+    }
+  });
+  </script>
+<style>
+.moderation-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+.moderation-thumb {
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(31,138,90,0.35);
+}
+.moderation-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.status-approved {
+border: 2px solid #4caf50;
+}
+.status-rejected {
+opacity: 0.7;
+border: 2px solid #f44336;
+}
+.status-pending {
+border: 2px solid #ff9800;
+}
+
+/* Status styles for toggle buttons */
+.toggle-visibility-btn.status-approved {
+background:#f44336;
+color:#fff;
+}
+.toggle-visibility-btn.status-rejected {
+background:#4caf50;
+color:#fff;
+}
+.toggle-visibility-btn.status-pending {
+background:#4caf50;
+color:#fff;
+}
+
+.modal {
+display: none;
+position: fixed;
+z-index: 2000;
+left: 0;
+top: 0;
+width: 100%;
+height: 100%;
+background-color: rgba(0,0,0,0.8);
+}
+.modal-content {
+background-color: #1a1a1a;
+margin: 5% auto;
+padding: 20px;
+border: 1px solid #444;
+border-radius: 12px;
+width: 90%;
+max-width: 600px;
+position: relative;
+}
+.close {
+color: #aaa;
+float: right;
+font-size: 28px;
+font-weight: bold;
+cursor: pointer;
+background: none;
+border: none;
+position: absolute;
+right: 15px;
+top: 10px;
+}
+.close:hover {
+  color: #fff;
+}
+
+.reject-dialog {
+  border: none;
+  border-radius: 12px;
+  padding: 22px;
+  max-width: 480px;
+  width: calc(100% - 32px);
+  background: #122018;
+  color: #fff;
+}
+.reject-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.75);
+}
+.reject-dialog textarea {
+  width: 100%;
+  margin: 8px 0;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #2b2b2b;
+  color: #fff;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.reject-dialog-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+</style>
+
+</body>
+</html>

@@ -1,0 +1,212 @@
+{
+  "title": "Frequently asked questions",
+  "intro": "A complete guide to Albamount: catalog, account, publishing, ALBA, chat, and rules.",
+  "updated": "Updated 5 September 2026",
+  "searchPlaceholder": "Search questions…",
+  "empty": "Nothing found. Try other words or contact us.",
+  "toc": "Sections",
+  "openAll": "Open all",
+  "closeAll": "Close all",
+  "contactCta": "Didn’t find an answer — contact us",
+  "rulesCta": "Publication rules",
+  "groups": [
+    {
+      "id": "about",
+      "title": "About the site",
+      "items": [
+        {
+          "q": "What is Albamount?",
+          "a": "Albamount is a catalog of Buy/Sell listings and services. It is not a social feed: each card shows photos, price, description, and the author’s contacts without endless scrolling."
+        },
+        {
+          "q": "What is the difference between Services and Buy/Sell?",
+          "a": "Services are offers from providers. Buy/Sell is goods and buy-or-sell listings. The three main tabs at the bottom are Services, Buy/Sell, and Contact us."
+        },
+        {
+          "q": "Do I need an account to browse?",
+          "a": "No. The catalog, search, filters, photos, videos, and descriptions are public. You need an account to publish cards and write in chat."
+        },
+        {
+          "q": "Which languages are supported?",
+          "a": "Russian, English, Kazakh, and Chinese. Switch language in the header; the choice is saved in your browser."
+        }
+      ]
+    },
+    {
+      "id": "account",
+      "title": "Account and sign-in",
+      "items": [
+        {
+          "q": "How do I register?",
+          "a": "Tap Sign up, enter a nickname, email, password, and account type. Confirm the email we send — without that you cannot create cards."
+        },
+        {
+          "q": "Which account type should I choose?",
+          "a": "Buy/Sell is for product listings only. Services is for services only. The type is set at registration and controls what you can publish. One account cannot publish both."
+        },
+        {
+          "q": "I did not get the confirmation email.",
+          "a": "Check Spam. You can resend the email from the verification status page. If it still does not arrive, write to us via Contact us."
+        },
+        {
+          "q": "How do I open My account?",
+          "a": "Use Sign in in the header with your nickname and password. The cabinet has your cards, ALBA balance, and referral code."
+        },
+        {
+          "q": "I forgot my password. Can I reset it?",
+          "a": "There is no self-service password reset yet. Contact us through the form and include your nickname and account email."
+        }
+      ]
+    },
+    {
+      "id": "catalog",
+      "title": "Catalog, search, and cards",
+      "items": [
+        {
+          "q": "How do I find a listing?",
+          "a": "Use search and Filters: country, city, hashtag, and price range. Categories have their own button. Reset returns the full list for that section."
+        },
+        {
+          "q": "What does a card show?",
+          "a": "Up to 5 photos, price, author contacts, and optional video or link. The i icon opens the full description. Chat is the discussion for that card."
+        },
+        {
+          "q": "What do the ▲ and ▼ arrows mean?",
+          "a": "They rate the card. Guests can vote once; the choice is stored in the browser. Signed-in users vote from their account."
+        },
+        {
+          "q": "Why is my card missing from the catalog?",
+          "a": "It may be pending moderation, rejected, expired, or removed by an admin. Check the status in My account."
+        }
+      ]
+    },
+    {
+      "id": "publish",
+      "title": "Publishing cards",
+      "items": [
+        {
+          "q": "How do I create a card?",
+          "a": "My account → Create card. You need a title, description, category, country and city, at least one hashtag, contacts, and at least one photo. Video and a link are optional. The card then goes to moderation."
+        },
+        {
+          "q": "Is the first card free?",
+          "a": "Yes. The first card of your type (product or service) is free. Further cards require a purchased ALBA entitlement."
+        },
+        {
+          "q": "How long does a card stay in the catalog?",
+          "a": "A free card stays 7 days after moderator approval. An ALBA card stays 1 calendar month. Then it is taken off the catalog."
+        },
+        {
+          "q": "Can I edit a card after approval?",
+          "a": "Yes, free of charge for 24 hours after the first approval. After that, changes require a new card."
+        },
+        {
+          "q": "How do I extend a listing?",
+          "a": "In My account tap Allow ALBA auto-renew on the card: when the term ends, 30 ALBA are charged if the balance covers it, and the listing stays live for another month. If auto-renew is off or there is not enough ALBA, the card is taken down; then use Renew with ALBA — a new paid publication with moderation."
+        },
+        {
+          "q": "How many photos, and what size?",
+          "a": "Up to 5 images. They are compressed in the browser before upload. A file must be at most 20 MB before compression. Use your own photos or material you have rights to."
+        },
+        {
+          "q": "How do I add a video?",
+          "a": "Paste a video URL (usually YouTube). A review button appears on the card."
+        },
+        {
+          "q": "Why are country, city, and hashtags required?",
+          "a": "They power search and filters. Country and city are required, plus at least one hashtag: type a word such as repair and tap Add. You can add up to 15 hashtags."
+        },
+        {
+          "q": "Can I delete a card?",
+          "a": "Yes. Use Delete on your card in My account. It then disappears from the catalog."
+        }
+      ]
+    },
+    {
+      "id": "alba",
+      "title": "ALBA and card rights",
+      "items": [
+        {
+          "q": "What is ALBA?",
+          "a": "Albamount’s internal unit. It pays for extra card rights and republication. One entitlement costs 30 ALBA."
+        },
+        {
+          "q": "How do I get ALBA?",
+          "a": "Invite a friend with your referral link (usually 10 ALBA for you and 10 for them) or receive a grant from the administration. There is no bank-card checkout on the site: entitlements are bought from your ALBA balance in My account."
+        },
+        {
+          "q": "How do I buy a card right?",
+          "a": "In My account open the ALBA balance and buy a right for your card type. Then create a new card or republish an expired one."
+        },
+        {
+          "q": "Do I get ALBA back if a card is rejected?",
+          "a": "Yes, if a paid card is still pending and a moderator rejects it, 30 ALBA is returned to the balance. After a card is published, taking it down or blocking it does not refund ALBA."
+        }
+      ]
+    },
+    {
+      "id": "referral",
+      "title": "Referrals",
+      "items": [
+        {
+          "q": "How do I invite a friend?",
+          "a": "Copy your referral link or code in My account and send it. They enter the code at registration."
+        },
+        {
+          "q": "What is the referral bonus?",
+          "a": "Usually 10 ALBA for you and 10 ALBA for the new user after a successful sign-up. The exact amount is shown in My account."
+        }
+      ]
+    },
+    {
+      "id": "chat",
+      "title": "Chat",
+      "items": [
+        {
+          "q": "How do I message the card author?",
+          "a": "Use Chat on the card. Guests can read. Writing requires sign-in. A message can be up to 1000 characters."
+        },
+        {
+          "q": "What does the red badge on Chat or My account mean?",
+          "a": "Unread messages on cards you own or have already commented on. Open the chat to clear the count. Guests do not see the badge."
+        },
+        {
+          "q": "Why don’t I see my message immediately?",
+          "a": "Messages are saved on the server. An open chat updates on send and when you reopen it. Refresh the page if the network dropped."
+        }
+      ]
+    },
+    {
+      "id": "rules",
+      "title": "Rules and moderation",
+      "items": [
+        {
+          "q": "What is forbidden to publish?",
+          "a": "Other people’s photos or brands without rights, alcohol, tobacco, vapes and nicotine, indecent or violent content, fraud, and banned goods. The full text is in Publication rules in My account."
+        },
+        {
+          "q": "What happens if I break the rules?",
+          "a": "The card can be rejected or removed. Repeated or serious breaches can lead to an account block. If a paid card is rejected while still pending, ALBA is returned; published or blocked cards are not refunded."
+        },
+        {
+          "q": "How long does moderation take?",
+          "a": "It depends on the queue. Check Pending, Published, or Rejected in My account. If a rejection looks wrong, contact us."
+        }
+      ]
+    },
+    {
+      "id": "support",
+      "title": "Support",
+      "items": [
+        {
+          "q": "How do I contact the team?",
+          "a": "Open Contact us: name, email, and message. Pick a subject so we can route it faster. The message goes straight to an administrator."
+        },
+        {
+          "q": "Where is My account on a phone?",
+          "a": "After sign-in, the cabinet button is in the header. Services / Buy/Sell / Contact us are in the bottom bar."
+        }
+      ]
+    }
+  ]
+}

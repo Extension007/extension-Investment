@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= t('auth.verifyEmailSuccess') %> - Albamount</title>
+  <link rel="stylesheet" href="/styles.css?v=1.3.9">
+</head>
+<body>
+  <div id="bg-animated" aria-hidden="true"></div>
+  <header class="main-header">
+    <div class="container header-inner">
+      <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
+      <div class="header-actions">
+        <%- include('partials/lang-switcher') %>
+        <a class="btn outline" href="/"><%= t('common.back') %></a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="container verification-page">
+      <h1 class="page-title"><%= typeof alreadyVerified !== 'undefined' && alreadyVerified ? t('auth.verifyEmailSuccess') : '✅ ' + t('auth.verifyEmailSuccess') %></h1>
+      <p class="message">
+        <%= typeof message !== 'undefined' && message
+          ? message
+          : t('auth.verifyEmailSuccess') %>
+      </p>
+      <% if (typeof email !== 'undefined' && email) { %>
+        <p class="message" style="opacity:0.85;">Email: <strong><%= email %></strong></p>
+      <% } %>
+
+      <div class="actions">
+        <a href="/user/login" class="btn primary"><%= t('auth.goLogin') %></a>
+        <a href="/cabinet" class="btn outline"><%= t('nav.cabinet') %></a>
+        <a href="/" class="btn outline"><%= t('common.back') %></a>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/mobile-tabs') %>
+</body>
+</html>
