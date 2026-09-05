@@ -11,7 +11,9 @@
     "cabinetTitle": "个人中心",
     "rulesTitle": "发布规则 — Albamount",
     "faqTitle": "常见问题 — Albamount",
-    "faqDescription": "Albamount 帮助：注册、发布卡片、ALBA、聊天、搜索与规则。"
+    "faqDescription": "Albamount 帮助：注册、发布卡片、ALBA、聊天、搜索与规则。",
+    "appTitle": "下载应用 — Albamount",
+    "appDescription": "安装 Albamount Android 应用，在手机上使用同一目录。"
   },
   "nav": {
     "login": "登录",
@@ -24,6 +26,17 @@
     "catalog": "目录",
     "language": "语言",
     "faq": "FAQ"
+  },
+  "appDownload": {
+    "title": "Albamount Android 应用",
+    "lead": "与网站相同：目录、账户、语言和管理功能。",
+    "button": "下载 APK",
+    "version": "版本 {{version}} · Android 8+",
+    "howTitle": "如何安装",
+    "step1": "在手机上打开此页面并点击「下载 APK」。",
+    "step2": "如系统提示，允许从此来源安装。",
+    "step3": "打开文件并安装 Albamount。",
+    "shareLabel": "分享链接："
   },
   "intro": {
     "title": "目录，而不是信息流",

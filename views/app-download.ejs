@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <title><%= t('meta.appTitle') %></title>
+  <%- include('partials/seo-head', {
+    canonicalPath: '/app',
+    seoTitle: t('meta.appTitle'),
+    seoDescription: t('meta.appDescription')
+  }) %>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=1.3.9">
+  <link rel="stylesheet" href="/header-tabs.css?v=1.1.3">
+  <style>
+    .app-download-page {
+      max-width: 560px;
+      margin: 0 auto;
+      color: #eee;
+      text-align: center;
+      padding: 8px 4px 40px;
+    }
+    .app-download-page h1 {
+      margin: 0 0 10px;
+      font-size: 1.7rem;
+      font-weight: 700;
+    }
+    .app-download-page .lead {
+      margin: 0 0 28px;
+      line-height: 1.65;
+      opacity: 0.88;
+    }
+    .app-download-page .btn-download {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 12px 28px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .app-download-page .meta {
+      margin: 18px 0 0;
+      font-size: 0.9rem;
+      opacity: 0.65;
+    }
+    .app-download-page .steps {
+      margin: 36px 0 0;
+      text-align: left;
+      line-height: 1.7;
+      opacity: 0.9;
+    }
+    .app-download-page .steps h2 {
+      margin: 0 0 10px;
+      font-size: 1.1rem;
+    }
+    .app-download-page .steps ol {
+      margin: 0;
+      padding-left: 1.25rem;
+    }
+    .app-download-page .share-box {
+      margin-top: 28px;
+      padding: 14px 16px;
+      border: 1px solid rgba(31, 138, 90, 0.35);
+      border-radius: 12px;
+      background: rgba(10, 31, 22, 0.55);
+      text-align: left;
+      word-break: break-all;
+    }
+    .app-download-page .share-box label {
+      display: block;
+      font-size: 0.85rem;
+      opacity: 0.75;
+      margin-bottom: 6px;
+    }
+    .app-download-page .share-box code {
+      font-size: 0.95rem;
+      color: #c8f5d8;
+    }
+  </style>
+</head>
+<body>
+  <%- include('partials/header') %>
+  <main class="container" style="padding-top: 100px; padding-bottom: 100px;">
+    <div class="app-download-page">
+      <h1><%= t('appDownload.title') %></h1>
+      <p class="lead"><%= t('appDownload.lead') %></p>
+      <a class="btn btn-download" href="/downloads/albamount.apk" download="albamount.apk">
+        <%= t('appDownload.button') %>
+      </a>
+      <p class="meta"><%= t('appDownload.version', { version: appVersion || '2.0.0' }) %></p>
+
+      <div class="steps">
+        <h2><%= t('appDownload.howTitle') %></h2>
+        <ol>
+          <li><%= t('appDownload.step1') %></li>
+          <li><%= t('appDownload.step2') %></li>
+          <li><%= t('appDownload.step3') %></li>
+        </ol>
+      </div>
+
+      <div class="share-box">
+        <label><%= t('appDownload.shareLabel') %></label>
+        <code>https://www.albamount.xyz/app</code>
+      </div>
+    </div>
+  </main>
+  <%- include('partials/mobile-tabs') %>
+  <script src="/script.js?v=1.4.3" defer></script>
+</body>
+</html>

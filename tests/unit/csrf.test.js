@@ -2,7 +2,9 @@ const {
   isMultipartRequest,
   readCsrfToken,
   shouldDeferMultipartCsrf,
-  requestPath
+  requestPath,
+  shouldSkipCsrf,
+  isMobileApiPath
 } = require('../../middleware/csrf');
 
 describe('CSRF helpers', () => {
@@ -58,5 +60,20 @@ describe('CSRF helpers', () => {
       body: {},
       query: {}
     })).toBe(false);
+  });
+});
+
+describe('mobile CSRF skip', () => {
+  test('skips CSRF for /api/mobile writes', () => {
+    expect(isMobileApiPath({ originalUrl: '/api/mobile/v1/auth/login' })).toBe(true);
+    expect(shouldSkipCsrf({ originalUrl: '/api/mobile/v1/auth/login' })).toBe(true);
+    expect(shouldSkipCsrf({ originalUrl: '/api/mobile/v1/cards/4/vote' })).toBe(true);
+  });
+
+  test('does not skip CSRF for website or other APIs', () => {
+    expect(shouldSkipCsrf({ originalUrl: '/user/login' })).toBe(false);
+    expect(shouldSkipCsrf({ originalUrl: '/api/rating/1' })).toBe(false);
+    expect(shouldSkipCsrf({ originalUrl: '/api/mobileevil' })).toBe(false);
+    expect(shouldSkipCsrf({ originalUrl: '/cabinet/product/7/auto-renew' })).toBe(false);
   });
 });

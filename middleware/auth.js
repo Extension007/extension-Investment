@@ -134,6 +134,8 @@ async function getUserFromRequestAsync(req) {
 }
 
 function wantsJsonResponse(req) {
+  const { isMobileApiPath } = require("../utils/mobileApi");
+  if (isMobileApiPath(req)) return true;
   return req.xhr || req.get("accept")?.includes("application/json");
 }
 

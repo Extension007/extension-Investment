@@ -8,7 +8,8 @@ function handleValidationErrors(req, res, next) {
   if (!errors.isEmpty()) {
     const errorMessages = errors.array().map(e => ({ field: e.param || e.path, reason: e.msg }));
     console.error('[ValidationError] path=%s errors=%s', req.path, JSON.stringify(errorMessages));
-    const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+    const { isMobileApiPath } = require("../utils/mobileApi");
+    const wantsJson = isMobileApiPath(req) || req.xhr || req.get("accept")?.includes("application/json");
     if (wantsJson) {
       return res.status(400).json({
         success: false,

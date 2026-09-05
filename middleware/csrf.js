@@ -1,4 +1,5 @@
 const csrf = require('csurf');
+const { shouldSkipCsrf, isMobileApiPath } = require('../utils/mobileApi');
 
 function csrfCookieOptions() {
   const isProduction = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
@@ -74,8 +75,11 @@ const csrfProtection = csrf({
 
 // Multipart bodies are not parsed until multer. Global csurf therefore cannot see
 // hidden _csrf on native form posts. Defer only those upload routes that verify
-// again after multer — never skip CSRF for login/logout/API.
+// again after multer. Native /api/mobile clients use Bearer JWT instead of CSRF.
 function globalCsrfProtection(req, res, next) {
+  if (shouldSkipCsrf(req)) {
+    return next();
+  }
   if (shouldDeferMultipartCsrf(req)) {
     return next();
   }
@@ -99,5 +103,7 @@ module.exports = {
   isMultipartRequest,
   readCsrfToken,
   shouldDeferMultipartCsrf,
-  requestPath
+  requestPath,
+  shouldSkipCsrf,
+  isMobileApiPath
 };

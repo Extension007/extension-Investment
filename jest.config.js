@@ -1,4 +1,4 @@
-﻿module.exports = {
+module.exports = {
   verbose: true,
   testTimeout: 30000,
   testEnvironment: 'node',
@@ -14,5 +14,5 @@
     '!jest.config.js'
   ],
   coverageDirectory: 'coverage',
-  testPathIgnorePatterns: ['/node_modules/']
+  testPathIgnorePatterns: ['/node_modules/', '/apps/']
 };

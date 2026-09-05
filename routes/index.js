@@ -74,6 +74,9 @@ router.get("/lang/:code", (req, res) => {
 // Авторизация
 router.use("/", require("./auth"));
 
+// Mobile JSON API (must be before /api so /api/mobile is not swallowed)
+router.use("/api/mobile", require("./mobile"));
+
 // API
 router.use("/api", require("./api"));
 
@@ -106,6 +109,22 @@ router.get("/faq", (req, res) => {
     faqDoc,
     faqJsonLd: buildFaqJsonLd(faqDoc),
     activeTab: "faq",
+    isAuth,
+    isAdmin: userRole === "admin",
+    isUser: userRole === "user",
+    userRole,
+    user: req.user || null,
+    csrfToken: res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : "")
+  });
+});
+
+// Публичная страница скачивания Android-приложения (ссылка для шаринга)
+router.get(["/app", "/download", "/get-app"], (req, res) => {
+  const isAuth = Boolean(req.user);
+  const userRole = req.user?.role || null;
+  res.render("app-download", {
+    activeTab: "app",
+    appVersion: "2.0.1",
     isAuth,
     isAdmin: userRole === "admin",
     isUser: userRole === "user",

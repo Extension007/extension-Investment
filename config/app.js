@@ -137,6 +137,7 @@ if (!isVercel && USE_POSTGRES) {
 }
 
 const { globalCsrfProtection, csrfToken, shouldDeferMultipartCsrf } = require("../middleware/csrf");
+const { shouldSkipOriginCheck } = require("../utils/mobileApi");
 app.use(globalCsrfProtection);
 app.use(csrfToken);
 
@@ -146,6 +147,9 @@ app.use((req, res, next) => {
     return next();
   }
   if (csrfSafeMethods.has(req.method)) {
+    return next();
+  }
+  if (shouldSkipOriginCheck(req)) {
     return next();
   }
   if (shouldDeferMultipartCsrf(req)) {

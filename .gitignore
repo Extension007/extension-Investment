@@ -1,4 +1,4 @@
-﻿node_modules/
+node_modules/
 .env
 .env.local
 .env.*.local
@@ -21,3 +21,15 @@ secrets/
 .vercel
 .env*
 !.env.example
+
+# Android
+apps/android/.gradle/
+apps/android/build/
+apps/android/app/build/
+apps/android/local.properties
+apps/android/.idea/
+*.apk
+*.aab
+!public/downloads/*.apk
+*.iml
+apps/android/keystore/

@@ -1,4 +1,4 @@
-﻿const { Op } = require("sequelize");
+const { Op } = require("sequelize");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const { sendVerificationEmail } = require("../services/emailVerificationService");
@@ -6,17 +6,17 @@ const { notifyAdmin } = require("../services/adminNotificationService");
 const logger = require("../utils/logger");
 const { isUniqueConstraintError, getDuplicateFieldMessage } = require("../utils/sequelizeErrors");
 
-exports.register = async (req, res) => {
+async function performRegister(req) {
   try {
     const { username, email, password } = req.body;
     const { normalizeAccountType } = require("../utils/accountType");
     const accountType = normalizeAccountType(req.body.accountType);
     if (!email || !password) {
       logger.error({ msg: 'register_missing_fields', email: !!email, password: !!password });
-      return res.status(400).json({ success: false, message: req.t("api.fieldsRequired", "Please fill in required fields") });
+      return { status: 400, body: { success: false, message: req.t("api.fieldsRequired", "Please fill in required fields") } };
     }
     if (!accountType) {
-      return res.status(400).json({ success: false, message: req.t("auth.accountType", "Select an account type") });
+      return { status: 400, body: { success: false, message: req.t("auth.accountType", "Select an account type") } };
     }
 
     const orConditions = [{ email }];
@@ -30,7 +30,7 @@ exports.register = async (req, res) => {
 
     if (existingUser) {
       logger.warn({ msg: 'register_duplicate', email: existingUser.email === email });
-      return res.status(400).json({ success: false, message: req.t("js.registerError", "Registration error") });
+      return { status: 400, body: { success: false, message: req.t("js.registerError", "Registration error") } };
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -83,35 +83,51 @@ exports.register = async (req, res) => {
           await User.destroy({ where: { id: user.id } });
         }
         logger.error({ msg: 'verification_email_error', error: emailError.message, stack: emailError.stack });
-        return res.status(500).json({
-          success: false,
-          message: req.t("auth.verifyEmailError", "Could not send verification email. Please try again later.")
-        });
+        return {
+          status: 500,
+          body: {
+            success: false,
+            message: req.t("auth.verifyEmailError", "Could not send verification email. Please try again later.")
+          }
+        };
       }
     } else {
       user.emailVerified = true;
       await user.save();
     }
 
-    return res.status(200).json({
-      success: true,
-      message: req.t("auth.registerDone", "Registration complete. Check your email."),
-      user: {
-        id: user.id,
-        email: user.email,
-        emailVerified: user.emailVerified
+    return {
+      status: 200,
+      body: {
+        success: true,
+        message: req.t("auth.registerDone", "Registration complete. Check your email."),
+        user: {
+          id: user.id,
+          email: user.email,
+          emailVerified: user.emailVerified
+        }
       }
-    });
+    };
   } catch (err) {
     logger.error({ msg: 'register_error', error: err.message, stack: err.stack });
     if (isUniqueConstraintError(err)) {
-      return res.status(400).json({
-        success: false,
-        message: getDuplicateFieldMessage(err)
-      });
+      return {
+        status: 400,
+        body: {
+          success: false,
+          message: getDuplicateFieldMessage(err)
+        }
+      };
     }
-    return res.status(500).json({ success: false, message: req.t("js.registerError", "Registration error") });
+    return { status: 500, body: { success: false, message: req.t("js.registerError", "Registration error") } };
   }
+}
+
+exports.performRegister = performRegister;
+
+exports.register = async (req, res) => {
+  const result = await performRegister(req);
+  return res.status(result.status).json(result.body);
 };
 
 /**
@@ -146,6 +162,8 @@ async function resolveUser(userId, includeRefresh = true) {
 
   return { user: userPayload, token, cookieOpts, freshUser };
 }
+
+exports.resolveUser = resolveUser;
 
 exports.userLogin = async (req, res) => {
   const { username, password } = req.body;

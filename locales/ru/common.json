@@ -11,7 +11,9 @@
     "cabinetTitle": "Личный кабинет",
     "rulesTitle": "Правила публикации — Albamount",
     "faqTitle": "Частые вопросы — Albamount",
-    "faqDescription": "Ответы по каталогу Albamount: регистрация, публикация карточек, ALBA, чат, поиск и правила."
+    "faqDescription": "Ответы по каталогу Albamount: регистрация, публикация карточек, ALBA, чат, поиск и правила.",
+    "appTitle": "Скачать приложение — Albamount",
+    "appDescription": "Установите Android-приложение Albamount и пользуйтесь тем же каталогом с телефона."
   },
   "nav": {
     "login": "Вход",
@@ -24,6 +26,17 @@
     "catalog": "Каталог",
     "language": "Язык",
     "faq": "FAQ"
+  },
+  "appDownload": {
+    "title": "Albamount для Android",
+    "lead": "Тот же сайт в приложении: каталог, кабинет, языки и админка.",
+    "button": "Скачать APK",
+    "version": "Версия {{version}} · Android 8+",
+    "howTitle": "Как установить",
+    "step1": "Откройте эту страницу на телефоне и нажмите «Скачать APK».",
+    "step2": "Если Android спросит — разрешите установку из этого источника.",
+    "step3": "Откройте файл и установите Albamount.",
+    "shareLabel": "Ссылка для друзей:"
   },
   "intro": {
     "title": "Каталог, а не лента",

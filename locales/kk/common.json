@@ -11,7 +11,9 @@
     "cabinetTitle": "Жеке кабинет",
     "rulesTitle": "Жариялау ережелері — Albamount",
     "faqTitle": "Жиі қойылатын сұрақтар — Albamount",
-    "faqDescription": "Albamount анықтамасы: тіркелу, карточка жариялау, ALBA, чат, іздеу және ережелер."
+    "faqDescription": "Albamount анықтамасы: тіркелу, карточка жариялау, ALBA, іздеу және ережелер.",
+    "appTitle": "Қосымшаны жүктеу — Albamount",
+    "appDescription": "Albamount Android қосымшасын орнатып, телефонда сол каталогты пайдаланыңыз."
   },
   "nav": {
     "login": "Кіру",
@@ -24,6 +26,17 @@
     "catalog": "Каталог",
     "language": "Тіл",
     "faq": "FAQ"
+  },
+  "appDownload": {
+    "title": "Albamount Android қосымшасы",
+    "lead": "Сол сайт қосымшада: каталог, кабинет, тілдер және админ.",
+    "button": "APK жүктеу",
+    "version": "Нұсқа {{version}} · Android 8+",
+    "howTitle": "Қалай орнату керек",
+    "step1": "Бұл бетті телефонда ашып, «APK жүктеу» басыңыз.",
+    "step2": "Android сұраса — осы дереккөзден орнатуға рұқсат беріңіз.",
+    "step3": "Файлды ашып, Albamount орнатыңыз.",
+    "shareLabel": "Бөлісу сілтемесі:"
   },
   "intro": {
     "title": "Каталог, лента емес",

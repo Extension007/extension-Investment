@@ -11,7 +11,9 @@
     "cabinetTitle": "My account",
     "rulesTitle": "Publication rules — Albamount",
     "faqTitle": "FAQ — Albamount",
-    "faqDescription": "Albamount help: accounts, publishing cards, ALBA, chat, search, and rules."
+    "faqDescription": "Albamount help: accounts, publishing cards, ALBA, chat, search, and rules.",
+    "appTitle": "Download the app — Albamount",
+    "appDescription": "Install the Albamount Android app and use the same catalog on your phone."
   },
   "nav": {
     "login": "Sign in",
@@ -24,6 +26,17 @@
     "catalog": "Catalog",
     "language": "Language",
     "faq": "FAQ"
+  },
+  "appDownload": {
+    "title": "Albamount for Android",
+    "lead": "The same site in an app: catalog, account, languages, and admin.",
+    "button": "Download APK",
+    "version": "Version {{version}} · Android 8+",
+    "howTitle": "How to install",
+    "step1": "Open this page on your phone and tap Download APK.",
+    "step2": "Allow install from this source if Android asks.",
+    "step3": "Open the file and install Albamount.",
+    "shareLabel": "Share this link:"
   },
   "intro": {
     "title": "A catalog, not a feed",
