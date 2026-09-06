@@ -150,6 +150,21 @@ const Product = sequelize.define('Product', {
     type: DataTypes.STRING(255),
     allowNull: false
   },
+  currency: {
+    type: DataTypes.STRING(8),
+    allowNull: false,
+    defaultValue: "KZT"
+  },
+  sourceLocale: {
+    type: DataTypes.STRING(8),
+    allowNull: false,
+    defaultValue: "en"
+  },
+  translations: {
+    type: DataTypes.JSONB,
+    allowNull: false,
+    defaultValue: {}
+  },
   link: DataTypes.STRING(1000),
   images: {
     type: DataTypes.JSONB,
@@ -863,6 +878,22 @@ async function refreshDbConnection() {
       if (process.env.NODE_ENV === "production" || process.env.VERCEL) {
         throw schemaErr;
       }
+    }
+    try {
+      await sequelize.query(`
+        ALTER TABLE products
+        ADD COLUMN IF NOT EXISTS currency VARCHAR(8) NOT NULL DEFAULT 'KZT'
+      `);
+      await sequelize.query(`
+        ALTER TABLE products
+        ADD COLUMN IF NOT EXISTS source_locale VARCHAR(8) NOT NULL DEFAULT 'en'
+      `);
+      await sequelize.query(`
+        ALTER TABLE products
+        ADD COLUMN IF NOT EXISTS translations JSONB NOT NULL DEFAULT '{}'::jsonb
+      `);
+    } catch (schemaErr) {
+      console.warn("product currency/translations schema ensure skipped:", schemaErr.message);
     }
     try {
       await sequelize.query(`

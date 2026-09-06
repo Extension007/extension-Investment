@@ -23,7 +23,7 @@
   const itemDescription = item.description || '';
   const itemPrice = item.price != null && String(item.price).trim() !== '' ? String(item.price).trim() : '';
   const priceLabel = (typeof formatPriceDisplay === 'function')
-    ? formatPriceDisplay(itemPrice)
+    ? formatPriceDisplay(itemPrice, item.currency)
     : itemPrice;
   const itemLink = item.link || '';
   const itemVideoUrl = item.video_url || '';

@@ -224,7 +224,13 @@
     "deleteAccountPassword": "Current password",
     "deleteAccountConfirmPlaceholder": "Type DELETE to confirm",
     "deleteAccountButton": "Delete my account forever",
-    "deleteAccountConfirmDialog": "Delete your account and all your data forever?"
+    "deleteAccountConfirmDialog": "Delete your account and all your data forever?",
+    "priceAmountHint": "Amount or text (e.g. 5000 or negotiable)",
+    "currency": "Currency",
+    "previewAndSend": "Preview translations & send",
+    "translationPreviewTitle": "Translation preview",
+    "translationPreviewLead": "Check the auto-translated fields. You can edit them before sending the card to moderation.",
+    "translationConfirm": "Looks good — send to moderation"
   },
   "form": {
     "addProduct": "Add listing",

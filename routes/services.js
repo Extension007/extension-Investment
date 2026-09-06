@@ -99,9 +99,12 @@ async function renderServicesCatalog(req, res) {
       User.count()
     ]);
 
+    const locale = res.locals.locale || req.locale || "en";
+    const { localizeCardList } = require("../services/cardTranslationService");
+
     res.render("services", servicesPageLocals(req, {
-      products,
-      services,
+      products: localizeCardList(products, locale),
+      services: localizeCardList(services, locale),
       visitors: visitors ? visitors.value : 0,
       totalUsers: users,
       selectedCategory: selectedCategoryDisplay,

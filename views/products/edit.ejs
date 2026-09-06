@@ -44,7 +44,15 @@
         
         <input type="text" name="name" value="<%= product.name %>" placeholder="<%= t('cabinet.name') %>" required aria-label="<%= t('cabinet.name') %>">
         <textarea name="description" placeholder="<%= t('cabinet.description') %>" rows="4" aria-label="<%= t('cabinet.description') %>"><%= product.description || '' %></textarea>
-        <input type="text" name="price" value="<%= product.price %>" placeholder="<%= t('cabinet.price') %>" required maxlength="80" aria-label="<%= t('cabinet.price') %>">
+        <input type="text" name="price" value="<%= product.price %>" placeholder="<%= t('cabinet.priceAmountHint') %>" required maxlength="80" aria-label="<%= t('cabinet.price') %>">
+        <label for="currency"><%= t('cabinet.currency') %>:</label>
+        <select id="currency" name="currency" required aria-label="<%= t('cabinet.currency') %>">
+          <% const selectedCurrency = product.currency || 'KZT'; %>
+          <% (typeof CURRENCIES !== 'undefined' ? CURRENCIES : [{ code: 'KZT', symbol: '?' }]).forEach(function(c) { %>
+            <option value="<%= c.code %>" <%= c.code === selectedCurrency ? 'selected' : '' %>><%= c.code %> (<%= c.symbol %>)</option>
+          <% }) %>
+        </select>
+        <input type="hidden" name="sourceLocale" value="<%= product.sourceLocale || (typeof locale !== 'undefined' ? locale : 'en') %>">
         <input type="url" name="link" value="<%= product.link || '' %>" placeholder="<%= t('cabinet.link') %>" aria-label="<%= t('cabinet.link') %>">
         <input type="url" name="video_url" value="<%= product.video_url || '' %>" placeholder="<%= t('cabinet.video') %>" aria-label="<%= t('cabinet.video') %>">
         

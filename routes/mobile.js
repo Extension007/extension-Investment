@@ -60,6 +60,7 @@ function mapCardFields(body = {}) {
     name: body.name,
     description: body.description,
     price: body.price,
+    currency: body.currency,
     link: body.link,
     video_url: body.video_url,
     category: body.category || body.categoryId,
@@ -73,6 +74,8 @@ function mapCardFields(body = {}) {
     region: body.region,
     city: body.city,
     tags: body.tags,
+    sourceLocale: body.sourceLocale || body.source_locale,
+    translations: body.translations,
     current_images: body.current_images,
     image_urls: body.image_urls
   };

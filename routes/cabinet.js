@@ -187,6 +187,31 @@ router.get("/rules", conditionalCsrfToken, requireUser, (req, res) => {
 });
 
 // Пользователь создаёт карточку
+// Предпросмотр автоперевода полей карточки (до модерации)
+router.post("/product/preview-translations", requireUser, productLimiter, conditionalCsrfProtection, async (req, res) => {
+  try {
+    const { buildCardTranslations } = require("../services/cardTranslationService");
+    const sourceLocale = req.body.sourceLocale || req.locale || res.locals.locale || "en";
+    const result = await buildCardTranslations(
+      {
+        name: req.body.name,
+        description: req.body.description,
+        price: req.body.price,
+        tags: req.body.tags,
+        contact_method: req.body.contact_method
+      },
+      sourceLocale
+    );
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    logger.error({ msg: "cabinet_preview_translations", error: err.message });
+    return res.status(err.status || 500).json({
+      success: false,
+      message: err.message || "Не удалось подготовить перевод"
+    });
+  }
+});
+
 router.post("/product", requireUser, productLimiter, mobileOptimization, upload, handleMulterError, conditionalCsrfProtection, validateProduct, async (req, res) => {
   if (!USE_POSTGRES) return res.status(503).json({ success: false, message: "Нет БД" });
   try {
@@ -212,6 +237,7 @@ router.post("/product", requireUser, productLimiter, mobileOptimization, upload,
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
+      currency: req.body.currency,
       link: req.body.link,
       video_url: req.body.video_url,
       category: req.body.category,
@@ -225,6 +251,17 @@ router.post("/product", requireUser, productLimiter, mobileOptimization, upload,
       region: req.body.region,
       city: req.body.city,
       tags: req.body.tags,
+      sourceLocale: req.body.sourceLocale || req.locale || res.locals.locale || "en",
+      translations: (() => {
+        try {
+          if (!req.body.translations) return null;
+          return typeof req.body.translations === "string"
+            ? JSON.parse(req.body.translations)
+            : req.body.translations;
+        } catch (_) {
+          return null;
+        }
+      })(),
       ownerId: getAuthUserId(req.user),
       status: "pending",
       image_urls: imageUrls
@@ -281,11 +318,18 @@ router.post("/product/:id/price", requireUser, conditionalCsrfProtection, valida
      }
 
      const { normalizePrice, formatPriceDisplay } = require('../utils/price');
+     const { normalizeCurrency, DEFAULT_CURRENCY } = require('../utils/currency');
      let normalized;
      try {
        normalized = normalizePrice(req.body.price);
      } catch (err) {
        return res.status(400).json({ success: false, message: err.message || 'Некорректная цена' });
+     }
+     let currency = DEFAULT_CURRENCY;
+     try {
+       if (req.body.currency) currency = normalizeCurrency(req.body.currency);
+     } catch (err) {
+       return res.status(400).json({ success: false, message: err.message || "Некорректная валюта" });
      }
      
      // Check product ownership
@@ -302,11 +346,16 @@ router.post("/product/:id/price", requireUser, conditionalCsrfProtection, valida
      }
 
      await Product.update(
-       { price: normalized },
+       { price: normalized, currency },
        { where: { id: req.params.id } }
      );
      
-     res.json({ success: true, price: normalized, priceDisplay: formatPriceDisplay(normalized) });
+     res.json({
+       success: true,
+       price: normalized,
+       currency,
+       priceDisplay: formatPriceDisplay(normalized, currency)
+     });
    } catch (err) {
      logger.error({ msg: 'cabinet_error', error: err.message, stack: err.stack, path: req.path });
      res.status(500).json({ success: false, message: "Ошибка изменения цены" });
@@ -389,6 +438,7 @@ router.post("/product/:id/edit", requireUser, productLimiter, mobileOptimization
       name: req.body.name,
       description: req.body.description,
       price: req.body.price,
+      currency: req.body.currency,
       link: req.body.link,
       video_url: req.body.video_url,
       category: req.body.category,
@@ -402,6 +452,17 @@ router.post("/product/:id/edit", requireUser, productLimiter, mobileOptimization
       region: req.body.region,
       city: req.body.city,
       tags: req.body.tags,
+      sourceLocale: req.body.sourceLocale || req.locale || res.locals.locale || "en",
+      translations: (() => {
+        try {
+          if (!req.body.translations) return null;
+          return typeof req.body.translations === "string"
+            ? JSON.parse(req.body.translations)
+            : req.body.translations;
+        } catch (_) {
+          return null;
+        }
+      })(),
       current_images: req.body.current_images,
       image_urls: req.body.image_urls
     };

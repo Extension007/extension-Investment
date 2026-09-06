@@ -109,9 +109,12 @@ router.get("/", async (req, res) => {
        }
      });
 
+    const locale = res.locals.locale || req.locale || "en";
+    const { localizeCardList } = require("../services/cardTranslationService");
+
     res.render("index", {
-      products,
-      services,
+      products: localizeCardList(products, locale),
+      services: localizeCardList(services, locale),
       visitorCount,
       userCount,
       page: 1,

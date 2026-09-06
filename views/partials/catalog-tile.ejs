@@ -14,7 +14,7 @@
   const contacts = item.contacts || {};
   const hasContacts = Boolean(contacts.phone || contacts.email || contacts.telegram || contacts.whatsapp || contacts.contact_method);
   const priceLabel = (typeof formatPriceDisplay === 'function')
-    ? formatPriceDisplay(item.price)
+    ? formatPriceDisplay(item.price, item.currency)
     : (item.price ? String(item.price) : '');
   const likes = item.likes || 0;
   const dislikes = item.dislikes || 0;

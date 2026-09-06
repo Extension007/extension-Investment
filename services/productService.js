@@ -8,6 +8,12 @@ const { CATEGORY_KEYS } = require("../config/constants");
 const { processUploadedFiles, deleteProductImages } = require("./imageService");
 const { getAvailableEntitlementsCount, consumeEntitlement } = require("./albaService");
 const { normalizePrice } = require("../utils/price");
+const { normalizeCurrency, DEFAULT_CURRENCY } = require("../utils/currency");
+const {
+  buildCardTranslations,
+  sanitizeStoredTranslations,
+  SUPPORTED_LOCALES
+} = require("./cardTranslationService");
 const { sequelize } = require("../config/database");
 
 async function resolveCategoryData(category) {
@@ -90,6 +96,7 @@ async function createProduct(data, files = [], options = {}) {
     name,
     description,
     price,
+    currency,
     link,
     video_url,
     category,
@@ -106,7 +113,9 @@ async function createProduct(data, files = [], options = {}) {
     country,
     region,
     city,
-    tags
+    tags,
+    sourceLocale,
+    translations
   } = data;
 
   const locationData = validateLocationAndTags(
@@ -146,15 +155,62 @@ async function createProduct(data, files = [], options = {}) {
     throw e;
   }
 
+  let normalizedCurrency = DEFAULT_CURRENCY;
+  try {
+    normalizedCurrency = normalizeCurrency(currency);
+  } catch (err) {
+    const e = new Error(err.message || "Некорректная валюта");
+    e.status = 400;
+    throw e;
+  }
+
+  const resolvedSourceLocale = SUPPORTED_LOCALES.includes(sourceLocale)
+    ? sourceLocale
+    : "en";
+
+  let translationMap = null;
+  if (translations && typeof translations === "object" && Object.keys(translations).length) {
+    translationMap = sanitizeStoredTranslations(translations, resolvedSourceLocale, {
+      name,
+      description,
+      price: normalizedPrice,
+      tags: locationData.tags,
+      contact_method: contacts.contact_method
+    });
+  } else {
+    const built = await buildCardTranslations(
+      {
+        name,
+        description,
+        price: normalizedPrice,
+        tags: locationData.tags,
+        contact_method: contacts.contact_method
+      },
+      resolvedSourceLocale
+    );
+    translationMap = built.translations;
+  }
+
+  const sourceFields = translationMap[resolvedSourceLocale] || {};
+
   const productData = {
-    name: name.trim(),
-    description: description ? description.trim() : "",
-    price: normalizedPrice,
+    name: (sourceFields.name || name).trim(),
+    description: sourceFields.description != null ? sourceFields.description : (description ? description.trim() : ""),
+    price: sourceFields.price || normalizedPrice,
+    currency: normalizedCurrency,
+    sourceLocale: resolvedSourceLocale,
+    translations: translationMap,
     link: link ? link.trim() : "",
     video_url: video_url ? video_url.trim() : "",
     images,
     image_url,
-    contacts,
+    contacts: {
+      ...contacts,
+      contact_method:
+        sourceFields.contact_method != null && String(sourceFields.contact_method).trim() !== ""
+          ? sourceFields.contact_method
+          : contacts.contact_method
+    },
     category: categoryValue,
     categoryId,
     type: typeValue,
@@ -167,7 +223,10 @@ async function createProduct(data, files = [], options = {}) {
     country: locationData.country,
     region: locationData.region,
     city: locationData.city,
-    tags: locationData.tags
+    tags:
+      Array.isArray(sourceFields.tags) && sourceFields.tags.length
+        ? sourceFields.tags
+        : locationData.tags
   };
 
   return await Product.create(productData, { transaction: options.transaction });
@@ -201,6 +260,7 @@ async function updateProduct(productId, data, files = [], options = {}) {
     name,
     description,
     price,
+    currency,
     link,
     video_url,
     category,
@@ -214,7 +274,9 @@ async function updateProduct(productId, data, files = [], options = {}) {
     country,
     region,
     city,
-    tags
+    tags,
+    sourceLocale,
+    translations
   } = data;
 
   // Обработка изображений
@@ -337,6 +399,17 @@ async function updateProduct(productId, data, files = [], options = {}) {
     throw e;
   }
 
+  let normalizedCurrency = product.currency || DEFAULT_CURRENCY;
+  if (typeof currency !== "undefined" && currency !== null && String(currency).trim() !== "") {
+    try {
+      normalizedCurrency = normalizeCurrency(currency);
+    } catch (err) {
+      const e = new Error(err.message || "Некорректная валюта");
+      e.status = 400;
+      throw e;
+    }
+  }
+
   // Обновляем товар
   const locationData = validateLocationAndTags(
     {
@@ -348,15 +421,52 @@ async function updateProduct(productId, data, files = [], options = {}) {
     { requireAll: options.skipLocationValidation !== true }
   );
 
+  const resolvedSourceLocale = SUPPORTED_LOCALES.includes(sourceLocale)
+    ? sourceLocale
+    : product.sourceLocale || "en";
+
+  let translationMap;
+  if (translations && typeof translations === "object" && Object.keys(translations).length) {
+    translationMap = sanitizeStoredTranslations(translations, resolvedSourceLocale, {
+      name,
+      description,
+      price: normalizedPrice,
+      tags: locationData.tags,
+      contact_method: contacts.contact_method
+    });
+  } else {
+    const built = await buildCardTranslations(
+      {
+        name,
+        description,
+        price: normalizedPrice,
+        tags: locationData.tags,
+        contact_method: contacts.contact_method
+      },
+      resolvedSourceLocale
+    );
+    translationMap = built.translations;
+  }
+  const sourceFields = translationMap[resolvedSourceLocale] || {};
+
   const updateData = {
-    name: name.trim(),
-    description: description ? description.trim() : "",
-    price: normalizedPrice,
+    name: (sourceFields.name || name).trim(),
+    description: sourceFields.description != null ? sourceFields.description : (description ? description.trim() : ""),
+    price: sourceFields.price || normalizedPrice,
+    currency: normalizedCurrency,
+    sourceLocale: resolvedSourceLocale,
+    translations: translationMap,
     link: link ? link.trim() : "",
     video_url: video_url ? video_url.trim() : "",
     images: newImages,
     image_url,
-    contacts,
+    contacts: {
+      ...contacts,
+      contact_method:
+        sourceFields.contact_method != null && String(sourceFields.contact_method).trim() !== ""
+          ? sourceFields.contact_method
+          : contacts.contact_method
+    },
     category: categoryValue,
     categoryId,
     type: typeValue,
@@ -364,13 +474,11 @@ async function updateProduct(productId, data, files = [], options = {}) {
     country: locationData.country,
     region: locationData.region,
     city: locationData.city,
-    tags: locationData.tags
+    tags:
+      Array.isArray(sourceFields.tags) && sourceFields.tags.length
+        ? sourceFields.tags
+        : locationData.tags
   };
-
-   await Product.update(
-     updateData,
-     { where: { id: productId } }
-   );
    return await Product.findByPk(productId);
 }
 

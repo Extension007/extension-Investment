@@ -193,6 +193,75 @@
     const msg = document.getElementById('createProductMsg');
     if (!form || !msg) return;
 
+    function showTranslationPreviewModal(preview) {
+      return new Promise(function(resolve) {
+        const modal = document.getElementById('translationPreviewModal');
+        const body = document.getElementById('translationPreviewBody');
+        const confirmBtn = document.getElementById('translationPreviewConfirm');
+        const cancelBtn = document.getElementById('translationPreviewCancel');
+        if (!modal || !body || !confirmBtn || !cancelBtn) {
+          resolve(preview);
+          return;
+        }
+
+        const locales = Object.keys(preview.translations || {});
+        const labels = { en: 'EN', ru: 'RU', kk: 'KK', zh: 'ZH' };
+        body.innerHTML = '';
+        locales.forEach(function(code) {
+          const block = preview.translations[code] || {};
+          const section = document.createElement('section');
+          section.style.cssText = 'margin:0 0 16px;padding:12px;border:1px solid rgba(31,138,90,.35);border-radius:10px;';
+          section.innerHTML =
+            '<h4 style="margin:0 0 8px;color:#e8d5a3;">' + (labels[code] || code) +
+            (code === preview.sourceLocale ? ' ★' : '') + '</h4>' +
+            '<label style="display:block;font-size:.85rem;opacity:.8;">' + t('name', 'Name') + '</label>' +
+            '<input data-tr-locale="' + code + '" data-tr-field="name" value="' + String(block.name || '').replace(/"/g, '&quot;') + '" style="width:100%;margin:0 0 8px;padding:8px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;">' +
+            '<label style="display:block;font-size:.85rem;opacity:.8;">' + t('description', 'Description') + '</label>' +
+            '<textarea data-tr-locale="' + code + '" data-tr-field="description" rows="3" style="width:100%;margin:0 0 8px;padding:8px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;">' + String(block.description || '') + '</textarea>' +
+            '<label style="display:block;font-size:.85rem;opacity:.8;">' + t('price', 'Price') + '</label>' +
+            '<input data-tr-locale="' + code + '" data-tr-field="price" value="' + String(block.price || '').replace(/"/g, '&quot;') + '" style="width:100%;margin:0 0 8px;padding:8px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;">' +
+            '<label style="display:block;font-size:.85rem;opacity:.8;">' + t('contactMethod', 'Contact method') + '</label>' +
+            '<textarea data-tr-locale="' + code + '" data-tr-field="contact_method" rows="2" style="width:100%;margin:0 0 8px;padding:8px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;">' + String(block.contact_method || '') + '</textarea>' +
+            '<label style="display:block;font-size:.85rem;opacity:.8;">' + t('hashtags', 'Hashtags') + '</label>' +
+            '<input data-tr-locale="' + code + '" data-tr-field="tags" value="' + String((block.tags || []).join(', ')).replace(/"/g, '&quot;') + '" style="width:100%;padding:8px;border-radius:8px;border:1px solid #444;background:#1a1a1a;color:#fff;">';
+          body.appendChild(section);
+        });
+
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden', 'false');
+
+        function cleanup(result) {
+          modal.style.display = 'none';
+          modal.setAttribute('aria-hidden', 'true');
+          confirmBtn.onclick = null;
+          cancelBtn.onclick = null;
+          resolve(result);
+        }
+
+        cancelBtn.onclick = function() { cleanup(null); };
+        confirmBtn.onclick = function() {
+          const next = { sourceLocale: preview.sourceLocale, translations: {} };
+          locales.forEach(function(code) {
+            const nameEl = body.querySelector('[data-tr-locale="' + code + '"][data-tr-field="name"]');
+            const descEl = body.querySelector('[data-tr-locale="' + code + '"][data-tr-field="description"]');
+            const priceEl = body.querySelector('[data-tr-locale="' + code + '"][data-tr-field="price"]');
+            const cmEl = body.querySelector('[data-tr-locale="' + code + '"][data-tr-field="contact_method"]');
+            const tagsEl = body.querySelector('[data-tr-locale="' + code + '"][data-tr-field="tags"]');
+            next.translations[code] = {
+              name: nameEl ? nameEl.value.trim() : '',
+              description: descEl ? descEl.value.trim() : '',
+              price: priceEl ? priceEl.value.trim() : '',
+              contact_method: cmEl ? cmEl.value.trim() : '',
+              tags: tagsEl
+                ? tagsEl.value.split(/[,#]/).map(function(x) { return x.trim().replace(/^#/, ''); }).filter(Boolean)
+                : []
+            };
+          });
+          cleanup(next);
+        };
+      });
+    }
+
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
 
@@ -249,6 +318,47 @@
         const tagsInput = document.getElementById('tagsInput');
         if (tagsInput) tagsInput.focus();
         return;
+      }
+
+      msg.textContent = t('translatingPreview', 'Готовим перевод для предпросмотра…');
+      msg.style.color = '#666';
+
+      let preview;
+      try {
+        const previewRes = await csrfFetch('/cabinet/product/preview-translations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            name: (form.querySelector('[name="name"]') || {}).value || '',
+            description: (form.querySelector('[name="description"]') || {}).value || '',
+            price: (form.querySelector('[name="price"]') || {}).value || '',
+            contact_method: (form.querySelector('[name="contact_method"]') || {}).value || '',
+            tags: tags,
+            sourceLocale: (form.querySelector('[name="sourceLocale"]') || {}).value || 'en'
+          })
+        });
+        preview = await previewRes.json();
+        if (!previewRes.ok || !preview.success) {
+          msg.textContent = (preview && preview.message) || t('translateFail', 'Не удалось подготовить перевод');
+          msg.style.color = '#b00020';
+          return;
+        }
+      } catch (previewErr) {
+        msg.textContent = t('translateFail', 'Не удалось подготовить перевод') + ': ' + (previewErr.message || '');
+        msg.style.color = '#b00020';
+        return;
+      }
+
+      const confirmed = await showTranslationPreviewModal(preview);
+      if (!confirmed) {
+        msg.textContent = t('translateCancelled', 'Отправка отменена. Можете поправить текст и попробовать снова.');
+        msg.style.color = '#e8d5a3';
+        return;
+      }
+
+      const translationsInput = document.getElementById('translationsJson');
+      if (translationsInput) {
+        translationsInput.value = JSON.stringify(confirmed.translations || preview.translations || {});
       }
 
       let formData;

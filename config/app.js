@@ -17,7 +17,13 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "../views"));
 
 const { formatPriceDisplay } = require("../utils/price");
+const { CURRENCIES, DEFAULT_CURRENCY } = require("../utils/currency");
+const { applyCardLocale, localizeCardList } = require("../services/cardTranslationService");
 app.locals.formatPriceDisplay = formatPriceDisplay;
+app.locals.CURRENCIES = CURRENCIES;
+app.locals.DEFAULT_CURRENCY = DEFAULT_CURRENCY;
+app.locals.applyCardLocale = applyCardLocale;
+app.locals.localizeCardList = localizeCardList;
 app.locals.cardPublication = require("../utils/cardPublication");
 app.locals.appVersion = require("../package.json").version;
 
