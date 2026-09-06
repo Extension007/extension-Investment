@@ -1,4 +1,4 @@
-п»ї<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
 <head>
   <meta charset="UTF-8">
@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=1.3.9">
+  <link rel="stylesheet" href="/styles.css?v=1.4.0">
 </head>
 <body>
   <div id="bg-animated" aria-hidden="true"></div>
@@ -22,7 +22,7 @@
       </nav>
       <div class="header-actions">
         <%- include('../partials/lang-switcher') %>
-        <a class="btn outline" href="<%= mode === 'admin' ? '/admin' : '/cabinet' %>">в†ђ <%= t('common.back') %></a>
+        <a class="btn outline" href="<%= mode === 'admin' ? '/admin' : '/cabinet' %>">< <%= t('common.back') %></a>
       </div>
     </div>
   </header>
@@ -57,7 +57,7 @@
           <textarea name="contact_method" placeholder="<%= t('cabinet.contactMethod') %>" rows="2" aria-label="<%= t('cabinet.contactMethod') %>"><%= (product.contacts && product.contacts.contact_method) || '' %></textarea>
         </div>
 
-        <!-- РўРµРєСѓС‰РёРµ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ -->
+        <!-- Текущие изображения -->
         <% 
           const currentImages = product.images && Array.isArray(product.images) && product.images.length > 0 
             ? product.images 
@@ -70,7 +70,7 @@
               <% currentImages.forEach((img, idx) => { %>
                 <div class="current-image-item image-wrapper" data-image-index="<%= idx %>" style="position:relative;aspect-ratio:1;overflow:hidden;border-radius:8px;border:2px solid #ddd;">
                   <img src="<%= img %>" alt="<%= t('catalog.imageOf') %> <%= idx + 1 %>" data-original-url="<%= img %>" style="width:100%;height:100%;object-fit:cover;">
-                  <button type="button" class="remove-image-btn image-delete-button" data-image-index="<%= idx %>" aria-label="<%= t('common.delete') %>" style="position:absolute;top:5px;right:5px;background:#f44336;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:18px;line-height:1;">Г—</button>
+                  <button type="button" class="remove-image-btn image-delete-button" data-image-index="<%= idx %>" aria-label="<%= t('common.delete') %>" style="position:absolute;top:5px;right:5px;background:#f44336;color:#fff;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:18px;line-height:1;">?</button>
                 </div>
               <% }) %>
             </div>
@@ -78,7 +78,7 @@
           </div>
         <% } %>
 
-        <!-- Р—Р°РіСЂСѓР·РєР° РЅРѕРІС‹С… РёР·РѕР±СЂР°Р¶РµРЅРёР№ -->
+        <!-- Загрузка новых изображений -->
         <div class="form-section">
           <label for="images"><%= t('form.uploadImages') %></label>
           <input 
@@ -180,7 +180,7 @@
         option.value = fullKey;
         option.textContent = value.label;
         
-        // Р•СЃР»Рё СЌС‚Рѕ С‚РµРєСѓС‰РµРµ Р·РЅР°С‡РµРЅРёРµ РєР°С‚РµРіРѕСЂРёРё РёР»Рё РµРіРѕ С‡Р°СЃС‚СЊ, РґРµР»Р°РµРј РµРіРѕ РІС‹Р±СЂР°РЅРЅС‹Рј
+        // Если это текущее значение категории или его часть, делаем его выбранным
         if (currentValue === fullKey || currentValue.startsWith(fullKey + '.')) {
           option.selected = true;
         }
@@ -194,10 +194,10 @@
       select.addEventListener('change', function() {
         const selectedValue = this.value;
         if (selectedValue) {
-          // РћР±РЅРѕРІР»СЏРµРј СЃРєСЂС‹С‚РѕРµ РїРѕР»Рµ РєР°С‚РµРіРѕСЂРёРё
+          // Обновляем скрытое поле категории
           document.querySelector('input[name="category"], select[name="category"]').value = selectedValue;
           
-          // РЈРґР°Р»СЏРµРј РІСЃРµ РґРѕС‡РµСЂРЅРёРµ СЃРµР»РµРєС‚РѕСЂС‹
+          // Удаляем все дочерние селекторы
           const childSelectors = parentElement.querySelectorAll(`.category-select[data-level]:not([data-level="${level}"])`);
           childSelectors.forEach(child => {
             if (parseInt(child.getAttribute('data-level')) > level) {
@@ -205,7 +205,7 @@
             }
           });
           
-          // Р•СЃР»Рё Сѓ РІС‹Р±СЂР°РЅРЅРѕР№ РєР°С‚РµРіРѕСЂРёРё РµСЃС‚СЊ РїРѕРґРєР°С‚РµРіРѕСЂРёРё, СЃРѕР·РґР°РµРј РЅРѕРІС‹Р№ СЃРµР»РµРєС‚РѕСЂ
+          // Если у выбранной категории есть подкатегории, создаем новый селектор
           const categoryPath = selectedValue.split('.');
           let currentCategory = hierarchicalCategories;
           
@@ -224,7 +224,7 @@
         }
       });
       
-      // Р•СЃР»Рё Сѓ РЅР°СЃ РµСЃС‚СЊ С‚РµРєСѓС‰РµРµ Р·РЅР°С‡РµРЅРёРµ Рё СЌС‚Рѕ РЅРµ СЃР°РјС‹Р№ РіР»СѓР±РѕРєРёР№ СѓСЂРѕРІРµРЅСЊ, РїСЂРѕРґРѕР»Р¶Р°РµРј СЃС‚СЂРѕРёС‚СЊ РёРµСЂР°СЂС…РёСЋ
+      // Если у нас есть текущее значение и это не самый глубокий уровень, продолжаем строить иерархию
       if (currentValue) {
         const currentValueParts = currentValue.split('.');
         if (currentValueParts.length > level + 1) {
@@ -248,18 +248,18 @@
       }
     }
 
-    // РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ РёРµСЂР°СЂС…РёС‡РµСЃРєРѕРіРѕ РІС‹Р±РѕСЂР° РєР°С‚РµРіРѕСЂРёР№
+    // Инициализация иерархического выбора категорий
     document.addEventListener('DOMContentLoaded', function() {
       const categorySelector = document.getElementById('categorySelector');
       const hierarchicalDiv = document.getElementById('hierarchicalCategories');
       const categorySelect = document.getElementById('categorySelect');
       
-      // Р¤СѓРЅРєС†РёСЏ РґР»СЏ РѕР±РЅРѕРІР»РµРЅРёСЏ РѕС‚РѕР±СЂР°Р¶РµРЅРёСЏ РёРµСЂР°СЂС…РёС‡РµСЃРєРѕРіРѕ РІС‹Р±РѕСЂР°
+      // Функция для обновления отображения иерархического выбора
       function updateHierarchicalDisplay() {
         const currentCategory = '<%= product.category %>';
         const hasHierarchicalPrefix = currentCategory.includes('.');
         
-        // РџСЂРѕРІРµСЂСЏРµРј, СЏРІР»СЏРµС‚СЃСЏ Р»Рё РІС‹Р±СЂР°РЅРЅР°СЏ РєР°С‚РµРіРѕСЂРёСЏ С‡Р°СЃС‚СЊСЋ РёРµСЂР°СЂС…РёС‡РµСЃРєРѕР№ СЃС‚СЂСѓРєС‚СѓСЂС‹
+        // Проверяем, является ли выбранная категория частью иерархической структуры
         const isHierarchicalCategory = Object.keys(hierarchicalCategories).some(key =>
           currentCategory === key || currentCategory.startsWith(key + '.')
         );
@@ -275,16 +275,16 @@
       categorySelect.addEventListener('change', function() {
         const selectedValue = this.value;
         if (selectedValue) {
-          // Р•СЃР»Рё РІС‹Р±СЂР°РЅР° РєРѕРЅРєСЂРµС‚РЅР°СЏ РєР°С‚РµРіРѕСЂРёСЏ, СЃРєСЂС‹РІР°РµРј РёРµСЂР°СЂС…РёС‡РµСЃРєРёР№ РІС‹Р±РѕСЂ
+          // Если выбрана конкретная категория, скрываем иерархический выбор
           hierarchicalDiv.style.display = 'none';
         } else {
-          // Р•СЃР»Рё РІС‹Р±СЂР°РЅР° РїСѓСЃС‚Р°СЏ РѕРїС†РёСЏ, РїРѕРєР°Р·С‹РІР°РµРј РёРµСЂР°СЂС…РёС‡РµСЃРєРёР№ РІС‹Р±РѕСЂ
+          // Если выбрана пустая опция, показываем иерархический выбор
           hierarchicalDiv.style.display = 'block';
           buildHierarchicalSelector(hierarchicalDiv, hierarchicalCategories, 0, '', '<%= product.category %>');
         }
       });
       
-      // РРЅРёС†РёР°Р»РёР·РёСЂСѓРµРј РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ
+      // Инициализируем отображение
       updateHierarchicalDisplay();
     });
   </script>

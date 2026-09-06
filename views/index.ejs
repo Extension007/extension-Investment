@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
 <head>
   <meta charset="UTF-8">
@@ -16,8 +16,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css?v=1.3.9">
-  <link rel="stylesheet" href="/header-tabs.css?v=1.1.3">
+  <link rel="stylesheet" href="/styles.css?v=1.4.0">
+  <link rel="stylesheet" href="/header-tabs.css?v=1.1.4">
   <link rel="stylesheet" href="/catalog-tiles.css?v=1.0.9">
 </head>
 <body class="catalog-tiles" data-logged-in="<%= typeof isAuth !== 'undefined' && isAuth ? '1' : '0' %>">
@@ -52,15 +52,15 @@
           </button>
           <div id="categoriesMenu" class="dropdown-menu hierarchical-categories" aria-hidden="true">
             <button class="dropdown-item" data-category="all"><%= t('catalog.all') %></button>
-            <!-- Ð‘Ð»Ð¾ÐºÐ¸ ÐºÐ°Ñ‚ÐµÐ³Ð¾Ñ€Ð¸Ð¹ Ð±ÑƒÐ´ÑƒÑ‚ Ð·Ð°Ð³Ñ€ÑƒÐ¶ÐµÐ½Ñ‹ Ð´Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸ -->
+            <!-- Áëîêè êàòåãîðèé áóäóò çàãðóæåíû äèíàìè÷åñêè -->
             <div id="categoriesBlocks" class="categories-blocks">
-              <!-- Ð—Ð´ÐµÑÑŒ Ð±ÑƒÐ´ÑƒÑ‚ Ð¾Ñ‚Ð¾Ð±Ñ€Ð°Ð¶Ð°Ñ‚ÑŒÑÑ Ð±Ð»Ð¾ÐºÐ¸ (ÐºÐ¾Ñ€Ð½ÐµÐ²Ñ‹Ðµ ÐºÐ°Ñ‚ÐµÐ³Ð¾Ñ€Ð¸Ð¸) -->
+              <!-- Çäåñü áóäóò îòîáðàæàòüñÿ áëîêè (êîðíåâûå êàòåãîðèè) -->
             </div>
-            <!-- ÐšÐ¾Ð½Ñ‚ÐµÐ¹Ð½ÐµÑ€ Ð´Ð»Ñ Ð¿Ð¾Ð´ÐºÐ°Ñ‚ÐµÐ³Ð¾Ñ€Ð¸Ð¹ -->
+            <!-- Êîíòåéíåð äëÿ ïîäêàòåãîðèé -->
             <div id="subcategoriesContainer" class="subcategories-container" style="display: none;">
               <button class="back-to-blocks-btn" id="backToBlocks"><%= t('catalog.backToBlocks') %></button>
               <div id="subcategoriesList">
-                <!-- ÐŸÐ¾Ð´ÐºÐ°Ñ‚ÐµÐ³Ð¾Ñ€Ð¸Ð¸ Ð±ÑƒÐ´ÑƒÑ‚ Ð·Ð°Ð³Ñ€ÑƒÐ¶ÐµÐ½Ñ‹ Ð´Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸ -->
+                <!-- Ïîäêàòåãîðèè áóäóò çàãðóæåíû äèíàìè÷åñêè -->
               </div>
             </div>
           </div>
@@ -84,9 +84,9 @@
       </div>
     </section>
 
-    <!-- Ð¡ÐµÐºÑ†Ð¸Ñ ÑƒÑÐ»ÑƒÐ³ Ð¿ÐµÑ€ÐµÐ½ÐµÑÐµÐ½Ð° Ð² Ð¾Ñ‚Ð´ÐµÐ»ÑŒÐ½ÑƒÑŽ ÑÑ‚Ñ€Ð°Ð½Ð¸Ñ†Ñƒ /services -->
+    <!-- Ñåêöèÿ óñëóã ïåðåíåñåíà â îòäåëüíóþ ñòðàíèöó /services -->
 
-    <!-- ÐœÐ¾Ð´Ð°Ð»ÑŒÐ½Ñ‹Ðµ Ð¾ÐºÐ½Ð° Ñ‡Ð°Ñ‚Ð° Ð´Ð»Ñ Ð²ÑÐµÑ… ÐºÐ°Ñ€Ñ‚Ð¾Ñ‡ÐµÐº -->
+    <!-- Ìîäàëüíûå îêíà ÷àòà äëÿ âñåõ êàðòî÷åê -->
     <% if (products && products.length) { %>
       <% products.forEach(p => { %>
         <div class="chat-modal" id="chat-modal-<%= p._id %>" style="display: none;">
@@ -94,7 +94,7 @@
           <div class="chat-modal-content">
             <div class="chat-modal-header">
               <h3><%= t('catalog.chatTitle') %></h3>
-              <button class="chat-close-btn" data-close-chat-modal="<%= p._id %>" type="button">Ã—</button>
+              <button class="chat-close-btn" data-close-chat-modal="<%= p._id %>" type="button">?</button>
             </div>
             <div class="chat-messages" id="chat-messages-<%= p._id %>">
             </div>
@@ -120,7 +120,7 @@
           <div class="chat-modal-content">
             <div class="chat-modal-header">
               <h3><%= t('catalog.chatTitle') %></h3>
-              <button class="chat-close-btn" data-close-chat-modal="<%= s._id %>" type="button">Ã—</button>
+              <button class="chat-close-btn" data-close-chat-modal="<%= s._id %>" type="button">?</button>
             </div>
             <div class="chat-messages" id="chat-messages-<%= s._id %>">
             </div>
@@ -143,23 +143,23 @@
 
   <%- include('partials/mobile-tabs') %>
 
-<!-- FIX: ÐŸÐ¾Ð»Ð½Ð¾ÑÐºÑ€Ð°Ð½Ð½Ñ‹Ð¹ overlay Ð´Ð»Ñ YouTube Ð²Ð¸Ð´ÐµÐ¾ -->
+<!-- FIX: Ïîëíîýêðàííûé overlay äëÿ YouTube âèäåî -->
 <div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
   <div class="video-overlay-container">
     <button class="video-overlay-close" data-close-video aria-label="<%= t('catalog.closeVideo') %>">&times;</button>
     <div class="video-overlay-iframe-container" id="videoIframeContainer">
-      <!-- FIX: iframe ÑÐ¾Ð·Ð´Ð°ÐµÑ‚ÑÑ Ð´Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸ Ð¿Ð¾ ÐºÐ»Ð¸ÐºÑƒ, Ð¿ÑƒÑÑ‚Ð¾Ð¹ Ð¿Ñ€Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐµ -->
+      <!-- FIX: iframe ñîçäàåòñÿ äèíàìè÷åñêè ïî êëèêó, ïóñòîé ïðè çàãðóçêå -->
     </div>
   </div>
 </div>
 
-<!-- FIX: Overlay Ð´Ð»Ñ Ð¿Ñ€Ð¾ÑÐ¼Ð¾Ñ‚Ñ€Ð° Ð¸Ð·Ð¾Ð±Ñ€Ð°Ð¶ÐµÐ½Ð¸Ð¹ Ð² Ð¿Ð¾Ð»Ð½Ð¾Ð¼ Ñ€Ð°Ð·Ð¼ÐµÑ€Ðµ -->
+<!-- FIX: Overlay äëÿ ïðîñìîòðà èçîáðàæåíèé â ïîëíîì ðàçìåðå -->
 <div id="imageOverlay" class="image-overlay" aria-hidden="true">
   <div class="image-overlay-container">
     <button class="image-overlay-close" data-close-image aria-label="<%= t('catalog.closeImage') %>">&times;</button>
     <img id="imageOverlayImg" src="" alt="" class="image-overlay-img">
-    <button class="image-overlay-nav image-overlay-prev" data-image-nav="prev" aria-label="<%= t('catalog.prevImage') %>">â€¹</button>
-    <button class="image-overlay-nav image-overlay-next" data-image-nav="next" aria-label="<%= t('catalog.nextImage') %>">â€º</button>
+    <button class="image-overlay-nav image-overlay-prev" data-image-nav="prev" aria-label="<%= t('catalog.prevImage') %>">‹</button>
+    <button class="image-overlay-nav image-overlay-next" data-image-nav="next" aria-label="<%= t('catalog.nextImage') %>">›</button>
   </div>
 </div>
 
@@ -167,7 +167,7 @@
   <div class="modal-content image-modal-content" role="dialog" aria-modal="true" aria-label="<%= t('catalog.viewImage') %>">
     <button class="close" data-close-image aria-label="<%= t('catalog.closeImage') %>">&times;</button>
     <div class="image-modal-container">
-      <button class="image-nav-btn image-nav-prev" aria-label="<%= t('catalog.prevImage') %>">â€¹</button>
+      <button class="image-nav-btn image-nav-prev" aria-label="<%= t('catalog.prevImage') %>">‹</button>
       <div class="image-modal-image-wrapper">
         <img id="imageModalImage" src="" alt="" class="image-modal-image">
         <div class="image-modal-counter">
@@ -175,7 +175,7 @@
         </div>
         <div class="image-modal-title" id="imageModalTitle"></div>
       </div>
-      <button class="image-nav-btn image-nav-next" aria-label="<%= t('catalog.nextImage') %>">â€º</button>
+      <button class="image-nav-btn image-nav-next" aria-label="<%= t('catalog.nextImage') %>">›</button>
     </div>
   </div>
 </div>
@@ -185,15 +185,15 @@
     <button class="close" data-close-description aria-label="<%= t('auth.close') %>">&times;</button>
     <h3 id="descriptionModalTitle" style="margin-bottom:20px;font-size:1.5rem;color:#fff;"><%= t('catalog.description') %></h3>
     <div id="descriptionModalContent" style="max-height:75vh;overflow-y:auto;padding:20px 0;line-height:1.6;font-size:1.1rem;color:#ddd;">
-      <!-- ÐžÐ¿Ð¸ÑÐ°Ð½Ð¸Ðµ Ð±ÑƒÐ´ÐµÑ‚ Ð²ÑÑ‚Ð°Ð²Ð»ÐµÐ½Ð¾ Ð´Ð¸Ð½Ð°Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸ -->
+      <!-- Îïèñàíèå áóäåò âñòàâëåíî äèíàìè÷åñêè -->
     </div>
   </div>
 </div>
 
-<!-- ÐœÐ¾Ð´Ð°Ð»ÑŒÐ½Ð¾Ðµ Ð¾ÐºÐ½Ð¾ Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ð°Ñ†Ð¸Ð¸ -->
+<!-- Ìîäàëüíîå îêíî ðåãèñòðàöèè -->
 <%- include('./partials/register-modal') %>
 
-<!-- Ð¼Ð¾Ð´Ð°Ð»ÑŒÐ½Ð¾Ðµ Ð¾ÐºÐ½Ð¾ Ð´Ð»Ñ Ð³Ð¾ÑÑ‚ÐµÐ¹ Ñ‡Ð°Ñ‚Ð° -->
+<!-- ìîäàëüíîå îêíî äëÿ ãîñòåé ÷àòà -->
 <div id="authModal" class="modal" aria-hidden="true" style="display:none;">
   <div class="modal-content" role="dialog" aria-modal="true" aria-label="<%= t('nav.login') %>">
     <button class="close" data-close-auth aria-label="<%= t('auth.close') %>">&times;</button>
@@ -205,7 +205,7 @@
   </div>
 </div>
 
-<!-- Bootstrap script for safe EJS â†’ JS data transfer -->
+<!-- Bootstrap script for safe EJS > JS data transfer -->
 <script src="/utils/bootstrap.js?v=1.0.3"></script>
 <script>
   window.__I18N__ = <%- JSON.stringify(typeof i18nBundle !== 'undefined' ? i18nBundle : { locale: 'en', js: {} }) %>;
@@ -236,7 +236,7 @@
 <script src="/js/location-tags.js?v=1.0.2"></script>
   <script src="/script.js?v=1.1.3"></script>
 
-<!-- ÐŸÐ¾Ð´ÐºÐ»ÑŽÑ‡Ð°ÐµÐ¼ ÑÐºÑ€Ð¸Ð¿Ñ‚ Ð´Ð»Ñ Ð¿Ñ€ÐµÐ´Ð¾Ñ‚Ð²Ñ€Ð°Ñ‰ÐµÐ½Ð¸Ñ Ð¿ÐµÑ€ÐµÐºÑ€Ñ‹Ñ‚Ð¸Ñ ÐºÐ¾Ð½Ñ‚ÐµÐ½Ñ‚Ð° Ñ„ÑƒÑ‚ÐµÑ€Ð¾Ð¼ -->
+<!-- Ïîäêëþ÷àåì ñêðèïò äëÿ ïðåäîòâðàùåíèÿ ïåðåêðûòèÿ êîíòåíòà ôóòåðîì -->
 <script src="/fix-footer-overlap.js?v=1.0.1"></script>
 </body>
 </html>
