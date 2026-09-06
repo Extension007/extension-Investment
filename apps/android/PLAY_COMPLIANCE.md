@@ -6,7 +6,8 @@
 - Terms of use: https://www.albamount.xyz/terms
 - Publication rules: https://www.albamount.xyz/rules
 - Account deletion (in-app): https://www.albamount.xyz/cabinet → Delete account
-- App download (sideload APK, optional): https://www.albamount.xyz/app
+- App download (sideload APK, members only until store release): https://www.albamount.xyz/cabinet/app
+
 
 ## Data Safety (declare)
 

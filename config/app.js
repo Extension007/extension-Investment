@@ -102,6 +102,11 @@ if (usePgSession) {
 
 app.use(cookieParser(process.env.SESSION_SECRET || "exto-secret-change-in-production"));
 
+// Старое публичное имя APK больше не раздаём
+app.get("/downloads/albamount.apk", (req, res) => {
+  res.redirect(302, "/user/login?next=/cabinet/app");
+});
+
 app.use(express.static(path.join(__dirname, "../public")));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 

@@ -30,6 +30,7 @@ apps/android/local.properties
 apps/android/.idea/
 *.apk
 *.aab
-!public/downloads/*.apk
+!public/downloads/**/*.apk
+!private/downloads/*.apk
 *.iml
 apps/android/keystore/

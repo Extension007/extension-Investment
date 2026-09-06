@@ -4,10 +4,11 @@
   <meta charset="UTF-8">
   <title><%= t('meta.appTitle') %></title>
   <%- include('partials/seo-head', {
-    canonicalPath: '/app',
+    canonicalPath: '/cabinet/app',
     seoTitle: t('meta.appTitle'),
     seoDescription: t('meta.appDescription')
   }) %>
+  <meta name="robots" content="noindex, nofollow">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
   <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
@@ -114,10 +115,10 @@
         <h2><%= t('appDownload.androidTitle') %></h2>
         <p class="platform-lead"><%= t('appDownload.androidLead') %></p>
         <div class="center-cta">
-          <a class="btn btn-download" href="/downloads/albamount.apk" download="albamount.apk">
+          <a class="btn btn-download" href="/cabinet/download-apk" download="albamount.apk">
             <%= t('appDownload.button') %>
           </a>
-          <p class="meta"><%= t('appDownload.version', { version: androidAppVersion || '2.0.2' }) %></p>
+          <p class="meta"><%= t('appDownload.version', { version: androidAppVersion || '2.1.0' }) %></p>
         </div>
         <div class="steps">
           <h3><%= t('appDownload.howTitle') %></h3>
@@ -144,10 +145,7 @@
         <p class="meta" style="margin-top:16px;"><%= t('appDownload.iosNote') %></p>
       </section>
 
-      <div class="share-box">
-        <label><%= t('appDownload.shareLabel') %></label>
-        <code>https://www.albamount.xyz/app</code>
-      </div>
+      <p class="meta" style="margin-top:28px;"><%= t('appDownload.membersOnlyNote') %></p>
     </div>
   </main>
   <%- include('partials/mobile-tabs') %>

@@ -22,6 +22,7 @@ const { canUserEditCard, assertUserCanEditCard } = require("../utils/cardPublica
 const { expirePublishedCards, republishCard, setCardAutoRenew } = require("../services/cardPublicationService");
 
 const isVercel = Boolean(process.env.VERCEL);
+const ANDROID_APP_VERSION = "2.1.0";
 
 function sendAccountTypeError(req, res, err) {
   const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
@@ -545,6 +546,28 @@ router.post("/product/:id/auto-renew", requireUser, conditionalCsrfProtection, v
       message: err.message || "Не удалось сохранить автопродление"
     });
   }
+});
+
+// Страница скачивания приложения — только из личного кабинета (до релиза в сторах)
+router.get("/app", requireUser, (req, res) => {
+  const isAuth = Boolean(req.user);
+  const userRole = req.user?.role || null;
+  res.render("app-download", {
+    activeTab: "cabinet",
+    androidAppVersion: ANDROID_APP_VERSION,
+    isAuth,
+    isAdmin: userRole === "admin",
+    isUser: userRole === "user",
+    userRole,
+    user: req.user || null,
+    csrfToken: res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : "")
+  });
+});
+
+// APK только для авторизованных: после входа отдаём через CDN-путь (файл слишком большой для serverless body)
+router.get("/download-apk", requireUser, (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  return res.redirect(302, "/downloads/_member/albamount.apk");
 });
 
 // Полное удаление своего аккаунта и всех данных пользователя

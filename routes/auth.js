@@ -12,9 +12,15 @@ function renderUserLogin(req, res, error = null) {
     (typeof req.csrfToken === "function" ? req.csrfToken() : null) ||
     res.locals.csrfToken ||
     "";
+  const rawNext = String(req.query?.next || "").trim();
+  const nextPath =
+    rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("://")
+      ? rawNext
+      : "/cabinet";
   res.render("user-login", {
     error,
-    csrfToken
+    csrfToken,
+    nextPath
   });
 }
 
