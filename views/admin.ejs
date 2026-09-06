@@ -289,7 +289,7 @@
 <td data-label="Роль"><%= u.role %></td>
 <td data-label="Действие" class="admin-table-actions">
 <% if (!isSelf) { %>
-<form method="POST" action="/admin/users/<%= uid %>/delete" onsubmit="return confirm('Удалить пользователя <%= (u.username || '').replace(/'/g, '') %> из базы? Карточки будут скрыты.');">
+<form method="POST" action="/admin/users/<%= uid %>/delete" onsubmit="return confirm('Удалить пользователя <%= (u.username || '').replace(/'/g, '') %> из базы? Карточки, комментарии и связанные данные будут удалены навсегда.');">
 <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
 <button type="submit" class="btn small outline">Удалить</button>
 </form>

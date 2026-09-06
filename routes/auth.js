@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const emailVerificationController = require('../controllers/emailVerificationController');
 const authController = require('../controllers/authController');
-const { loginLimiter, registerLimiter } = require('../middleware/rateLimiter');
+const { loginLimiter, registerLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 const { validateRegister } = require('../middleware/validators');
+const passwordResetController = require('../controllers/passwordResetController');
 
 function renderUserLogin(req, res, error = null) {
   if (typeof error === "function") error = null;
@@ -71,6 +72,11 @@ router.post("/register", registerLimiter, validateRegister, authController.regis
 router.get("/user/login", renderUserLogin);
 router.post("/user/login", loginLimiter, authController.userLogin);
 router.get("/login", (req, res) => res.redirect("/user/login"));
+
+router.get("/forgot-password", passwordResetController.showForgotForm);
+router.post("/forgot-password", passwordResetLimiter, passwordResetController.submitForgot);
+router.get("/reset-password/:token", passwordResetController.showResetForm);
+router.post("/reset-password/:token", passwordResetLimiter, passwordResetController.submitReset);
 
 // Admin auth routes
 router.get("/admin/login", renderAdminLogin);

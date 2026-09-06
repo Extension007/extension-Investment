@@ -9,11 +9,13 @@
     "loginTitle": "Sign in — User",
     "registerTitle": "Sign up",
     "cabinetTitle": "My account",
+    "forgotPasswordTitle": "Forgot password — Albamount",
+    "resetPasswordTitle": "Reset password — Albamount",
     "rulesTitle": "Publication rules — Albamount",
     "faqTitle": "FAQ — Albamount",
     "faqDescription": "Albamount help: accounts, publishing cards, ALBA, chat, search, and rules.",
     "appTitle": "Download the app — Albamount",
-    "appDescription": "Install the Albamount Android app and use the same catalog on your phone."
+    "appDescription": "Install Albamount on Android or add it to the iPhone Home Screen — same catalog on your phone."
   },
   "nav": {
     "login": "Sign in",
@@ -28,15 +30,25 @@
     "faq": "FAQ"
   },
   "appDownload": {
-    "title": "Albamount for Android",
-    "lead": "The same site in an app: catalog, account, languages, and admin.",
+    "title": "Albamount on your phone",
+    "lead": "The same catalog in an app-like experience: services, account, languages, and admin.",
     "button": "Download APK",
     "version": "Version {{version}} · Android 8+",
-    "howTitle": "How to install",
-    "step1": "Open this page on your phone and tap Download APK.",
+    "howTitle": "How to install on Android",
+    "step1": "Open this page on your Android phone and tap Download APK.",
     "step2": "Allow install from this source if Android asks.",
     "step3": "Open the file and install Albamount.",
-    "shareLabel": "Share this link:"
+    "shareLabel": "Share this link:",
+    "androidTitle": "Android",
+    "androidLead": "Install the APK — like a regular app with its own icon.",
+    "iosTitle": "iPhone / iPad",
+    "iosLead": "Apple does not allow free APK-style installs. On iPhone, add Albamount to the Home Screen — it opens like an app with the Albamount icon.",
+    "iosHowTitle": "How to add on iPhone",
+    "iosStep1": "Open https://www.albamount.xyz/app in Safari (not Chrome).",
+    "iosStep2": "Tap the Share button (square with an arrow up).",
+    "iosStep3": "Choose “Add to Home Screen”.",
+    "iosStep4": "Tap Add — the Albamount icon appears on the Home Screen.",
+    "iosNote": "Use Safari. After adding, open Albamount from the Home Screen icon."
   },
   "intro": {
     "title": "A catalog, not a feed",
@@ -112,7 +124,20 @@
     "verifyEmailPending": "A verification email was sent. Check your inbox.",
     "resendVerification": "Resend verification email",
     "resendVerificationSent": "Verification email sent. Check your inbox.",
-    "goLogin": "Go to sign in"
+    "goLogin": "Go to sign in",
+    "forgotPassword": "Forgot password?",
+    "forgotHeading": "Forgot password",
+    "forgotLead": "Enter the email you confirmed at sign-up. We will send a reset link if the account exists and is verified.",
+    "sendResetLink": "Send reset link",
+    "resetEmailSent": "If that email is registered and verified, we sent a reset link. Check your inbox.",
+    "resetHeading": "Set a new password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "saveNewPassword": "Save password",
+    "resetLinkInvalid": "This reset link is invalid or expired.",
+    "resetSuccess": "Password updated. You can sign in now.",
+    "passwordsMismatch": "Passwords do not match.",
+    "passwordTooShort": "Password must be at least 6 characters."
   },
   "contacts": {
     "heading": "Contact us",
@@ -181,7 +206,13 @@
     "publicationRules": "Publication rules",
     "footerAlba": "ALBA",
     "footerReferral": "Referral",
-    "footerRules": "Rules"
+    "footerRules": "Rules",
+    "deleteAccountTitle": "Delete account",
+    "deleteAccountLead": "This permanently deletes your account, cards, photos, comments, votes, ALBA history, and related data. This cannot be undone.",
+    "deleteAccountPassword": "Current password",
+    "deleteAccountConfirmPlaceholder": "Type DELETE to confirm",
+    "deleteAccountButton": "Delete my account forever",
+    "deleteAccountConfirmDialog": "Delete your account and all your data forever?"
   },
   "form": {
     "addProduct": "Add listing",

@@ -547,4 +547,55 @@ router.post("/product/:id/auto-renew", requireUser, conditionalCsrfProtection, v
   }
 });
 
+// Полное удаление своего аккаунта и всех данных пользователя
+router.post("/delete-account", conditionalCsrfProtection, requireUser, async (req, res) => {
+  const bcrypt = require("bcryptjs");
+  const { deleteOwnAccount } = require("../services/userAdminService");
+  const wantsJson = req.xhr || req.get("accept")?.includes("application/json");
+  try {
+    const userId = getAuthUserId(req.user);
+    if (!userId) {
+      const msg = "Необходима авторизация";
+      if (wantsJson) return res.status(401).json({ success: false, message: msg });
+      return res.status(401).send(msg);
+    }
+    const password = String(req.body?.password || "");
+    const confirm = String(req.body?.confirm || "");
+    if (confirm !== "DELETE" && confirm !== "УДАЛИТЬ") {
+      const msg = "Подтвердите удаление: введите DELETE";
+      if (wantsJson) return res.status(400).json({ success: false, message: msg });
+      return res.status(400).redirect("/cabinet?deleteError=1");
+    }
+    const user = await User.findByPk(userId);
+    if (!user) {
+      const msg = "Пользователь не найден";
+      if (wantsJson) return res.status(404).json({ success: false, message: msg });
+      return res.status(404).redirect("/user/login");
+    }
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) {
+      const msg = "Неверный пароль";
+      if (wantsJson) return res.status(400).json({ success: false, message: msg });
+      return res.status(400).redirect("/cabinet?deleteError=password");
+    }
+    await deleteOwnAccount(userId);
+
+    res.clearCookie("exto_token");
+    res.clearCookie("exto_user");
+    if (req.session && typeof req.session.destroy === "function") {
+      req.session.destroy(() => {});
+    }
+
+    if (wantsJson) {
+      return res.json({ success: true, redirect: "/" });
+    }
+    return res.redirect("/?accountDeleted=1");
+  } catch (err) {
+    logger.error({ msg: "cabinet_delete_account", error: err.message, stack: err.stack });
+    const msg = err.message || "Не удалось удалить аккаунт";
+    if (wantsJson) return res.status(err.status || 500).json({ success: false, message: msg });
+    return res.status(err.status || 500).redirect("/cabinet?deleteError=1");
+  }
+});
+
 module.exports = router;

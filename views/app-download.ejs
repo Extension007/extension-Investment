@@ -8,7 +8,7 @@
     seoTitle: t('meta.appTitle'),
     seoDescription: t('meta.appDescription')
   }) %>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
   <meta name="csrf-token" content="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="/header-tabs.css?v=1.1.3">
   <style>
     .app-download-page {
-      max-width: 560px;
+      max-width: 640px;
       margin: 0 auto;
       color: #eee;
       text-align: center;
@@ -34,6 +34,23 @@
       line-height: 1.65;
       opacity: 0.88;
     }
+    .app-platform {
+      margin: 0 0 22px;
+      padding: 22px 18px;
+      border: 1px solid rgba(31, 138, 90, 0.35);
+      border-radius: 14px;
+      background: rgba(10, 31, 22, 0.55);
+      text-align: left;
+    }
+    .app-platform h2 {
+      margin: 0 0 8px;
+      font-size: 1.2rem;
+    }
+    .app-platform .platform-lead {
+      margin: 0 0 16px;
+      line-height: 1.6;
+      opacity: 0.88;
+    }
     .app-download-page .btn-download {
       display: inline-flex;
       align-items: center;
@@ -45,19 +62,18 @@
       text-decoration: none;
     }
     .app-download-page .meta {
-      margin: 18px 0 0;
+      margin: 14px 0 0;
       font-size: 0.9rem;
       opacity: 0.65;
     }
     .app-download-page .steps {
-      margin: 36px 0 0;
-      text-align: left;
+      margin: 18px 0 0;
       line-height: 1.7;
       opacity: 0.9;
     }
-    .app-download-page .steps h2 {
-      margin: 0 0 10px;
-      font-size: 1.1rem;
+    .app-download-page .steps h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
     }
     .app-download-page .steps ol {
       margin: 0;
@@ -82,6 +98,9 @@
       font-size: 0.95rem;
       color: #c8f5d8;
     }
+    .app-platform .center-cta {
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -90,19 +109,40 @@
     <div class="app-download-page">
       <h1><%= t('appDownload.title') %></h1>
       <p class="lead"><%= t('appDownload.lead') %></p>
-      <a class="btn btn-download" href="/downloads/albamount.apk" download="albamount.apk">
-        <%= t('appDownload.button') %>
-      </a>
-      <p class="meta"><%= t('appDownload.version', { version: appVersion || '2.0.0' }) %></p>
 
-      <div class="steps">
-        <h2><%= t('appDownload.howTitle') %></h2>
-        <ol>
-          <li><%= t('appDownload.step1') %></li>
-          <li><%= t('appDownload.step2') %></li>
-          <li><%= t('appDownload.step3') %></li>
-        </ol>
-      </div>
+      <section class="app-platform" id="android">
+        <h2><%= t('appDownload.androidTitle') %></h2>
+        <p class="platform-lead"><%= t('appDownload.androidLead') %></p>
+        <div class="center-cta">
+          <a class="btn btn-download" href="/downloads/albamount.apk" download="albamount.apk">
+            <%= t('appDownload.button') %>
+          </a>
+          <p class="meta"><%= t('appDownload.version', { version: appVersion || '2.0.1' }) %></p>
+        </div>
+        <div class="steps">
+          <h3><%= t('appDownload.howTitle') %></h3>
+          <ol>
+            <li><%= t('appDownload.step1') %></li>
+            <li><%= t('appDownload.step2') %></li>
+            <li><%= t('appDownload.step3') %></li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="app-platform" id="iphone">
+        <h2><%= t('appDownload.iosTitle') %></h2>
+        <p class="platform-lead"><%= t('appDownload.iosLead') %></p>
+        <div class="steps">
+          <h3><%= t('appDownload.iosHowTitle') %></h3>
+          <ol>
+            <li><%= t('appDownload.iosStep1') %></li>
+            <li><%= t('appDownload.iosStep2') %></li>
+            <li><%= t('appDownload.iosStep3') %></li>
+            <li><%= t('appDownload.iosStep4') %></li>
+          </ol>
+        </div>
+        <p class="meta" style="margin-top:16px;"><%= t('appDownload.iosNote') %></p>
+      </section>
 
       <div class="share-box">
         <label><%= t('appDownload.shareLabel') %></label>

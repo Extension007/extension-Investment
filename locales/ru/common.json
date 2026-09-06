@@ -9,11 +9,13 @@
     "loginTitle": "Вход — Пользователь",
     "registerTitle": "Регистрация",
     "cabinetTitle": "Личный кабинет",
+    "forgotPasswordTitle": "Забыли пароль — Albamount",
+    "resetPasswordTitle": "Новый пароль — Albamount",
     "rulesTitle": "Правила публикации — Albamount",
     "faqTitle": "Частые вопросы — Albamount",
     "faqDescription": "Ответы по каталогу Albamount: регистрация, публикация карточек, ALBA, чат, поиск и правила.",
     "appTitle": "Скачать приложение — Albamount",
-    "appDescription": "Установите Android-приложение Albamount и пользуйтесь тем же каталогом с телефона."
+    "appDescription": "Установите Albamount на Android или добавьте на экран «Домой» на iPhone — тот же каталог на телефоне."
   },
   "nav": {
     "login": "Вход",
@@ -28,15 +30,25 @@
     "faq": "FAQ"
   },
   "appDownload": {
-    "title": "Albamount для Android",
-    "lead": "Тот же сайт в приложении: каталог, кабинет, языки и админка.",
+    "title": "Albamount на телефоне",
+    "lead": "Тот же каталог как приложение: услуги, кабинет, языки и админка.",
     "button": "Скачать APK",
     "version": "Версия {{version}} · Android 8+",
-    "howTitle": "Как установить",
-    "step1": "Откройте эту страницу на телефоне и нажмите «Скачать APK».",
+    "howTitle": "Как установить на Android",
+    "step1": "Откройте эту страницу на Android и нажмите «Скачать APK».",
     "step2": "Если Android спросит — разрешите установку из этого источника.",
     "step3": "Откройте файл и установите Albamount.",
-    "shareLabel": "Ссылка для друзей:"
+    "shareLabel": "Ссылка для друзей:",
+    "androidTitle": "Android",
+    "androidLead": "Установите APK — обычное приложение со своей иконкой.",
+    "iosTitle": "iPhone / iPad",
+    "iosLead": "Apple не даёт раздавать приложение файлом, как на Android. На iPhone добавьте Albamount на экран «Домой» — откроется как приложение с иконкой Albamount.",
+    "iosHowTitle": "Как добавить на iPhone",
+    "iosStep1": "Откройте https://www.albamount.xyz/app в Safari (не в Chrome).",
+    "iosStep2": "Нажмите кнопку «Поделиться» (квадрат со стрелкой вверх).",
+    "iosStep3": "Выберите «На экран „Домой“».",
+    "iosStep4": "Нажмите «Добавить» — появится иконка Albamount.",
+    "iosNote": "Нужен Safari. Дальше открывайте Albamount с иконки на экране «Домой»."
   },
   "intro": {
     "title": "Каталог, а не лента",
@@ -112,7 +124,20 @@
     "verifyEmailPending": "Письмо с подтверждением отправлено. Проверьте почту.",
     "resendVerification": "Отправить письмо ещё раз",
     "resendVerificationSent": "Письмо с подтверждением отправлено повторно. Проверьте почту.",
-    "goLogin": "Перейти ко входу"
+    "goLogin": "Перейти ко входу",
+    "forgotPassword": "Забыли пароль?",
+    "forgotHeading": "Восстановление пароля",
+    "forgotLead": "Укажите email, который вы подтвердили при регистрации. Если аккаунт есть и почта подтверждена — придёт ссылка для сброса.",
+    "sendResetLink": "Отправить ссылку",
+    "resetEmailSent": "Если такой подтверждённый email есть — мы отправили ссылку. Проверьте почту.",
+    "resetHeading": "Новый пароль",
+    "newPassword": "Новый пароль",
+    "confirmPassword": "Повторите пароль",
+    "saveNewPassword": "Сохранить пароль",
+    "resetLinkInvalid": "Ссылка недействительна или устарела.",
+    "resetSuccess": "Пароль обновлён. Можно войти.",
+    "passwordsMismatch": "Пароли не совпадают.",
+    "passwordTooShort": "Пароль должен быть не короче 6 символов."
   },
   "contacts": {
     "heading": "Напишите нам",
@@ -181,7 +206,13 @@
     "publicationRules": "Правила публикации",
     "footerAlba": "ALBA",
     "footerReferral": "Реферал",
-    "footerRules": "Правила"
+    "footerRules": "Правила",
+    "deleteAccountTitle": "Удалить аккаунт",
+    "deleteAccountLead": "Аккаунт, карточки, фото, комментарии, голоса, история ALBA и связанные данные будут удалены навсегда. Отменить нельзя.",
+    "deleteAccountPassword": "Текущий пароль",
+    "deleteAccountConfirmPlaceholder": "Введите DELETE для подтверждения",
+    "deleteAccountButton": "Удалить аккаунт навсегда",
+    "deleteAccountConfirmDialog": "Удалить аккаунт и все ваши данные навсегда?"
   },
   "form": {
     "addProduct": "Добавить объявление",

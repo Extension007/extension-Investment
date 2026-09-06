@@ -93,10 +93,17 @@ const contactLimiter = rateLimit(buildOptions({
   message: { success: false, message: "Слишком много сообщений. Попробуйте позже." }
 }));
 
+const passwordResetLimiter = rateLimit(buildOptions({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: "Слишком много попыток. Попробуйте позже."
+}));
+
 module.exports = {
   loginLimiter,
   registerLimiter,
   apiLimiter,
   productLimiter,
-  contactLimiter
+  contactLimiter,
+  passwordResetLimiter
 };

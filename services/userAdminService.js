@@ -1,5 +1,7 @@
-const { sequelize, User } = require('../config/database');
-const logger = require('../utils/logger');
+const { sequelize, Product, Comment, Vote } = require("../config/database");
+const User = require("../models/User");
+const logger = require("../utils/logger");
+const { deleteProductImages } = require("./imageService");
 
 function pgCode(err) {
   return err.parent?.code || err.original?.code || err.code;
@@ -10,8 +12,8 @@ async function runSql(t, sql, id) {
     await sequelize.query(sql, { replacements: { id }, transaction: t });
   } catch (err) {
     const code = pgCode(err);
-    if (code === '42P01' || code === '42703') {
-      logger.warn({ msg: 'user_delete_skip_sql', sql, code, error: err.message });
+    if (code === "42P01" || code === "42703") {
+      logger.warn({ msg: "user_delete_skip_sql", sql, code, error: err.message });
       return;
     }
     throw err;
@@ -43,8 +45,48 @@ async function listUserForeignKeys(t) {
   return rows || [];
 }
 
-async function detachUserReferences(t, id) {
-  await runSql(t, 'UPDATE products SET owner_id = NULL, deleted = true WHERE owner_id = :id', id);
+/** Hard-delete every card owned by the user, including Cloudinary images. */
+async function purgeOwnedProducts(t, userId) {
+  const products = await Product.findAll({
+    where: { ownerId: userId },
+    transaction: t
+  });
+  for (const product of products) {
+    const images = Array.isArray(product.images) ? product.images : [];
+    if (images.length) {
+      try {
+        await deleteProductImages(images);
+      } catch (err) {
+        logger.warn({
+          msg: "user_delete_image_cleanup_failed",
+          productId: product.id,
+          error: err.message
+        });
+      }
+    }
+  }
+  await Product.destroy({ where: { ownerId: userId }, transaction: t });
+}
+
+async function purgeUserContent(t, user) {
+  const id = user.id;
+  await purgeOwnedProducts(t, id);
+
+  await Comment.destroy({ where: { userId: id }, transaction: t }).catch(() => {});
+  await Vote.destroy({ where: { userId: id }, transaction: t }).catch(() => {});
+
+  if (user.email) {
+    try {
+      await sequelize.query(
+        "DELETE FROM contact_messages WHERE lower(email) = lower(:email)",
+        { replacements: { email: String(user.email) }, transaction: t }
+      );
+    } catch (err) {
+      const code = pgCode(err);
+      if (code !== "42P01" && code !== "42703") throw err;
+    }
+  }
+
   await runSql(
     t,
     `UPDATE entitlements
@@ -61,15 +103,15 @@ async function detachUserReferences(t, id) {
     let ops = 0;
 
     for (const fk of fks) {
-      const table = String(fk.table_name || '');
-      const column = String(fk.column_name || '');
+      const table = String(fk.table_name || "");
+      const column = String(fk.column_name || "");
       if (!table || !column) continue;
-      if (table === 'users' && column === 'id') continue;
-      if (table === 'products' && column === 'owner_id') continue;
+      if (table === "users" && column === "id") continue;
+      if (table === "products" && column === "owner_id") continue;
 
-      const quoted = `"${table.replace(/"/g, '')}"`;
-      const col = `"${column.replace(/"/g, '')}"`;
-      const mustDelete = table !== 'users' && (fk.is_nullable === false || fk.is_nullable === 'f');
+      const quoted = `"${table.replace(/"/g, "")}"`;
+      const col = `"${column.replace(/"/g, "")}"`;
+      const mustDelete = table !== "users" && (fk.is_nullable === false || fk.is_nullable === "f");
       if (mustDelete) {
         await runSql(t, `DELETE FROM ${quoted} WHERE ${col} = :id`, id);
       } else {
@@ -82,44 +124,54 @@ async function detachUserReferences(t, id) {
   }
 }
 
-async function deleteRegisteredUser(userId, actorUser) {
+/**
+ * @param {number|string} userId
+ * @param {object|null} actorUser - admin actor; omit/null for self-delete
+ * @param {{ allowSelf?: boolean }} options
+ */
+async function deleteRegisteredUser(userId, actorUser, options = {}) {
+  const allowSelf = Boolean(options.allowSelf);
   const id = parseInt(String(userId), 10);
   const actorId = parseInt(String(actorUser?.id || actorUser?._id), 10);
 
   if (!Number.isFinite(id)) {
-    const err = new Error('Некорректный ID пользователя');
+    const err = new Error("Некорректный ID пользователя");
     err.status = 400;
     throw err;
   }
 
-  if (Number.isFinite(actorId) && id === actorId) {
-    const err = new Error('Нельзя удалить собственный аккаунт');
+  if (!allowSelf && Number.isFinite(actorId) && id === actorId) {
+    const err = new Error("Нельзя удалить собственный аккаунт");
     err.status = 400;
     throw err;
   }
 
   const user = await User.findByPk(id);
   if (!user) {
-    const err = new Error('Пользователь не найден');
+    const err = new Error("Пользователь не найден");
     err.status = 404;
     throw err;
   }
 
-  if (user.role === 'admin') {
-    const adminCount = await User.count({ where: { role: 'admin' } });
+  if (user.role === "admin") {
+    const adminCount = await User.count({ where: { role: "admin" } });
     if (adminCount <= 1) {
-      const err = new Error('Нельзя удалить последнего администратора');
+      const err = new Error("Нельзя удалить последнего администратора");
       err.status = 400;
       throw err;
     }
   }
 
   await sequelize.transaction(async (t) => {
-    await detachUserReferences(t, id);
-    await runSql(t, 'DELETE FROM users WHERE id = :id', id);
+    await purgeUserContent(t, user);
+    await runSql(t, "DELETE FROM users WHERE id = :id", id);
   });
 
   return { username: user.username, id };
 }
 
-module.exports = { deleteRegisteredUser };
+async function deleteOwnAccount(userId) {
+  return deleteRegisteredUser(userId, null, { allowSelf: true });
+}
+
+module.exports = { deleteRegisteredUser, deleteOwnAccount };

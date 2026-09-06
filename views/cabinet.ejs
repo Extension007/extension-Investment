@@ -566,6 +566,17 @@
         </div>
       </div>
     </section>
+
+    <section class="account-danger" style="margin: 32px 0 100px; padding: 16px 18px; border: 1px solid rgba(200,80,80,0.45); border-radius: 12px; background: rgba(40,12,12,0.45);">
+      <h2 style="margin:0 0 8px; font-size:1.05rem; color:#f0b0b0;"><%= t('cabinet.deleteAccountTitle') %></h2>
+      <p style="margin:0 0 14px; opacity:.85; line-height:1.55; font-size:.95rem;"><%= t('cabinet.deleteAccountLead') %></p>
+      <form id="deleteAccountForm" method="POST" action="/cabinet/delete-account" style="display:flex; flex-direction:column; gap:10px; max-width:360px;">
+        <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+        <input type="password" name="password" placeholder="<%= t('cabinet.deleteAccountPassword') %>" required autocomplete="current-password">
+        <input type="text" name="confirm" placeholder="<%= t('cabinet.deleteAccountConfirmPlaceholder') %>" required autocomplete="off">
+        <button type="submit" class="btn outline small" style="border-color:#c45; color:#f8c;"><%= t('cabinet.deleteAccountButton') %></button>
+      </form>
+    </section>
   </main>
 
 
@@ -838,6 +849,14 @@
           refreshAlbaData();
         });
       });
+
+      const deleteForm = document.getElementById('deleteAccountForm');
+      if (deleteForm) {
+        deleteForm.addEventListener('submit', function (e) {
+          var ok = window.confirm(<%= JSON.stringify(t('cabinet.deleteAccountConfirmDialog')) %>);
+          if (!ok) e.preventDefault();
+        });
+      }
     });
   </script>
 

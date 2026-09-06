@@ -30,6 +30,11 @@ const VerificationToken = sequelize.define('VerificationToken', {
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: false
+  },
+  purpose: {
+    type: DataTypes.STRING(40),
+    allowNull: false,
+    defaultValue: 'email_verify'
   }
 }, {
   tableName: 'verification_tokens',
@@ -37,7 +42,8 @@ const VerificationToken = sequelize.define('VerificationToken', {
   indexes: [
     { fields: ['user_id'] },
     { fields: ['token'], unique: true },
-    { fields: ['used'] }
+    { fields: ['used'] },
+    { fields: ['purpose'] }
   ]
 });
 

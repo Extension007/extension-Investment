@@ -54,7 +54,11 @@
         },
         {
           "q": "I forgot my password. Can I reset it?",
-          "a": "There is no self-service password reset yet. Contact us through the form and include your nickname and account email."
+          "a": "Yes. On the sign-in page tap Forgot password?, enter your verified email, and open the link we send. Unverified emails cannot reset a password."
+        },
+        {
+          "q": "How do I delete my account?",
+          "a": "In My account, use Delete account. Enter your password and type DELETE. Your account, cards, photos, comments, and related data are removed permanently."
         }
       ]
     },

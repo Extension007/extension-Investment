@@ -36,13 +36,18 @@ async function ensureVerificationTokensTable() {
       token TEXT NOT NULL UNIQUE,
       expires_at TIMESTAMP NOT NULL,
       used BOOLEAN DEFAULT false,
+      purpose TEXT NOT NULL DEFAULT 'email_verify',
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW()
     )
   `);
+  await sequelize.query(
+    `ALTER TABLE verification_tokens ADD COLUMN IF NOT EXISTS purpose TEXT NOT NULL DEFAULT 'email_verify'`
+  ).catch(() => {});
   await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_verification_tokens_user_id ON verification_tokens(user_id)`);
   await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_verification_tokens_token ON verification_tokens(token)`);
   await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_verification_tokens_used ON verification_tokens(used)`);
+  await sequelize.query(`CREATE INDEX IF NOT EXISTS idx_verification_tokens_purpose ON verification_tokens(purpose)`);
 }
 
 async function sendVerificationEmail(user, locale = "en") {
@@ -53,14 +58,15 @@ async function sendVerificationEmail(user, locale = "en") {
 
   await VerificationToken.update(
     { used: true },
-    { where: { userId: user.id, used: false } }
+    { where: { userId: user.id, used: false, purpose: 'email_verify' } }
   );
 
   await VerificationToken.create({
     userId: user.id,
     token,
     expiresAt,
-    used: false
+    used: false,
+    purpose: 'email_verify'
   });
 
   // Legacy columns for older clients / transitional period
@@ -157,6 +163,7 @@ async function verifyEmail(userId, token) {
           userId: uid,
           token,
           used: false,
+          purpose: 'email_verify',
           expiresAt: { [Op.gt]: new Date() }
         },
         transaction: t
@@ -223,7 +230,7 @@ async function verifyEmailByTokenOnly(token) {
   await ensureVerificationTokensTable();
 
   const row = await VerificationToken.findOne({
-    where: { token },
+    where: { token, purpose: 'email_verify' },
     order: [['createdAt', 'DESC']]
   });
 

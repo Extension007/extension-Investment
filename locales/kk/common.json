@@ -9,11 +9,13 @@
     "loginTitle": "Кіру — Пайдаланушы",
     "registerTitle": "Тіркелу",
     "cabinetTitle": "Жеке кабинет",
+    "forgotPasswordTitle": "Құпия сөзді ұмыттым — Albamount",
+    "resetPasswordTitle": "Жаңа құпия сөз — Albamount",
     "rulesTitle": "Жариялау ережелері — Albamount",
     "faqTitle": "Жиі қойылатын сұрақтар — Albamount",
     "faqDescription": "Albamount анықтамасы: тіркелу, карточка жариялау, ALBA, іздеу және ережелер.",
     "appTitle": "Қосымшаны жүктеу — Albamount",
-    "appDescription": "Albamount Android қосымшасын орнатып, телефонда сол каталогты пайдаланыңыз."
+    "appDescription": "Albamount-ты Android-қа орнатыңыз немесе iPhone негізгі экранына қосыңыз — сол каталог телефонда."
   },
   "nav": {
     "login": "Кіру",
@@ -28,15 +30,25 @@
     "faq": "FAQ"
   },
   "appDownload": {
-    "title": "Albamount Android қосымшасы",
-    "lead": "Сол сайт қосымшада: каталог, кабинет, тілдер және админ.",
+    "title": "Albamount телефонда",
+    "lead": "Сол каталог қосымшадай: қызметтер, кабинет, тілдер және админ.",
     "button": "APK жүктеу",
     "version": "Нұсқа {{version}} · Android 8+",
-    "howTitle": "Қалай орнату керек",
-    "step1": "Бұл бетті телефонда ашып, «APK жүктеу» басыңыз.",
+    "howTitle": "Android-та қалай орнату керек",
+    "step1": "Бұл бетті Android телефонда ашып, «APK жүктеу» басыңыз.",
     "step2": "Android сұраса — осы дереккөзден орнатуға рұқсат беріңіз.",
     "step3": "Файлды ашып, Albamount орнатыңыз.",
-    "shareLabel": "Бөлісу сілтемесі:"
+    "shareLabel": "Бөлісу сілтемесі:",
+    "androidTitle": "Android",
+    "androidLead": "APK орнатыңыз — өз белгішесі бар қалыпты қосымша.",
+    "iosTitle": "iPhone / iPad",
+    "iosLead": "Apple Android-тағыдай файлмен орнатуға рұқсат бермейді. iPhone-да Albamount-ты «Негізгі экранға» қосыңыз — қосымшадай ашылады.",
+    "iosHowTitle": "iPhone-ға қалай қосу керек",
+    "iosStep1": "https://www.albamount.xyz/app сілтемесін Safari-де ашыңыз (Chrome емес).",
+    "iosStep2": "«Бөлісу» батырмасын басыңыз (жоғары көрсеткі бар шаршы).",
+    "iosStep3": "«Негізгі экранға» таңдаңыз.",
+    "iosStep4": "«Қосу» басыңыз — Albamount белгішесі пайда болады.",
+    "iosNote": "Safari керек. Әрі қарай негізгі экран белгішесінен ашыңыз."
   },
   "intro": {
     "title": "Каталог, лента емес",
@@ -112,7 +124,20 @@
     "verifyEmailPending": "Растау хаты жіберілді. Поштаңызды тексеріңіз.",
     "resendVerification": "Хатты қайта жіберу",
     "resendVerificationSent": "Растау хаты қайта жіберілді. Поштаңызды тексеріңіз.",
-    "goLogin": "Кіруге өту"
+    "goLogin": "Кіруге өту",
+    "forgotPassword": "Құпия сөзді ұмыттыңыз ба?",
+    "forgotHeading": "Құпия сөзді қалпына келтіру",
+    "forgotLead": "Тіркелу кезінде растаған email енгізіңіз. Аккаунт бар және пошта расталған болса — сілтеме келеді.",
+    "sendResetLink": "Сілтеме жіберу",
+    "resetEmailSent": "Егер расталған email бар болса — сілтеме жіберілді. Поштаны тексеріңіз.",
+    "resetHeading": "Жаңа құпия сөз",
+    "newPassword": "Жаңа құпия сөз",
+    "confirmPassword": "Құпия сөзді қайталаңыз",
+    "saveNewPassword": "Құпия сөзді сақтау",
+    "resetLinkInvalid": "Сілтеме жарамсыз немесе ескірген.",
+    "resetSuccess": "Құпия сөз жаңартылды. Кіруге болады.",
+    "passwordsMismatch": "Құпия сөздер сәйкес емес.",
+    "passwordTooShort": "Құпия сөз кемінде 6 таңбадан тұруы керек."
   },
   "contacts": {
     "heading": "Бізге жазыңыз",
@@ -181,7 +206,13 @@
     "publicationRules": "Жариялау ережелері",
     "footerAlba": "ALBA",
     "footerReferral": "Реферал",
-    "footerRules": "Ереже"
+    "footerRules": "Ереже",
+    "deleteAccountTitle": "Аккаунтты жою",
+    "deleteAccountLead": "Аккаунт, карточкалар, фото, пікірлер, дауыстар, ALBA тарихы және байланысты деректер біржола жойылады. Кері қайтару мүмкін емес.",
+    "deleteAccountPassword": "Ағымдағы құпия сөз",
+    "deleteAccountConfirmPlaceholder": "Растау үшін DELETE енгізіңіз",
+    "deleteAccountButton": "Аккаунтты біржола жою",
+    "deleteAccountConfirmDialog": "Аккаунт пен барлық деректерді біржола жоясыз ба?"
   },
   "form": {
     "addProduct": "Хабарландыру қосу",

@@ -9,11 +9,13 @@
     "loginTitle": "登录 — 用户",
     "registerTitle": "注册",
     "cabinetTitle": "个人中心",
+    "forgotPasswordTitle": "忘记密码 — Albamount",
+    "resetPasswordTitle": "重置密码 — Albamount",
     "rulesTitle": "发布规则 — Albamount",
     "faqTitle": "常见问题 — Albamount",
     "faqDescription": "Albamount 帮助：注册、发布卡片、ALBA、聊天、搜索与规则。",
     "appTitle": "下载应用 — Albamount",
-    "appDescription": "安装 Albamount Android 应用，在手机上使用同一目录。"
+    "appDescription": "在 Android 安装 Albamount，或在 iPhone 添加到主屏幕——同一目录，随身可用。"
   },
   "nav": {
     "login": "登录",
@@ -28,15 +30,25 @@
     "faq": "FAQ"
   },
   "appDownload": {
-    "title": "Albamount Android 应用",
+    "title": "Albamount 手机版",
     "lead": "与网站相同：目录、账户、语言和管理功能。",
     "button": "下载 APK",
     "version": "版本 {{version}} · Android 8+",
-    "howTitle": "如何安装",
-    "step1": "在手机上打开此页面并点击「下载 APK」。",
+    "howTitle": "如何在 Android 安装",
+    "step1": "在 Android 手机打开此页面并点击「下载 APK」。",
     "step2": "如系统提示，允许从此来源安装。",
     "step3": "打开文件并安装 Albamount。",
-    "shareLabel": "分享链接："
+    "shareLabel": "分享链接：",
+    "androidTitle": "Android",
+    "androidLead": "安装 APK，获得带图标的独立应用。",
+    "iosTitle": "iPhone / iPad",
+    "iosLead": "Apple 不允许像 Android 那样直接分享安装包。在 iPhone 上把 Albamount 添加到主屏幕，即可像应用一样打开并显示图标。",
+    "iosHowTitle": "如何在 iPhone 上添加",
+    "iosStep1": "用 Safari（不要用 Chrome）打开 https://www.albamount.xyz/app。",
+    "iosStep2": "点击分享按钮（方框加向上箭头）。",
+    "iosStep3": "选择「添加到主屏幕」。",
+    "iosStep4": "点「添加」— 主屏幕会出现 Albamount 图标。",
+    "iosNote": "请使用 Safari。之后从主屏幕图标打开 Albamount。"
   },
   "intro": {
     "title": "目录，而不是信息流",
@@ -112,7 +124,20 @@
     "verifyEmailPending": "验证邮件已发送。请查收收件箱。",
     "resendVerification": "重新发送验证邮件",
     "resendVerificationSent": "验证邮件已重新发送，请检查收件箱。",
-    "goLogin": "前往登录"
+    "goLogin": "前往登录",
+    "forgotPassword": "忘记密码？",
+    "forgotHeading": "找回密码",
+    "forgotLead": "输入注册时已验证的邮箱。若账号存在且邮箱已验证，我们将发送重置链接。",
+    "sendResetLink": "发送重置链接",
+    "resetEmailSent": "若该已验证邮箱存在，我们已发送链接。请查收邮件。",
+    "resetHeading": "设置新密码",
+    "newPassword": "新密码",
+    "confirmPassword": "确认密码",
+    "saveNewPassword": "保存密码",
+    "resetLinkInvalid": "重置链接无效或已过期。",
+    "resetSuccess": "密码已更新，现在可以登录。",
+    "passwordsMismatch": "两次密码不一致。",
+    "passwordTooShort": "密码至少 6 个字符。"
   },
   "contacts": {
     "heading": "联系我们",
@@ -181,7 +206,13 @@
     "publicationRules": "发布规则",
     "footerAlba": "ALBA",
     "footerReferral": "推荐",
-    "footerRules": "规则"
+    "footerRules": "规则",
+    "deleteAccountTitle": "删除账号",
+    "deleteAccountLead": "将永久删除您的账号、卡片、照片、评论、投票、ALBA 记录及相关数据。此操作无法撤销。",
+    "deleteAccountPassword": "当前密码",
+    "deleteAccountConfirmPlaceholder": "输入 DELETE 以确认",
+    "deleteAccountButton": "永久删除我的账号",
+    "deleteAccountConfirmDialog": "确定永久删除账号及所有数据？"
   },
   "form": {
     "addProduct": "添加买卖信息",
