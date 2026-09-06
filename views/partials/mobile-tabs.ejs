@@ -1,4 +1,5 @@
 <footer class="mobile-tabs-footer">
+  <%- include('legal-links') %>
   <div class="mobile-tabs-container">
     <a href="/" class="mobile-tab-button <%= typeof activeTab !== 'undefined' && activeTab === 'services' ? 'active' : '' %>">
       <%= typeof t === 'function' ? t('nav.services') : 'Услуги' %>

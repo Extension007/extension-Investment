@@ -45,7 +45,11 @@ function buildSitemapXml({
     urlEntry(`${base}/ad`, { lastmod, changefreq: "daily", priority: "0.9" }),
     urlEntry(`${base}/services`, { lastmod, changefreq: "daily", priority: "0.8" }),
     urlEntry(`${base}/contacts`, { changefreq: "monthly", priority: "0.5" }),
-    urlEntry(`${base}/faq`, { changefreq: "monthly", priority: "0.6" })
+    urlEntry(`${base}/faq`, { changefreq: "monthly", priority: "0.6" }),
+    urlEntry(`${base}/privacy`, { changefreq: "yearly", priority: "0.4" }),
+    urlEntry(`${base}/terms`, { changefreq: "yearly", priority: "0.4" }),
+    urlEntry(`${base}/rules`, { changefreq: "monthly", priority: "0.5" }),
+    urlEntry(`${base}/app`, { changefreq: "monthly", priority: "0.5" })
   ];
 
   return [

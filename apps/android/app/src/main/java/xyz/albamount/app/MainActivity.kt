@@ -3,32 +3,49 @@ package xyz.albamount.app
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.Typeface
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Bundle
+import android.view.Gravity
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.getSystemService
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import xyz.albamount.app.BuildConfig
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 /**
- * Полная копия сайта: приложение открывает живой https://www.albamount.xyz
- * (тот же дизайн, языки, кабинет, админ, формы с фото).
+ * Albamount Android shell for Google Play: same live site plus splash,
+ * offline/error UI, and pull-to-refresh (Policy 4.3 helpers).
  */
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
+    private lateinit var swipeRefresh: SwipeRefreshLayout
+    private lateinit var splash: View
+    private lateinit var offlinePanel: View
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     private val fileChooser = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -52,25 +69,32 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Контент не уходит под статус-бар и кнопки «Назад/Домой»
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        val root = FrameLayout(this).apply {
-            setBackgroundColor(BG_COLOR)
-        }
+        val root = FrameLayout(this).apply { setBackgroundColor(BG_COLOR) }
 
-        webView = WebView(this).apply {
-            setBackgroundColor(BG_COLOR)
+        swipeRefresh = SwipeRefreshLayout(this).apply {
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
+            setColorSchemeColors(0xFF1F8A5A.toInt(), 0xFFC9A227.toInt())
+            setOnRefreshListener {
+                if (isOnline()) webView.reload() else {
+                    isRefreshing = false
+                    showOffline(true)
+                }
+            }
+        }
+
+        webView = WebView(this).apply {
+            setBackgroundColor(BG_COLOR)
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.databaseEnabled = true
-            settings.allowFileAccess = true
+            settings.allowFileAccess = false
             settings.allowContentAccess = true
-            settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
             settings.cacheMode = WebSettings.LOAD_DEFAULT
             settings.useWideViewPort = true
             settings.loadWithOverviewMode = true
@@ -92,19 +116,33 @@ class MainActivity : ComponentActivity() {
                     return if (internal) {
                         false
                     } else {
-                        runCatching {
-                            startActivity(Intent(Intent.ACTION_VIEW, request.url))
-                        }
+                        runCatching { startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
                         true
                     }
                 }
 
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     CookieManager.getInstance().flush()
+                    if (!isOnline()) showOffline(true)
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     CookieManager.getInstance().flush()
+                    splash.visibility = View.GONE
+                    swipeRefresh.isRefreshing = false
+                    if (isOnline()) showOffline(false)
+                }
+
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        splash.visibility = View.GONE
+                        swipeRefresh.isRefreshing = false
+                        showOffline(true)
+                    }
                 }
             }
 
@@ -133,10 +171,21 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        root.addView(webView)
+        swipeRefresh.addView(
+            webView,
+            ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+        root.addView(swipeRefresh)
+
+        splash = buildSplash()
+        offlinePanel = buildOfflinePanel()
+        root.addView(splash)
+        root.addView(offlinePanel)
         setContentView(root)
 
-        // Padding на FrameLayout (не на WebView) — шапка и подвал сайта не залезают под системные панели
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, windowInsets ->
             val bars = windowInsets.getInsets(
                 WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
@@ -156,8 +205,123 @@ class MainActivity : ComponentActivity() {
             }
         )
 
+        registerNetworkCallback()
         val start = savedInstanceState?.getString(STATE_URL) ?: BuildConfig.SITE_URL
-        webView.loadUrl(start)
+        if (isOnline()) {
+            webView.loadUrl(start)
+        } else {
+            splash.visibility = View.GONE
+            showOffline(true)
+        }
+    }
+
+    private fun buildSplash(): View {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(BG_COLOR)
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            addView(TextView(context).apply {
+                text = "Albamount"
+                setTextColor(0xFFE8D5A3.toInt())
+                textSize = 28f
+                setTypeface(typeface, Typeface.BOLD)
+                gravity = Gravity.CENTER
+            })
+            addView(ProgressBar(context).apply {
+                val lp = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                lp.topMargin = (24 * resources.displayMetrics.density).toInt()
+                layoutParams = lp
+            })
+        }
+    }
+
+    private fun buildOfflinePanel(): View {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setBackgroundColor(BG_COLOR)
+            visibility = View.GONE
+            setPadding(48, 48, 48, 48)
+            layoutParams = FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            addView(TextView(context).apply {
+                text = getString(R.string.offline_title)
+                setTextColor(0xFFE8D5A3.toInt())
+                textSize = 22f
+                gravity = Gravity.CENTER
+                setTypeface(typeface, Typeface.BOLD)
+            })
+            addView(TextView(context).apply {
+                text = getString(R.string.offline_body)
+                setTextColor(Color.WHITE)
+                textSize = 15f
+                gravity = Gravity.CENTER
+                val lp = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                lp.topMargin = (12 * resources.displayMetrics.density).toInt()
+                layoutParams = lp
+            })
+            addView(Button(context).apply {
+                text = getString(R.string.offline_retry)
+                val lp = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+                lp.topMargin = (20 * resources.displayMetrics.density).toInt()
+                layoutParams = lp
+                setOnClickListener {
+                    if (isOnline()) {
+                        showOffline(false)
+                        splash.visibility = View.VISIBLE
+                        webView.loadUrl(BuildConfig.SITE_URL)
+                    }
+                }
+            })
+        }
+    }
+
+    private fun showOffline(show: Boolean) {
+        offlinePanel.visibility = if (show) View.VISIBLE else View.GONE
+    }
+
+    private fun isOnline(): Boolean {
+        val cm = getSystemService<ConnectivityManager>() ?: return true
+        val network = cm.activeNetwork ?: return false
+        val caps = cm.getNetworkCapabilities(network) ?: return false
+        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
+    private fun registerNetworkCallback() {
+        val cm = getSystemService<ConnectivityManager>() ?: return
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                runOnUiThread {
+                    if (offlinePanel.visibility == View.VISIBLE) {
+                        showOffline(false)
+                        splash.visibility = View.VISIBLE
+                        webView.loadUrl(webView.url ?: BuildConfig.SITE_URL)
+                    }
+                }
+            }
+
+            override fun onLost(network: Network) {
+                runOnUiThread { showOffline(true) }
+            }
+        }
+        networkCallback = callback
+        runCatching { cm.registerDefaultNetworkCallback(callback) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -177,6 +341,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        networkCallback?.let { cb ->
+            runCatching { getSystemService<ConnectivityManager>()?.unregisterNetworkCallback(cb) }
+        }
         webView.destroy()
         super.onDestroy()
     }

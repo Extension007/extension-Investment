@@ -15,7 +15,12 @@
     "faqTitle": "Жиі қойылатын сұрақтар — Albamount",
     "faqDescription": "Albamount анықтамасы: тіркелу, карточка жариялау, ALBA, іздеу және ережелер.",
     "appTitle": "Қосымшаны жүктеу — Albamount",
-    "appDescription": "Albamount-ты Android-қа орнатыңыз немесе iPhone негізгі экранына қосыңыз — сол каталог телефонда."
+    "appDescription": "Albamount-ты Android-қа орнатыңыз немесе iPhone негізгі экранына қосыңыз — сол каталог телефонда.",
+    "privacyTitle": "Құпиялылық саясаты — Albamount",
+    "privacyDescription": "Albamount сайт пен Android қосымшасында жеке деректерді қалай жинайды, пайдаланады және жояды.",
+    "termsTitle": "Пайдалану шарттары — Albamount",
+    "termsDescription": "Albamount каталогы, аккаунт және мобильді қосымшаны пайдалану шарттары.",
+    "rulesDescription": "Albamount-та хабарландырулар мен қызметтерді жариялау ережелері."
   },
   "nav": {
     "login": "Кіру",
@@ -27,7 +32,11 @@
     "contactUs": "Бізге жазыңыз",
     "catalog": "Каталог",
     "language": "Тіл",
-    "faq": "FAQ"
+    "faq": "FAQ",
+    "privacy": "Құпиялылық",
+    "terms": "Шарттар",
+    "rules": "Ережелер",
+    "app": "Қосымша"
   },
   "appDownload": {
     "title": "Albamount телефонда",

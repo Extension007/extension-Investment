@@ -1,29 +1,19 @@
 # Albamount Android
 
-Сайт и приложение работают с **одной** базой: https://www.albamount.xyz
+Site + app share one service: https://www.albamount.xyz
 
-## Что уже одинаково
+## Play readiness
 
-| Возможность | Сайт | Приложение |
-|---|---|---|
-| Каталог услуг / объявлений | да | да |
-| Поиск | да | да |
-| Карточка (фото, контакты, видео, ссылка) | да | да |
-| Голос (гость и пользователь) | да | да |
-| Чат (чтение всем, писать после входа) | да | да |
-| Вход / регистрация | да | да |
-| Кабинет, ALBA, автопродление | да | да |
-| FAQ | да | да |
-| Админ: очередь, одобрить / отклонить | да | да |
+See [PLAY_COMPLIANCE.md](./PLAY_COMPLIANCE.md) for Privacy/Terms URLs, Data Safety, and AAB signing steps.
 
-## Пока через сайт (кнопка в кабинете приложения)
-
-Создание и редактирование карточки **с загрузкой фото** — на сайте (`/cabinet`). В приложении есть кнопка «Создать / править карточку на сайте».
-
-## Запуск
+## Run locally
 
 1. Android Studio → Open → `apps/android`
 2. Sync Gradle
-3. Run на телефон
+3. Run on device/emulator (loads production site)
 
-Приложение сразу ходит на боевой API.
+## Release signing
+
+1. `keystore.properties.example` → `keystore.properties`
+2. Create `keystore/albamount-upload.jks`
+3. `./gradlew :app:bundleRelease`

@@ -118,13 +118,45 @@ router.get("/faq", (req, res) => {
   });
 });
 
+function renderLegalPage(viewName) {
+  return (req, res) => {
+    const isAuth = Boolean(req.user);
+    const userRole = req.user?.role || null;
+    res.render(viewName, {
+      activeTab: viewName,
+      isAuth,
+      isAdmin: userRole === "admin",
+      isUser: userRole === "user",
+      userRole,
+      user: req.user || null,
+      csrfToken: res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : "")
+    });
+  };
+}
+
+router.get("/privacy", renderLegalPage("privacy"));
+router.get("/terms", renderLegalPage("terms"));
+router.get("/rules", (req, res) => {
+  const isAuth = Boolean(req.user);
+  const userRole = req.user?.role || null;
+  res.render("publication-rules", {
+    activeTab: "rules",
+    isAuth,
+    isAdmin: userRole === "admin",
+    isUser: userRole === "user",
+    userRole,
+    user: req.user || null,
+    csrfToken: res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : "")
+  });
+});
+
 // Публичная страница скачивания Android-приложения (ссылка для шаринга)
 router.get(["/app", "/download", "/get-app"], (req, res) => {
   const isAuth = Boolean(req.user);
   const userRole = req.user?.role || null;
   res.render("app-download", {
     activeTab: "app",
-    androidAppVersion: "2.0.2",
+    androidAppVersion: "2.1.0",
     isAuth,
     isAdmin: userRole === "admin",
     isUser: userRole === "user",

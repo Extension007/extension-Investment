@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
+<head>
+  <meta charset="UTF-8">
+  <title><%= t('meta.termsTitle') %></title>
+  <%- include('partials/seo-head', {
+    canonicalPath: '/terms',
+    seoTitle: t('meta.termsTitle'),
+    seoDescription: t('meta.termsDescription')
+  }) %>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css?v=1.4.0">
+  <link rel="stylesheet" href="/header-tabs.css?v=1.1.4">
+  <style>
+    .legal-page { max-width: 760px; margin: 0 auto; color: #eee; line-height: 1.65; }
+    .legal-page h1 { margin: 0 0 8px; font-size: 1.7rem; }
+    .legal-page .updated { opacity: .7; font-size: .9rem; margin: 0 0 20px; }
+    .legal-page h2 { margin: 28px 0 10px; font-size: 1.15rem; color: #e8d5a3; }
+    .legal-page p, .legal-page li { opacity: .92; }
+    .legal-page ul { padding-left: 1.2rem; }
+    .legal-page a { color: #c8f5d8; }
+  </style>
+</head>
+<body>
+  <%- include('partials/header') %>
+  <main class="container" style="padding-top: 100px; padding-bottom: 110px;">
+    <article class="legal-page">
+      <h1><%= t('terms.title') %></h1>
+      <p class="updated"><%= t('terms.updated') %></p>
+      <p><%= t('terms.intro') %></p>
+
+      <h2><%= t('terms.serviceTitle') %></h2>
+      <p><%= t('terms.serviceBody') %></p>
+
+      <h2><%= t('terms.accountTitle') %></h2>
+      <p><%= t('terms.accountBody') %></p>
+
+      <h2><%= t('terms.contentTitle') %></h2>
+      <p><%= t('terms.contentBody') %></p>
+
+      <h2><%= t('terms.rulesTitle') %></h2>
+      <p><%= t('terms.rulesBody') %></p>
+
+      <h2><%= t('terms.appTitle') %></h2>
+      <p><%= t('terms.appBody') %></p>
+
+      <h2><%= t('terms.liabilityTitle') %></h2>
+      <p><%= t('terms.liabilityBody') %></p>
+
+      <h2><%= t('terms.changesTitle') %></h2>
+      <p><%= t('terms.changesBody') %></p>
+
+      <h2><%= t('terms.contactTitle') %></h2>
+      <p><%= t('terms.contactBody') %></p>
+    </article>
+  </main>
+  <%- include('partials/mobile-tabs') %>
+  <script src="/script.js?v=1.4.3" defer></script>
+</body>
+</html>

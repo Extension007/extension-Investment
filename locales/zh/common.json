@@ -15,7 +15,12 @@
     "faqTitle": "常见问题 — Albamount",
     "faqDescription": "Albamount 帮助：注册、发布卡片、ALBA、聊天、搜索与规则。",
     "appTitle": "下载应用 — Albamount",
-    "appDescription": "在 Android 安装 Albamount，或在 iPhone 添加到主屏幕——同一目录，随身可用。"
+    "appDescription": "在 Android 安装 Albamount，或在 iPhone 添加到主屏幕——同一目录，随身可用。",
+    "privacyTitle": "隐私政策 — Albamount",
+    "privacyDescription": "Albamount 如何在网站与 Android 应用中收集、使用和删除个人数据。",
+    "termsTitle": "使用条款 — Albamount",
+    "termsDescription": "使用 Albamount 目录、账户与移动应用的条款。",
+    "rulesDescription": "Albamount 信息与服务发布规则。"
   },
   "nav": {
     "login": "登录",
@@ -27,7 +32,11 @@
     "contactUs": "联系我们",
     "catalog": "目录",
     "language": "语言",
-    "faq": "FAQ"
+    "faq": "FAQ",
+    "privacy": "隐私",
+    "terms": "条款",
+    "rules": "规则",
+    "app": "应用"
   },
   "appDownload": {
     "title": "Albamount 手机版",

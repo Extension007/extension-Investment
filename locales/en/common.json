@@ -15,7 +15,12 @@
     "faqTitle": "FAQ — Albamount",
     "faqDescription": "Albamount help: accounts, publishing cards, ALBA, chat, search, and rules.",
     "appTitle": "Download the app — Albamount",
-    "appDescription": "Install Albamount on Android or add it to the iPhone Home Screen — same catalog on your phone."
+    "appDescription": "Install Albamount on Android or add it to the iPhone Home Screen — same catalog on your phone.",
+    "privacyTitle": "Privacy Policy — Albamount",
+    "privacyDescription": "How Albamount collects, uses, and deletes personal data in the website and Android app.",
+    "termsTitle": "Terms of Use — Albamount",
+    "termsDescription": "Terms for using the Albamount catalog, account, and mobile app.",
+    "rulesDescription": "Publication rules for listings and services on Albamount."
   },
   "nav": {
     "login": "Sign in",
@@ -27,7 +32,11 @@
     "contactUs": "Contact us",
     "catalog": "Catalog",
     "language": "Language",
-    "faq": "FAQ"
+    "faq": "FAQ",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "rules": "Rules",
+    "app": "App"
   },
   "appDownload": {
     "title": "Albamount on your phone",
@@ -464,5 +473,50 @@
     "historyNetworkError": "Network error while loading history",
     "imageReadFail": "Could not read image",
     "cloudinaryUploadFail": "Cloudinary upload failed"
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "updated": "Last updated: 6 September 2026",
+    "intro": "This Privacy Policy explains how Albamount (“we”) processes personal data when you use www.albamount.xyz and the Albamount Android application (a secure browser shell for the same service).",
+    "whoTitle": "Who we are",
+    "whoBody": "Controller: Albamount. Contact: support@albamount.xyz or the Contact form on the site.",
+    "dataTitle": "What we collect",
+    "dataAccount": "Account data: nickname, email, password hash, account type, verification status, ALBA balance and related history.",
+    "dataContent": "User content: listings (text, contacts, photos, optional video/link), comments/chat on cards, votes.",
+    "dataTech": "Technical data: cookies/session (including authentication JWT), language preference, guest identifier for voting, approximate device/browser info needed to run the site and app.",
+    "dataMessages": "Messages you send via Contact us (name, email, subject, text).",
+    "whyTitle": "Why we use data",
+    "whyBody": "To provide the catalog and accounts, moderate listings, prevent abuse, send verification and password-reset emails, improve reliability and security, and respond to support requests. Legal bases include contract performance and legitimate interests in operating a safe marketplace.",
+    "shareTitle": "Processors and sharing",
+    "shareBody": "We use infrastructure providers (hosting/database), email delivery (SMTP), and Cloudinary for image hosting. We do not sell your personal data. Data may be disclosed if required by law.",
+    "retentionTitle": "Retention",
+    "retentionBody": "We keep account and content data while your account is active. After you delete your account, we permanently remove the account and associated content we control (including listings, photos we host, comments, and related records), except where we must retain limited records for legal or security reasons.",
+    "rightsTitle": "Your rights",
+    "rightsBody": "Depending on your region, you may request access, correction, or deletion. In the app/site you can delete your account in My account (password + confirmation). You can also contact support@albamount.xyz. Password reset is available only for verified emails.",
+    "childrenTitle": "Children",
+    "childrenBody": "The service is not directed at children under 13 (or the minimum age required in your country). Do not create an account if you are under that age.",
+    "contactTitle": "Contact",
+    "contactBody": "Questions about privacy: support@albamount.xyz or https://www.albamount.xyz/contacts"
+  },
+  "terms": {
+    "title": "Terms of Use",
+    "updated": "Last updated: 6 September 2026",
+    "intro": "By using Albamount (website and Android app) you agree to these Terms.",
+    "serviceTitle": "The service",
+    "serviceBody": "Albamount is an online catalog for services and buy/sell listings. Features may change as we improve the product.",
+    "accountTitle": "Accounts",
+    "accountBody": "You must provide accurate information, keep your password secure, and use only one account unless we allow otherwise. You may delete your account in My account; deletion removes your account and related content as described in the Privacy Policy.",
+    "contentTitle": "Your content",
+    "contentBody": "You are responsible for listings, photos, contacts, and messages you publish. You grant us a license to host and display that content to operate the catalog. Do not post illegal, infringing, or harmful material.",
+    "rulesTitle": "Publication rules",
+    "rulesBody": "Listings must follow the Publication Rules: https://www.albamount.xyz/rules. We may reject, hide, or remove content and suspend accounts that violate the rules.",
+    "appTitle": "Mobile app",
+    "appBody": "The Android app displays the Albamount website in a dedicated shell. The same Terms and Privacy Policy apply. Sideloaded APK builds outside Google Play are provided at your own risk until a Play listing is available.",
+    "liabilityTitle": "Disclaimer",
+    "liabilityBody": "The service is provided “as is”. We are not a party to deals between users. To the fullest extent allowed by law, we are not liable for indirect losses arising from use of the catalog.",
+    "changesTitle": "Changes",
+    "changesBody": "We may update these Terms. Continued use after changes means you accept the updated Terms. The date above shows the latest revision.",
+    "contactTitle": "Contact",
+    "contactBody": "support@albamount.xyz · https://www.albamount.xyz/contacts"
   }
 }
