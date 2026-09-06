@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/styles.css?v=1.4.0">
+<link rel="stylesheet" href="/styles.css?v=1.4.1">
 </head>
 <body class="admin-page">
 
@@ -211,17 +211,22 @@
   </button>
 </form>
 <div id="albaGrantMsg" class="note" style="margin-top:10px; min-height:1.5em; color:#fff;"></div>
-<script src="/js/admin-alba-grant.js?v=1.0.3"></script>
+<script src="/js/admin-alba-grant.js?v=1.0.4"></script>
 
-<!-- История транзакций ALBA -->
-<div class="section-header" style="margin-top: 30px;">
-<h2>История транзакций ALBA</h2>
-</div>
+<!-- История транзакций ALBA (свёрнута — меньше прокрутки на телефоне) -->
+</section>
+
+<details class="section admin-fold">
+<summary class="admin-fold-summary">
+  <span class="admin-fold-title">История транзакций ALBA</span>
+  <span class="badge admin-fold-badge"><%= typeof albaTransactions !== 'undefined' && albaTransactions ? albaTransactions.length : 0 %></span>
+</summary>
+<div class="admin-fold-body">
 <button type="button" id="loadTransactionsBtn" class="btn small admin-refresh-btn">Обновить историю</button>
 <div id="albaTransactionsContainer">
 <% if (typeof albaTransactions !== 'undefined' && albaTransactions && albaTransactions.length) { %>
 <div class="admin-table-wrap">
-<table class="admin-data-table" id="albaHistoryTable">
+<table class="admin-data-table admin-preview-table" id="albaHistoryTable" data-preview="5">
 <thead>
 <tr>
 <th>ID</th>
@@ -234,38 +239,39 @@
 </tr>
 </thead>
 <tbody>
-<% albaTransactions.forEach(function(tx) { %>
-<tr>
-<td data-label="ID"><%= tx.id %></td>
+<% albaTransactions.forEach(function(tx, txIdx) { %>
+<tr class="<%= txIdx >= 5 ? 'admin-row-more' : '' %>">
+<td data-label="ID" class="admin-col-secondary"><%= tx.id %></td>
 <td data-label="Пользователь"><%= tx.username || '—' %></td>
-<td data-label="Тип"><%= tx.typeLabel || tx.type %></td>
+<td data-label="Тип" class="admin-col-secondary"><%= tx.typeLabel || tx.type %></td>
 <td data-label="Причина"><%= tx.reasonLabel || tx.reason %></td>
 <td data-label="Сумма"><%= tx.amount %></td>
-<td data-label="Комментарий"><%= tx.comment || '—' %></td>
+<td data-label="Комментарий" class="admin-col-secondary"><%= tx.comment || '—' %></td>
 <td data-label="Дата"><%= tx.createdAt ? new Date(tx.createdAt).toLocaleString('ru-RU') : '—' %></td>
 </tr>
 <% }) %>
 </tbody>
 </table>
 </div>
+<button type="button" class="btn small outline admin-show-more" data-table="albaHistoryTable" hidden>Показать ещё</button>
 <% } else { %>
 <p class="empty-state">Пока нет записей. Начислите ALBA или нажмите «Обновить историю».</p>
 <% } %>
 </div>
-</section>
+</div>
+</details>
 
 
 <!-- Зарегистрированные пользователи -->
-<section class="section">
-<div class="section-header">
-<h2>Пользователи</h2>
-<span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-Всего: <%= typeof registeredUsers !== 'undefined' && registeredUsers ? registeredUsers.length : 0 %>
-</span>
-</div>
+<details class="section admin-fold">
+<summary class="admin-fold-summary">
+  <span class="admin-fold-title">Пользователи</span>
+  <span class="badge admin-fold-badge">Всего: <%= typeof registeredUsers !== 'undefined' && registeredUsers ? registeredUsers.length : 0 %></span>
+</summary>
+<div class="admin-fold-body">
 <% if (typeof registeredUsers !== 'undefined' && registeredUsers && registeredUsers.length) { %>
 <div class="admin-table-wrap">
-<table class="admin-data-table">
+<table class="admin-data-table admin-preview-table" id="adminUsersTable" data-preview="5">
 <thead>
 <tr>
 <th>ID</th>
@@ -277,15 +283,15 @@
 </tr>
 </thead>
 <tbody>
-<% registeredUsers.forEach(function (u) {
+<% registeredUsers.forEach(function (u, uIdx) {
   const uid = u.id;
   const isSelf = String(uid) === String(typeof currentAdminId !== 'undefined' ? currentAdminId : '');
 %>
-<tr>
-<td data-label="ID"><%= uid %></td>
+<tr class="<%= uIdx >= 5 ? 'admin-row-more' : '' %>">
+<td data-label="ID" class="admin-col-secondary"><%= uid %></td>
 <td data-label="Логин"><%= u.username %></td>
 <td data-label="Email"><%= u.email %></td>
-<td data-label="Тип"><%= u.accountType === 'services' ? 'Услуги' : 'Купи/продай' %></td>
+<td data-label="Тип" class="admin-col-secondary"><%= u.accountType === 'services' ? 'Услуги' : 'Купи/продай' %></td>
 <td data-label="Роль"><%= u.role %></td>
 <td data-label="Действие" class="admin-table-actions">
 <% if (!isSelf) { %>
@@ -302,10 +308,12 @@
 </tbody>
 </table>
 </div>
+<button type="button" class="btn small outline admin-show-more" data-table="adminUsersTable" hidden>Показать ещё</button>
 <% } else { %>
 <p class="empty-state">Нет пользователей</p>
 <% } %>
-</section>
+</div>
+</details>
 
 
 <!-- Каталог товаров -->

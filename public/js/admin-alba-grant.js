@@ -19,7 +19,32 @@
     }
   }
 
+  window.setupAdminShowMore = function setupAdminShowMore() {
+    document.querySelectorAll('.admin-show-more').forEach(function (btn) {
+      if (btn.dataset.bound === '1') return;
+      var id = btn.getAttribute('data-table');
+      var table = id ? document.getElementById(id) : null;
+      if (!table) return;
+      var more = table.querySelectorAll('.admin-row-more');
+      if (!more.length) {
+        btn.hidden = true;
+        return;
+      }
+      btn.hidden = false;
+      if (!/\(\d+\)/.test(btn.textContent || '')) {
+        btn.textContent = 'Показать ещё (' + more.length + ')';
+      }
+      btn.dataset.bound = '1';
+      btn.addEventListener('click', function () {
+        table.classList.add('is-expanded');
+        btn.hidden = true;
+      });
+    });
+  };
+
   ready(function () {
+    window.setupAdminShowMore();
+
     var form = document.getElementById('adminGrantAlbaForm');
     var msg = document.getElementById('albaGrantMsg');
     var btn = document.getElementById('albaSubmitBtn');
@@ -146,7 +171,7 @@
       var btn = document.getElementById('loadTransactionsBtn');
       if (!container) return;
       if (btn) btn.disabled = true;
-      fetch('/api/p1/alba/transactions-history?limit=80', {
+      fetch('/api/p1/alba/transactions-history?limit=40', {
         credentials: 'same-origin',
         headers: { 'Accept': 'application/json' }
       }).then(function (res) {
@@ -172,24 +197,29 @@
         var colAmount = escapeHtml(t('colAmount', 'Amount'));
         var colComment = escapeHtml(t('colComment', 'Comment'));
         var colDate = escapeHtml(t('colDate', 'Date'));
-        var html = '<div class="admin-table-wrap"><table class="admin-data-table"><thead><tr>' +
+        var html = '<div class="admin-table-wrap"><table class="admin-data-table admin-preview-table" id="albaHistoryTable" data-preview="5"><thead><tr>' +
           '<th>ID</th><th>' + colUser + '</th><th>' + colType + '</th>' +
           '<th>' + colReason + '</th><th>' + colAmount + '</th><th>' + colComment + '</th>' +
           '<th>' + colDate + '</th></tr></thead><tbody>';
-        rows.forEach(function (tx) {
+        rows.forEach(function (tx, idx) {
           var user = tx.user || {};
           var meta = tx.meta && typeof tx.meta === 'object' ? tx.meta : {};
-          html += '<tr>' +
-            '<td data-label="ID">' + escapeHtml(tx.id) + '</td>' +
+          html += '<tr class="' + (idx >= 5 ? 'admin-row-more' : '') + '">' +
+            '<td data-label="ID" class="admin-col-secondary">' + escapeHtml(tx.id) + '</td>' +
             '<td data-label="' + colUser + '">' + escapeHtml(user.username || '—') + '</td>' +
-            '<td data-label="' + colType + '">' + escapeHtml(tx.type || '') + '</td>' +
+            '<td data-label="' + colType + '" class="admin-col-secondary">' + escapeHtml(tx.type || '') + '</td>' +
             '<td data-label="' + colReason + '">' + escapeHtml(tx.reason || '') + '</td>' +
             '<td data-label="' + colAmount + '">' + escapeHtml(tx.amount) + '</td>' +
-            '<td data-label="' + colComment + '">' + escapeHtml(meta.comment || tx.comment || '—') + '</td>' +
+            '<td data-label="' + colComment + '" class="admin-col-secondary">' + escapeHtml(meta.comment || tx.comment || '—') + '</td>' +
             '<td data-label="' + colDate + '">' + escapeHtml(formatDate(tx.createdAt)) + '</td></tr>';
         });
         html += '</tbody></table></div>';
+        if (rows.length > 5) {
+          html += '<button type="button" class="btn small outline admin-show-more" data-table="albaHistoryTable">Показать ещё (' +
+            (rows.length - 5) + ')</button>';
+        }
         container.innerHTML = html;
+        if (window.setupAdminShowMore) window.setupAdminShowMore();
       }).catch(function () {
         container.innerHTML = '<p class="empty-state">' + escapeHtml(t('historyNetworkError', 'Network error while loading history')) + '</p>';
       }).then(function () {

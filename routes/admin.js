@@ -153,7 +153,7 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
        User.findAll({
          attributes: ['id', 'username', 'email', 'role', 'accountType', 'emailVerified', 'createdAt'],
          order: [['id', 'DESC']],
-         limit: 500
+         limit: 100
        }),
 
        User.count()
@@ -173,7 +173,7 @@ router.get("/", requireAdmin, conditionalCsrfToken, async (req, res) => {
       const { formatAlbaTransaction } = require("../utils/albaLabels");
       const rows = await AlbaTransaction.findAll({
         order: [["id", "DESC"]],
-        limit: 80,
+        limit: 40,
         include: [
           { model: User, as: "user", attributes: ["id", "username", "email"], required: false },
           { model: User, as: "relatedUser", attributes: ["id", "username", "email"], required: false }

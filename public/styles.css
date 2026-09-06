@@ -4025,6 +4025,65 @@ body.admin-page .admin-refresh-btn {
   margin-bottom: 15px;
 }
 
+body.admin-page .admin-fold {
+  padding: 0;
+}
+
+body.admin-page .admin-fold-summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  padding: 16px 18px;
+  user-select: none;
+}
+
+body.admin-page .admin-fold-summary::-webkit-details-marker {
+  display: none;
+}
+
+body.admin-page .admin-fold-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f5f5f5;
+}
+
+body.admin-page .admin-fold-badge {
+  background: #666;
+  color: #fff;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+body.admin-page .admin-fold-summary::after {
+  content: "▾";
+  color: #c9a227;
+  font-size: 1rem;
+  transition: transform 0.15s ease;
+}
+
+body.admin-page .admin-fold[open] > .admin-fold-summary::after {
+  transform: rotate(-180deg);
+}
+
+body.admin-page .admin-fold-body {
+  padding: 0 18px 18px;
+}
+
+body.admin-page .admin-show-more {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+}
+
+body.admin-page .admin-preview-table:not(.is-expanded) .admin-row-more {
+  display: none !important;
+}
+
 body.admin-page .admin-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -4201,6 +4260,31 @@ body.admin-page .inbox-actions {
     color: #c9a227;
     text-align: left;
     flex: 0 0 38%;
+  }
+
+  body.admin-page .admin-data-table .admin-col-secondary {
+    display: none;
+  }
+
+  body.admin-page .admin-data-table tr {
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+
+  body.admin-page .admin-data-table td {
+    padding: 4px 0;
+  }
+
+  body.admin-page .admin-fold-summary {
+    padding: 14px 12px;
+  }
+
+  body.admin-page .admin-fold-body {
+    padding: 0 12px 14px;
+  }
+
+  body.admin-page .admin-fold-title {
+    font-size: 1.05rem;
   }
 
   body.admin-page .admin-table-actions {
