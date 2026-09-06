@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>РђРґРјРёРЅРєР° вЂ” РЈРїСЂР°РІР»РµРЅРёРµ С‚РѕРІР°СЂР°РјРё</title>
+<title>Админка — Управление товарами</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <meta name="referrer" content="strict-origin-when-cross-origin">
@@ -22,21 +22,21 @@
         <a class="logo" href="/"><img src="/albamount.png" alt="ALBAMOUNT" class="logo-img"></a>
         <div class="header-stats">
           <div class="stat-item">
-            <span style="opacity: 0.8;">РІРёР·РёС‚С‹</span>
+            <span style="opacity: 0.8;">визиты</span>
             <strong style="color: #4caf50;"><%= typeof visitorCount !== 'undefined' ? visitorCount : 0 %></strong>
           </div>
           <div class="stat-item">
-            <span style="opacity: 0.8;">РїРѕР»СЊР·РѕРІР°С‚РµР»Рё</span>
+            <span style="opacity: 0.8;">пользователи</span>
             <strong style="color: #2196f3;"><%= typeof userCount !== 'undefined' ? userCount : 0 %></strong>
           </div>
         </div>
       </div>
       <div class="header-actions">
-        <span class="user-chip">РђРґРјРёРЅ-РїР°РЅРµР»СЊ</span>
-        <a href="/admin/contacts" class="btn outline small">РќР°РїРёС€РёС‚Рµ РЅР°Рј</a>
+        <span class="user-chip">Админ-панель</span>
+        <a href="/admin/contacts" class="btn outline small">Напишите нам</a>
         <form id="logoutForm" method="POST" action="/logout">
           <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
-          <button type="submit" class="btn outline small">Р’С‹С…РѕРґ</button>
+          <button type="submit" class="btn outline small">Выход</button>
         </form>
       </div>
     </div>
@@ -70,15 +70,15 @@
 
 <main id="admin-main" class="container">
 
-<!-- РњРѕРґРµСЂР°С†РёСЏ С‚РѕРІР°СЂРѕРІ -->
+<!-- Модерация товаров -->
 <section class="section">
 <div class="section-header">
-<h2>РњРѕРґРµСЂР°С†РёСЏ С‚РѕРІР°СЂРѕРІ</h2>
+<h2>Модерация товаров</h2>
 <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
 <% if (pendingProducts && pendingProducts.length) { %>
-<%= pendingProducts.length %> РЅР° РїСЂРѕРІРµСЂРєРµ
+<%= pendingProducts.length %> на проверке
 <% } else { %>
-РќРµС‚ С‚РѕРІР°СЂРѕРІ РЅР° РјРѕРґРµСЂР°С†РёРё
+Нет товаров на модерации
 <% } %>
 </span>
 </div>
@@ -91,33 +91,33 @@
 <%- include('partials/admin-card-images', { item: p }) %>
 
 <div class="product-bottom">
-<p class="product-desc"><%= p.description || "вЂ”" %></p>
+<p class="product-desc"><%= p.description || "—" %></p>
 <div class="row" style="justify-content:center; gap:8px;">
-<span class="muted">Р¦РµРЅР°:</span>
+<span class="muted">Цена:</span>
 <strong class="price"><%= typeof formatPriceDisplay === 'function' ? formatPriceDisplay(p.price, p.currency) : p.price %></strong>
 </div>
 
 <% if (p.owner) { %>
 <% if (typeof p.owner === 'object' && p.owner.username) { %>
-<p class="muted" style="text-align:center;font-size:0.9rem;">РћС‚: <%= p.owner.username %></p>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= p.owner.username %></p>
 <% } else { %>
-<p class="muted" style="text-align:center;font-size:0.9rem;">РћС‚: РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ ID <%= p.owner %></p>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= p.owner %></p>
 <% } %>
 <% } else { %>
-<p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">Р’Р»Р°РґРµР»РµС† РЅРµ СѓРєР°Р·Р°РЅ</p>
+<p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">Владелец не указан</p>
 <% } %>
 
 <div class="product-actions admin-card-actions">
 <form method="POST" action="/admin/products/<%= p.id %>/approve">
 <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
-<button type="submit" class="btn small">РћРґРѕР±СЂРёС‚СЊ</button>
+<button type="submit" class="btn small">Одобрить</button>
 </form>
-<button type="button" class="btn small reject-btn" data-id="<%= p.id %>" data-type="product">РћС‚РєР»РѕРЅРёС‚СЊ</button>
+<button type="button" class="btn small reject-btn" data-id="<%= p.id %>" data-type="product">Отклонить</button>
 <% if (p.link) { %>
-<a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">РЎСЃС‹Р»РєР°</a>
+<a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
 <% } %>
 <% if (p.video_url) { %>
-<button type="button" class="btn small outline" data-video="<%= p.video_url %>">Р’РёРґРµРѕ</button>
+<button type="button" class="btn small outline" data-video="<%= p.video_url %>">Видео</button>
 <% } %>
 </div>
 </div>
@@ -125,19 +125,19 @@
 <% }) %>
 </div>
 <% } else { %>
-<p class="empty-state">РќРµС‚ С‚РѕРІР°СЂРѕРІ РЅР° РјРѕРґРµСЂР°С†РёРё</p>
+<p class="empty-state">Нет товаров на модерации</p>
 <% } %>
 </section>
 
-<!-- РњРѕРґРµСЂР°С†РёСЏ СѓСЃР»СѓРі -->
+<!-- Модерация услуг -->
 <section class="section">
 <div class="section-header">
-<h2>РњРѕРґРµСЂР°С†РёСЏ СѓСЃР»СѓРі</h2>
+<h2>Модерация услуг</h2>
 <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
 <% if (pendingServices && pendingServices.length) { %>
-<%= pendingServices.length %> РЅР° РїСЂРѕРІРµСЂРєРµ
+<%= pendingServices.length %> на проверке
 <% } else { %>
-РќРµС‚ СѓСЃР»СѓРі РЅР° РјРѕРґРµСЂР°С†РёРё
+Нет услуг на модерации
 <% } %>
 </span>
 </div>
@@ -150,33 +150,33 @@
 <%- include('partials/admin-card-images', { item: s }) %>
 
 <div class="product-bottom">
-<p class="product-desc"><%= s.description || "вЂ”" %></p>
+<p class="product-desc"><%= s.description || "—" %></p>
 <div class="row" style="justify-content:center; gap:8px;">
-<span class="muted">Р¦РµРЅР°:</span>
+<span class="muted">Цена:</span>
 <strong class="price"><%= typeof formatPriceDisplay === 'function' ? formatPriceDisplay(s.price, s.currency) : s.price %></strong>
 </div>
 
 <% if (s.owner) { %>
 <% if (typeof s.owner === 'object' && s.owner.username) { %>
-<p class="muted" style="text-align:center;font-size:0.9rem;">РћС‚: <%= s.owner.username %></p>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: <%= s.owner.username %></p>
 <% } else { %>
-<p class="muted" style="text-align:center;font-size:0.9rem;">РћС‚: РїРѕР»СЊР·РѕРІР°С‚РµР»СЊ ID <%= s.owner %></p>
+<p class="muted" style="text-align:center;font-size:0.9rem;">От: пользователь ID <%= s.owner %></p>
 <% } %>
 <% } else { %>
-<p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">Р’Р»Р°РґРµР»РµС† РЅРµ СѓРєР°Р·Р°РЅ</p>
+<p class="muted" style="text-align:center;font-size:0.9rem;color:#f44336;">Владелец не указан</p>
 <% } %>
 
 <div class="product-actions admin-card-actions">
 <form method="POST" action="/admin/services/<%= s.id %>/approve">
 <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
-<button type="submit" class="btn small">РћРґРѕР±СЂРёС‚СЊ</button>
+<button type="submit" class="btn small">Одобрить</button>
 </form>
-<button type="button" class="btn small reject-btn" data-id="<%= s.id %>" data-type="service">РћС‚РєР»РѕРЅРёС‚СЊ</button>
+<button type="button" class="btn small reject-btn" data-id="<%= s.id %>" data-type="service">Отклонить</button>
 <% if (s.link) { %>
-<a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">РЎСЃС‹Р»РєР°</a>
+<a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">Ссылка</a>
 <% } %>
 <% if (s.video_url) { %>
-<button type="button" class="btn small outline" data-video="<%= s.video_url %>">Р’РёРґРµРѕ</button>
+<button type="button" class="btn small outline" data-video="<%= s.video_url %>">Видео</button>
 <% } %>
 </div>
 </div>
@@ -184,14 +184,14 @@
 <% }) %>
 </div>
 <% } else { %>
-<p class="empty-state">РќРµС‚ СѓСЃР»СѓРі РЅР° РјРѕРґРµСЂР°С†РёРё</p>
+<p class="empty-state">Нет услуг на модерации</p>
 <% } %>
 </section>
 
-<!-- РЈРїСЂР°РІР»РµРЅРёРµ ALBA -->
+<!-- Управление ALBA -->
 <section class="section">
 <div class="section-header">
-<h2>РЈРїСЂР°РІР»РµРЅРёРµ ALBA</h2>
+<h2>Управление ALBA</h2>
 </div>
 <form id="adminGrantAlbaForm"
       method="POST"
@@ -202,22 +202,22 @@
   <input type="hidden" name="_csrf" id="albaCsrfField" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
   <input type="hidden" name="reason" value="admin_grant">
 
-  <input type="text" id="albaUsername" name="login" placeholder="Р›РѕРіРёРЅ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ" required autocomplete="username">
-  <input type="number" id="albaAmount" name="amount" placeholder="РљРѕР»РёС‡РµСЃС‚РІРѕ ALBA" required min="1" step="1">
-  <input type="text" id="albaComment" name="comment" placeholder="РљРѕРјРјРµРЅС‚Р°СЂРёР№" required>
+  <input type="text" id="albaUsername" name="login" placeholder="Логин пользователя" required autocomplete="username">
+  <input type="number" id="albaAmount" name="amount" placeholder="Количество ALBA" required min="1" step="1">
+  <input type="text" id="albaComment" name="comment" placeholder="Комментарий" required>
 
   <button type="submit" id="albaSubmitBtn" class="btn primary">
-    РќР°С‡РёСЃР»РёС‚СЊ ALBA
+    Начислить ALBA
   </button>
 </form>
 <div id="albaGrantMsg" class="note" style="margin-top:10px; min-height:1.5em; color:#fff;"></div>
 <script src="/js/admin-alba-grant.js?v=1.0.3"></script>
 
-<!-- Р�СЃС‚РѕСЂРёСЏ С‚СЂР°РЅР·Р°РєС†РёР№ ALBA -->
+<!-- История транзакций ALBA -->
 <div class="section-header" style="margin-top: 30px;">
-<h2>Р�СЃС‚РѕСЂРёСЏ С‚СЂР°РЅР·Р°РєС†РёР№ ALBA</h2>
+<h2>История транзакций ALBA</h2>
 </div>
-<button type="button" id="loadTransactionsBtn" class="btn small admin-refresh-btn">РћР±РЅРѕРІРёС‚СЊ РёСЃС‚РѕСЂРёСЋ</button>
+<button type="button" id="loadTransactionsBtn" class="btn small admin-refresh-btn">Обновить историю</button>
 <div id="albaTransactionsContainer">
 <% if (typeof albaTransactions !== 'undefined' && albaTransactions && albaTransactions.length) { %>
 <div class="admin-table-wrap">
@@ -225,42 +225,42 @@
 <thead>
 <tr>
 <th>ID</th>
-<th>РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ</th>
-<th>РўРёРї</th>
-<th>РџСЂРёС‡РёРЅР°</th>
-<th>РЎСѓРјРјР°</th>
-<th>РљРѕРјРјРµРЅС‚Р°СЂРёР№</th>
-<th>Р”Р°С‚Р°</th>
+<th>Пользователь</th>
+<th>Тип</th>
+<th>Причина</th>
+<th>Сумма</th>
+<th>Комментарий</th>
+<th>Дата</th>
 </tr>
 </thead>
 <tbody>
 <% albaTransactions.forEach(function(tx) { %>
 <tr>
 <td data-label="ID"><%= tx.id %></td>
-<td data-label="РџРѕР»СЊР·РѕРІР°С‚РµР»СЊ"><%= tx.username || 'вЂ”' %></td>
-<td data-label="РўРёРї"><%= tx.typeLabel || tx.type %></td>
-<td data-label="РџСЂРёС‡РёРЅР°"><%= tx.reasonLabel || tx.reason %></td>
-<td data-label="РЎСѓРјРјР°"><%= tx.amount %></td>
-<td data-label="РљРѕРјРјРµРЅС‚Р°СЂРёР№"><%= tx.comment || 'вЂ”' %></td>
-<td data-label="Р”Р°С‚Р°"><%= tx.createdAt ? new Date(tx.createdAt).toLocaleString('ru-RU') : 'вЂ”' %></td>
+<td data-label="Пользователь"><%= tx.username || '—' %></td>
+<td data-label="Тип"><%= tx.typeLabel || tx.type %></td>
+<td data-label="Причина"><%= tx.reasonLabel || tx.reason %></td>
+<td data-label="Сумма"><%= tx.amount %></td>
+<td data-label="Комментарий"><%= tx.comment || '—' %></td>
+<td data-label="Дата"><%= tx.createdAt ? new Date(tx.createdAt).toLocaleString('ru-RU') : '—' %></td>
 </tr>
 <% }) %>
 </tbody>
 </table>
 </div>
 <% } else { %>
-<p class="empty-state">РџРѕРєР° РЅРµС‚ Р·Р°РїРёСЃРµР№. РќР°С‡РёСЃР»РёС‚Рµ ALBA РёР»Рё РЅР°Р¶РјРёС‚Рµ В«РћР±РЅРѕРІРёС‚СЊ РёСЃС‚РѕСЂРёСЋВ».</p>
+<p class="empty-state">Пока нет записей. Начислите ALBA или нажмите «Обновить историю».</p>
 <% } %>
 </div>
 </section>
 
 
-<!-- Р—Р°СЂРµРіРёСЃС‚СЂРёСЂРѕРІР°РЅРЅС‹Рµ РїРѕР»СЊР·РѕРІР°С‚РµР»Рё -->
+<!-- Зарегистрированные пользователи -->
 <section class="section">
 <div class="section-header">
-<h2>РџРѕР»СЊР·РѕРІР°С‚РµР»Рё</h2>
+<h2>Пользователи</h2>
 <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-Р’СЃРµРіРѕ: <%= typeof registeredUsers !== 'undefined' && registeredUsers ? registeredUsers.length : 0 %>
+Всего: <%= typeof registeredUsers !== 'undefined' && registeredUsers ? registeredUsers.length : 0 %>
 </span>
 </div>
 <% if (typeof registeredUsers !== 'undefined' && registeredUsers && registeredUsers.length) { %>
@@ -269,10 +269,10 @@
 <thead>
 <tr>
 <th>ID</th>
-<th>Р›РѕРіРёРЅ</th>
+<th>Логин</th>
 <th>Email</th>
-<th>РўРёРї</th>
-<th>Р РѕР»СЊ</th>
+<th>Тип</th>
+<th>Роль</th>
 <th></th>
 </tr>
 </thead>
@@ -283,18 +283,18 @@
 %>
 <tr>
 <td data-label="ID"><%= uid %></td>
-<td data-label="Р›РѕРіРёРЅ"><%= u.username %></td>
+<td data-label="Логин"><%= u.username %></td>
 <td data-label="Email"><%= u.email %></td>
-<td data-label="РўРёРї"><%= u.accountType === 'services' ? 'РЈСЃР»СѓРіРё' : 'РљСѓРїРё/РїСЂРѕРґР°Р№' %></td>
-<td data-label="Р РѕР»СЊ"><%= u.role %></td>
-<td data-label="Р”РµР№СЃС‚РІРёРµ" class="admin-table-actions">
+<td data-label="Тип"><%= u.accountType === 'services' ? 'Услуги' : 'Купи/продай' %></td>
+<td data-label="Роль"><%= u.role %></td>
+<td data-label="Действие" class="admin-table-actions">
 <% if (!isSelf) { %>
-<form method="POST" action="/admin/users/<%= uid %>/delete" onsubmit="return confirm('РЈРґР°Р»РёС‚СЊ РїРѕР»СЊР·РѕРІР°С‚РµР»СЏ <%= (u.username || '').replace(/'/g, '') %> РёР· Р±Р°Р·С‹? РљР°СЂС‚РѕС‡РєРё, РєРѕРјРјРµРЅС‚Р°СЂРёРё Рё СЃРІСЏР·Р°РЅРЅС‹Рµ РґР°РЅРЅС‹Рµ Р±СѓРґСѓС‚ СѓРґР°Р»РµРЅС‹ РЅР°РІСЃРµРіРґР°.');">
+<form method="POST" action="/admin/users/<%= uid %>/delete" onsubmit="return confirm('Удалить пользователя <%= (u.username || '').replace(/'/g, '') %> из базы? Карточки, комментарии и связанные данные будут удалены навсегда.');">
 <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
-<button type="submit" class="btn small outline">РЈРґР°Р»РёС‚СЊ</button>
+<button type="submit" class="btn small outline">Удалить</button>
 </form>
 <% } else { %>
-<span class="muted">СЌС‚Рѕ РІС‹</span>
+<span class="muted">это вы</span>
 <% } %>
 </td>
 </tr>
@@ -303,17 +303,17 @@
 </table>
 </div>
 <% } else { %>
-<p class="empty-state">РќРµС‚ РїРѕР»СЊР·РѕРІР°С‚РµР»РµР№</p>
+<p class="empty-state">Нет пользователей</p>
 <% } %>
 </section>
 
 
-<!-- РљР°С‚Р°Р»РѕРі С‚РѕРІР°СЂРѕРІ -->
+<!-- Каталог товаров -->
 <section class="section">
 <div class="section-header">
-<h2>РљР°С‚Р°Р»РѕРі В«РљСѓРїРё/РїСЂРѕРґР°Р№В»</h2>
+<h2>Каталог «Купи/продай»</h2>
 <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-Р’СЃРµРіРѕ: <%= products ? products.length : 0 %>
+Всего: <%= products ? products.length : 0 %>
 </span>
 </div>
 
@@ -325,51 +325,51 @@
 <%- include('partials/admin-card-images', { item: p }) %>
 
 <div class="product-bottom">
-<!-- РЎС‚Р°С‚СѓСЃ РєР°СЂС‚РѕС‡РєРё -->
+<!-- Статус карточки -->
 <div style="text-align:center;margin-bottom:10px;">
 <% if (p.status === "pending") { %>
 <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-РќР° РјРѕРґРµСЂР°С†РёРё
+На модерации
 </span>
 <% } else if (p.status === "approved") { %>
 <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-РћРїСѓР±Р»РёРєРѕРІР°РЅРѕ
+Опубликовано
 </span>
 <% } else if (p.status === "rejected") { %>
 <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРѕ
+Заблокировано
 </span>
 <% } else { %>
 <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-Р‘РµР· СЃС‚Р°С‚СѓСЃР°
+Без статуса
 </span>
 <% } %>
 </div>
 
-<p class="product-desc"><%= p.description || "вЂ”" %></p>
+<p class="product-desc"><%= p.description || "—" %></p>
 <div class="row" style="justify-content:center; gap:8px;">
-<span class="muted">Р¦РµРЅР°:</span>
+<span class="muted">Цена:</span>
 <strong class="price"><%= typeof formatPriceDisplay === 'function' ? formatPriceDisplay(p.price, p.currency) : p.price %></strong>
 </div>
 
-<!-- Р’Р»Р°РґРµР»РµС† -->
+<!-- Владелец -->
 <% if (p.owner) { %>
 <% if (typeof p.owner === 'object' && p.owner.username) { %>
 <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-Р’Р»Р°РґРµР»РµС†: <%= p.owner.username %>
+Владелец: <%= p.owner.username %>
 </p>
 <% } else { %>
 <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-Р’Р»Р°РґРµР»РµС†: ID <%= p.owner %>
+Владелец: ID <%= p.owner %>
 </p>
 <% } %>
 <% } else { %>
 <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
-Р’Р»Р°РґРµР»РµС† РЅРµ СѓРєР°Р·Р°РЅ (СЃРѕР·РґР°РЅРѕ Р°РґРјРёРЅРѕРј)
+Владелец не указан (создано админом)
 </p>
 <% } %>
 
-<!-- РљР°С‚РµРіРѕСЂРёСЏ -->
+<!-- Категория -->
 <% if (categories && p.category) { %>
 <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
 <%= categories[p.category] || p.category %>
@@ -377,50 +377,50 @@
 <% } %>
 
 <div class="product-actions admin-card-actions">
-<form method="POST" action="/admin/products/<%= p.id %>/toggle-visibility" onsubmit="return confirm('Р�Р·РјРµРЅРёС‚СЊ РІРёРґРёРјРѕСЃС‚СЊ СЌС‚РѕР№ РєР°СЂС‚РѕС‡РєРё?');">
+<form method="POST" action="/admin/products/<%= p.id %>/toggle-visibility" onsubmit="return confirm('Изменить видимость этой карточки?');">
 <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
 <button type="submit" class="btn small status-<%= p.status %>">
-<%= p.status === 'approved' ? 'Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ' : 'Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ' %>
+<%= p.status === 'approved' ? 'Заблокировать' : 'Разблокировать' %>
 </button>
 </form>
 
-<a class="btn small outline" href="/admin/products/<%= p.id %>/edit">Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ</a>
+<a class="btn small outline" href="/admin/products/<%= p.id %>/edit">Редактировать</a>
 
-<form method="POST" action="/admin/products/<%= p.id %>/delete" style="display:inline" onsubmit="return confirm('РЈРґР°Р»РёС‚СЊ РєР°СЂС‚РѕС‡РєСѓ?');">
+<form method="POST" action="/admin/products/<%= p.id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
 <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
-<button type="submit" class="btn small outline">РЈРґР°Р»РёС‚СЊ</button>
+<button type="submit" class="btn small outline">Удалить</button>
 </form>
 
 <% if (p.link) { %>
-<a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">РЎСЃС‹Р»РєР°</a>
+<a class="btn small outline" href="<%= p.link %>" target="_blank" rel="noopener">Ссылка</a>
 <% } %>
 <% if (p.video_url) { %>
-<button type="button" class="btn small outline" data-video="<%= p.video_url %>">Р’РёРґРµРѕ</button>
+<button type="button" class="btn small outline" data-video="<%= p.video_url %>">Видео</button>
 <% } %>
 </div>
 
-<!-- Р РµР№С‚РёРЅРі (С‚РѕР»СЊРєРѕ РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ) -->
+<!-- Рейтинг (только отображение) -->
 <div class="product-rating" data-id="<%= p.id %>" style="margin-top:10px;">
-<button class="btn icon" type="button" disabled aria-label="Р›Р°Р№Рє">^</button>
+<button class="btn icon" type="button" disabled aria-label="Лайк">^</button>
 <span class="result"><%= (p.likes || 0) - (p.dislikes || 0) %></span>
-<button class="btn icon" type="button" disabled aria-label="Р”РёР·Р»Р°Р№Рє">РЋ</button>
-<span class="votes">(<%= (p.likes || 0) + (p.dislikes || 0) %> РіРѕР»РѕСЃРѕРІ)</span>
+<button class="btn icon" type="button" disabled aria-label="Дизлайк">Ў</button>
+<span class="votes">(<%= (p.likes || 0) + (p.dislikes || 0) %> голосов)</span>
 </div>
 </div>
 </div>
 <% }) %>
 </div>
 <% } else { %>
-<p class="empty-state">РџРѕРєР° РЅРµС‚ С‚РѕРІР°СЂРѕРІ</p>
+<p class="empty-state">Пока нет товаров</p>
 <% } %>
 </section>
 
-<!-- РљР°С‚Р°Р»РѕРі СѓСЃР»СѓРі -->
+<!-- Каталог услуг -->
 <section class="section">
 <div class="section-header">
-<h2>РљР°С‚Р°Р»РѕРі СѓСЃР»СѓРі</h2>
+<h2>Каталог услуг</h2>
 <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-Р’СЃРµРіРѕ: <%= services ? services.length : 0 %>
+Всего: <%= services ? services.length : 0 %>
 </span>
 </div>
 
@@ -432,51 +432,51 @@
 <%- include('partials/admin-card-images', { item: s }) %>
 
 <div class="product-bottom">
-<!-- РЎС‚Р°С‚СѓСЃ РєР°СЂС‚РѕС‡РєРё -->
+<!-- Статус карточки -->
 <div style="text-align:center;margin-bottom:10px;">
 <% if (s.status === "pending") { %>
 <span class="badge" style="background:#ff9800;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-РќР° РјРѕРґРµСЂР°С†РёРё
+На модерации
 </span>
 <% } else if (s.status === "approved") { %>
 <span class="badge" style="background:#4caf50;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-РћРїСѓР±Р»РёРєРѕРІР°РЅРѕ
+Опубликовано
 </span>
 <% } else if (s.status === "rejected") { %>
 <span class="badge" style="background:#f44336;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-Р—Р°Р±Р»РѕРєРёСЂРѕРІР°РЅРѕ
+Заблокировано
 </span>
 <% } else { %>
 <span class="badge" style="background:#666;color:#fff;padding:4px 12px;border-radius:6px;font-size:0.9rem;">
-Р‘РµР· СЃС‚Р°С‚СѓСЃР°
+Без статуса
 </span>
 <% } %>
 </div>
 
-<p class="product-desc"><%= s.description || "вЂ”" %></p>
+<p class="product-desc"><%= s.description || "—" %></p>
 <div class="row" style="justify-content:center; gap:8px;">
-<span class="muted">Р¦РµРЅР°:</span>
+<span class="muted">Цена:</span>
 <strong class="price"><%= typeof formatPriceDisplay === 'function' ? formatPriceDisplay(s.price, s.currency) : s.price %></strong>
 </div>
 
-<!-- Р’Р»Р°РґРµР»РµС† -->
+<!-- Владелец -->
 <% if (s.owner) { %>
 <% if (typeof s.owner === 'object' && s.owner.username) { %>
 <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-Р’Р»Р°РґРµР»РµС†: <%= s.owner.username %>
+Владелец: <%= s.owner.username %>
 </p>
 <% } else { %>
 <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
-Р’Р»Р°РґРµР»РµС†: ID <%= s.owner %>
+Владелец: ID <%= s.owner %>
 </p>
 <% } %>
 <% } else { %>
 <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;color:#f44336;">
-Р’Р»Р°РґРµР»РµС† РЅРµ СѓРєР°Р·Р°РЅ (СЃРѕР·РґР°РЅРѕ Р°РґРјРёРЅРѕРј)
+Владелец не указан (создано админом)
 </p>
 <% } %>
 
-<!-- РљР°С‚РµРіРѕСЂРёСЏ -->
+<!-- Категория -->
 <% if (categories && s.category) { %>
 <p class="muted" style="text-align:center;font-size:0.85rem;margin-top:5px;">
 <%= categories[s.category] || s.category %>
@@ -484,41 +484,41 @@
 <% } %>
 
 <div class="product-actions admin-card-actions">
-<form method="POST" action="/admin/services/<%= s.id %>/toggle-visibility" onsubmit="return confirm('Р�Р·РјРµРЅРёС‚СЊ РІРёРґРёРјРѕСЃС‚СЊ СЌС‚РѕР№ РєР°СЂС‚РѕС‡РєРё?');">
+<form method="POST" action="/admin/services/<%= s.id %>/toggle-visibility" onsubmit="return confirm('Изменить видимость этой карточки?');">
 <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
 <button type="submit" class="btn small status-<%= s.status %>">
-<%= s.status === 'approved' ? 'Р—Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ' : 'Р Р°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ' %>
+<%= s.status === 'approved' ? 'Заблокировать' : 'Разблокировать' %>
 </button>
 </form>
 
-<a class="btn small outline" href="/admin/services/<%= s.id %>/edit">Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ</a>
+<a class="btn small outline" href="/admin/services/<%= s.id %>/edit">Редактировать</a>
 
-<form method="POST" action="/admin/services/<%= s.id %>/delete" style="display:inline" onsubmit="return confirm('РЈРґР°Р»РёС‚СЊ РєР°СЂС‚РѕС‡РєСѓ?');">
+<form method="POST" action="/admin/services/<%= s.id %>/delete" style="display:inline" onsubmit="return confirm('Удалить карточку?');">
 <input type="hidden" name="_csrf" value="<%= csrfToken || '' %>">
-<button type="submit" class="btn small outline">РЈРґР°Р»РёС‚СЊ</button>
+<button type="submit" class="btn small outline">Удалить</button>
 </form>
 
 <% if (s.link) { %>
-<a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">РЎСЃС‹Р»РєР°</a>
+<a class="btn small outline" href="<%= s.link %>" target="_blank" rel="noopener">Ссылка</a>
 <% } %>
 <% if (s.video_url) { %>
-<button type="button" class="btn small outline" data-video="<%= s.video_url %>">Р’РёРґРµРѕ</button>
+<button type="button" class="btn small outline" data-video="<%= s.video_url %>">Видео</button>
 <% } %>
 </div>
 
-<!-- Р РµР№С‚РёРЅРі (С‚РѕР»СЊРєРѕ РѕС‚РѕР±СЂР°Р¶РµРЅРёРµ) -->
+<!-- Рейтинг (только отображение) -->
 <div class="product-rating" data-id="<%= s.id %>" style="margin-top:10px;">
-<button class="btn icon" type="button" disabled aria-label="Р›Р°Р№Рє">^</button>
+<button class="btn icon" type="button" disabled aria-label="Лайк">^</button>
 <span class="result"><%= (s.likes || 0) - (s.dislikes || 0) %></span>
-<button class="btn icon" type="button" disabled aria-label="Р”РёР·Р»Р°Р№Рє">РЋ</button>
-<span class="votes">(<%= (s.likes || 0) + (s.dislikes || 0) %> РіРѕР»РѕСЃРѕРІ)</span>
+<button class="btn icon" type="button" disabled aria-label="Дизлайк">Ў</button>
+<span class="votes">(<%= (s.likes || 0) + (s.dislikes || 0) %> голосов)</span>
 </div>
 </div>
 </div>
 <% }) %>
 </div>
 <% } else { %>
-<p class="empty-state">РџРѕРєР° РЅРµС‚ СѓСЃР»СѓРі</p>
+<p class="empty-state">Пока нет услуг</p>
 <% } %>
 </section>
 
@@ -528,32 +528,32 @@
   <p></p>
 </footer>
 
-<!-- РњРѕРґР°Р»СЊРЅРѕРµ РѕРєРЅРѕ РґР»СЏ РѕС‚РєР»РѕРЅРµРЅРёСЏ -->
+<!-- Модальное окно для отклонения -->
 <dialog id="rejectModal" class="reject-dialog">
   <form id="rejectForm" method="POST">
     <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' && csrfToken ? csrfToken : '' %>">
-    <h3 id="rejectModalTitle">РћС‚РєР»РѕРЅРёС‚СЊ РєР°СЂС‚РѕС‡РєСѓ</h3>
-    <textarea name="rejectionReason" placeholder="РџСЂРёС‡РёРЅР° РѕС‚РєР»РѕРЅРµРЅРёСЏ" rows="4" required></textarea>
-    <textarea name="adminComment" placeholder="РљРѕРјРјРµРЅС‚Р°СЂРёР№ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° (РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ)" rows="2"></textarea>
+    <h3 id="rejectModalTitle">Отклонить карточку</h3>
+    <textarea name="rejectionReason" placeholder="Причина отклонения" rows="4" required></textarea>
+    <textarea name="adminComment" placeholder="Комментарий администратора (необязательно)" rows="2"></textarea>
     <div class="reject-dialog-actions">
-      <button type="submit" class="btn">РћС‚РєР»РѕРЅРёС‚СЊ</button>
-      <button type="button" class="btn outline" data-close-reject>РћС‚РјРµРЅР°</button>
+      <button type="submit" class="btn">Отклонить</button>
+      <button type="button" class="btn outline" data-close-reject>Отмена</button>
     </div>
   </form>
 </dialog>
 
-<!-- FIX: РџРѕР»РЅРѕСЌРєСЂР°РЅРЅС‹Р№ overlay РґР»СЏ YouTube РІРёРґРµРѕ -->
+<!-- FIX: Полноэкранный overlay для YouTube видео -->
 <div id="videoOverlay" class="video-overlay" aria-hidden="true" style="display:none;">
 <div class="video-overlay-container">
-<button class="video-overlay-close" data-close-video aria-label="Р—Р°РєСЂС‹С‚СЊ РІРёРґРµРѕ">&times;</button>
+<button class="video-overlay-close" data-close-video aria-label="Закрыть видео">&times;</button>
 <div class="video-overlay-iframe-container" id="videoIframeContainer">
-<!-- FIX: iframe СЃРѕР·РґР°РµС‚СЃСЏ РґРёРЅР°РјРёС‡РµСЃРєРё РїРѕ РєР»РёРєСѓ -->
+<!-- FIX: iframe создается динамически по клику -->
 </div>
 </div>
 </div>
 
 
-<!-- РџРµСЂРµРґР°РµРј РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РґРѕСЃС‚СѓРїРЅРѕСЃС‚Рё Socket.IO РЅР° РєР»РёРµРЅС‚ -->
+<!-- Передаем информацию о доступности Socket.IO на клиент -->
 <!-- Bootstrap script for safe EJS > JS data transfer -->
  <script src="/utils/bootstrap.js?v=1.0.3"></script>
   <script>
@@ -598,7 +598,7 @@
       logoutForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         e.stopPropagation();
-        if (!confirm('Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ РІС‹Р№С‚Рё?')) return;
+        if (!confirm('Вы уверены, что хотите выйти?')) return;
         try {
           const csrf = (typeof CSRF_TOKEN !== 'undefined' && CSRF_TOKEN)
             || document.querySelector('input[name="_csrf"]')?.value
@@ -661,20 +661,20 @@
         e.preventDefault();
         e.stopPropagation();
         const id = btn.getAttribute('data-id');
-        if (!confirm('РћРґРѕР±СЂРёС‚СЊ СЌС‚Сѓ РєР°СЂС‚РѕС‡РєСѓ?')) return;
+        if (!confirm('Одобрить эту карточку?')) return;
         try {
           const itemType = btn.getAttribute('data-type') || 'product';
           const endpoint = '/admin/' + itemType + 's/' + id + '/approve';
 
           const result = await postJSON(endpoint);
           if (result.json.success) {
-            alert('РљР°СЂС‚РѕС‡РєР° РѕРґРѕР±СЂРµРЅР°!');
+            alert('Карточка одобрена!');
             location.reload();
           } else {
-            alert('РћС€РёР±РєР°: ' + (result.json.message || ('HTTP ' + result.status)));
+            alert('Ошибка: ' + (result.json.message || ('HTTP ' + result.status)));
           }
         } catch (err) {
-          alert('РћС€РёР±РєР° СЃРµС‚Рё: ' + err.message);
+          alert('Ошибка сети: ' + err.message);
         }
       });
     });
@@ -687,20 +687,20 @@
         const id = btn.getAttribute('data-id');
         const currentStatus = btn.getAttribute('data-status');
         const itemType = btn.getAttribute('data-type') || 'product';
-        const action = (currentStatus === 'approved' || currentStatus === 'published') ? 'Р·Р°Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ' : 'СЂР°Р·Р±Р»РѕРєРёСЂРѕРІР°С‚СЊ';
-        if (!confirm('Р’С‹ СѓРІРµСЂРµРЅС‹, С‡С‚Рѕ С…РѕС‚РёС‚Рµ ' + action + ' СЌС‚Сѓ РєР°СЂС‚РѕС‡РєСѓ?')) return;
+        const action = (currentStatus === 'approved' || currentStatus === 'published') ? 'заблокировать' : 'разблокировать';
+        if (!confirm('Вы уверены, что хотите ' + action + ' эту карточку?')) return;
 
         try {
           const endpoint = '/admin/' + itemType + 's/' + id + '/toggle-visibility';
           const result = await postJSON(endpoint);
           if (result.json.success) {
-            alert(result.json.message || 'РЎС‚Р°С‚СѓСЃ РєР°СЂС‚РѕС‡РєРё РёР·РјРµРЅРµРЅ');
+            alert(result.json.message || 'Статус карточки изменен');
             location.reload();
           } else {
-            alert('РћС€РёР±РєР°: ' + (result.json.message || ('HTTP ' + result.status)));
+            alert('Ошибка: ' + (result.json.message || ('HTTP ' + result.status)));
           }
         } catch (err) {
-          alert('РћС€РёР±РєР° СЃРµС‚Рё: ' + err.message);
+          alert('Ошибка сети: ' + err.message);
         }
       });
     });
@@ -717,7 +717,7 @@
         const itemType = btn.getAttribute('data-type') === 'service' ? 'services' : 'products';
         rejectForm.action = '/admin/' + itemType + '/' + id + '/reject';
         const title = document.getElementById('rejectModalTitle');
-        if (title) title.textContent = 'РћС‚РєР»РѕРЅРёС‚СЊ РєР°СЂС‚РѕС‡РєСѓ';
+        if (title) title.textContent = 'Отклонить карточку';
         if (typeof rejectModal.showModal === 'function') {
           if (!rejectModal.open) rejectModal.showModal();
         } else {
