@@ -2,7 +2,7 @@ const { getFaqDoc, buildFaqJsonLd } = require("../../utils/faqDoc");
 
 describe("faq locales", () => {
   const langs = ["en", "ru", "kk", "zh"];
-  const expectedIds = ["about", "account", "catalog", "publish", "alba", "referral", "chat", "rules", "support"];
+  const expectedIds = ["about", "account", "catalog", "publish", "alba", "referral", "chat", "app", "rules", "support"];
 
   test("all languages share the same section structure", () => {
     const counts = langs.map((lang) => {
