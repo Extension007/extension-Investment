@@ -206,6 +206,18 @@ router.delete("/images/:productId/:index", apiLimiter, csrfProtection, async (re
        return res.status(403).json({ success: false, message: "Доступ запрещен" });
      }
 
+     if (!isAdmin && isOwner) {
+       const { assertUserCanEditCard } = require("../utils/cardPublication");
+       try {
+         assertUserCanEditCard(product);
+       } catch (editErr) {
+         return res.status(editErr.status || 403).json({
+           success: false,
+           message: editErr.message || "Редактирование недоступно"
+         });
+       }
+     }
+
      // Проверить индекс
     const images = product.images || [];
     if (isNaN(imageIndex) || imageIndex < 0 || imageIndex >= images.length) {

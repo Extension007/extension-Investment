@@ -109,14 +109,20 @@ class MainActivity : ComponentActivity() {
 
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                    val host = request.url.host.orEmpty().lowercase()
-                    val internal = host.isEmpty() ||
+                    val uri = request.url
+                    val scheme = uri.scheme.orEmpty().lowercase()
+                    if (scheme == "tel" || scheme == "mailto" || scheme == "sms" || scheme == "geo") {
+                        runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
+                        return true
+                    }
+                    val host = uri.host.orEmpty().lowercase()
+                    val internal =
                         host == "albamount.xyz" ||
-                        host.endsWith(".albamount.xyz")
+                            host.endsWith(".albamount.xyz")
                     return if (internal) {
                         false
                     } else {
-                        runCatching { startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
+                        runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
                         true
                     }
                 }
@@ -206,13 +212,32 @@ class MainActivity : ComponentActivity() {
         )
 
         registerNetworkCallback()
-        val start = savedInstanceState?.getString(STATE_URL) ?: BuildConfig.SITE_URL
+        val deepLink = resolveAlbamountUrl(intent?.data)
+        val start = savedInstanceState?.getString(STATE_URL) ?: deepLink ?: BuildConfig.SITE_URL
         if (isOnline()) {
             webView.loadUrl(start)
         } else {
             splash.visibility = View.GONE
             showOffline(true)
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val url = resolveAlbamountUrl(intent.data) ?: return
+        if (::webView.isInitialized) {
+            webView.loadUrl(url)
+            showOffline(false)
+        }
+    }
+
+    private fun resolveAlbamountUrl(uri: Uri?): String? {
+        if (uri == null) return null
+        if (uri.scheme?.lowercase() != "https") return null
+        val host = uri.host.orEmpty().lowercase()
+        if (host != "albamount.xyz" && !host.endsWith(".albamount.xyz")) return null
+        return uri.toString()
     }
 
     private fun buildSplash(): View {

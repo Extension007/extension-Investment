@@ -121,11 +121,7 @@
 
         <div class="faq-actions">
           <a class="btn" href="/contacts"><%= faqDoc.contactCta %></a>
-          <% if (typeof isAuth !== 'undefined' && isAuth) { %>
-            <a class="btn outline" href="/cabinet/rules"><%= faqDoc.rulesCta %></a>
-          <% } else { %>
-            <a class="btn outline" href="/user/login"><%= t('nav.login') %></a>
-          <% } %>
+          <a class="btn outline" href="/rules"><%= faqDoc.rulesCta %></a>
         </div>
       </article>
     </section>
