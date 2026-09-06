@@ -124,7 +124,7 @@ router.get(["/app", "/download", "/get-app"], (req, res) => {
   const userRole = req.user?.role || null;
   res.render("app-download", {
     activeTab: "app",
-    appVersion: "2.0.1",
+    appVersion: "2.0.2",
     isAuth,
     isAdmin: userRole === "admin",
     isUser: userRole === "user",

@@ -11,8 +11,8 @@ android {
         applicationId = "xyz.albamount.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "2.0.1"
+        versionCode = 4
+        versionName = "2.0.2"
         buildConfigField("String", "SITE_URL", "\"https://www.albamount.xyz/\"")
     }
 
