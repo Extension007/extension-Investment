@@ -1,4 +1,4 @@
-п»ї<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="<%= typeof locale !== 'undefined' ? locale : 'en' %>">
 <head>
   <meta charset="UTF-8">
@@ -95,7 +95,6 @@
       <input type="text" name="username" id="username" placeholder="<%= t('auth.username') %>" required>
       <input type="password" name="password" id="password" placeholder="<%= t('auth.password') %>" required>
       <input type="hidden" name="_csrf" id="_csrf" value="<%= csrfToken %>">
-      <input type="hidden" name="next" id="loginNext" value="<%= typeof nextPath !== 'undefined' && nextPath ? nextPath : '/cabinet' %>">
       <button type="submit"><%= t('auth.submitLogin') %></button>
     </form>
 
@@ -110,7 +109,7 @@
     </div>
     <div class="link">
       <a href="/"><%= t('common.back') %></a>
-      В·
+      ·
       <a href="/register"><%= t('nav.register') %></a>
     </div>
   </div>
@@ -172,8 +171,6 @@
           var username = document.getElementById('username').value;
           var password = document.getElementById('password').value;
           var csrf = document.getElementById('_csrf').value;
-          var nextEl = document.getElementById('loginNext');
-          var next = nextEl ? nextEl.value : '/cabinet';
 
           try {
             var res = await fetch(window.location.origin + '/user/login', {
@@ -184,7 +181,7 @@
                 'Accept': 'application/json',
                 'X-CSRF-Token': csrf
               },
-              body: JSON.stringify({ username: username, password: password, next: next })
+              body: JSON.stringify({ username: username, password: password })
             });
 
             if (res.redirected) {
@@ -205,7 +202,7 @@
               }
             } else if (res.ok) {
               var text = await res.text();
-              if (/ГЌГҐГўГҐГ°Г­Г»Г©|Г®ГёГЁГЎГЄ|ГЇГ®Г¤ГІГўГҐГ°Г¤ГЁГІГҐ|invalid|wrong|confirm/i.test(text)) {
+              if (/Неверный|ошибк|подтвердите|invalid|wrong|confirm/i.test(text)) {
                 showError(window.i18nT ? window.i18nT('loginWrong', '<%= t("auth.loginError") %>') : '<%= t("auth.loginError") %>');
               } else {
                 showError(window.i18nT ? window.i18nT('loginWrong', '<%= t("auth.loginError") %>') : '<%= t("auth.loginError") %>');

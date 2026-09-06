@@ -165,17 +165,8 @@ async function resolveUser(userId, includeRefresh = true) {
 
 exports.resolveUser = resolveUser;
 
-function safeLoginNext(raw, fallback = "/cabinet") {
-  const next = String(raw || "").trim();
-  if (!next.startsWith("/") || next.startsWith("//") || next.includes("://")) {
-    return fallback;
-  }
-  return next;
-}
-
 exports.userLogin = async (req, res) => {
   const { username, password } = req.body;
-  const loginNext = safeLoginNext(req.body?.next || req.query?.next);
   const wantsJson =
     req.xhr ||
     req.get("accept")?.includes("application/json") ||
@@ -188,7 +179,6 @@ exports.userLogin = async (req, res) => {
     return res.status(status === 500 ? 500 : 200).render("user-login", {
       error: message,
       csrfToken: res.locals.csrfToken,
-      nextPath: loginNext,
       ...extras
     });
   };
@@ -215,7 +205,6 @@ exports.userLogin = async (req, res) => {
       return res.render("user-login", {
         error: req.t("auth.verifyEmailPending", "Please confirm your email before signing in."),
         csrfToken: res.locals.csrfToken,
-        nextPath: loginNext,
         showResendVerification: true,
         email: user.email
       });
@@ -241,9 +230,9 @@ exports.userLogin = async (req, res) => {
     });
 
     if (wantsJson) {
-      return res.json({ success: true, redirect: loginNext });
+      return res.json({ success: true, redirect: "/cabinet" });
     }
-    return res.redirect(loginNext);
+    return res.redirect("/cabinet");
   } catch (err) {
     logger.error({ msg: "user_login_error", error: err.message });
     if (wantsJson) {

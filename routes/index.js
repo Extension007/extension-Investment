@@ -150,13 +150,20 @@ router.get("/rules", (req, res) => {
   });
 });
 
-// Скачивание приложения — только для вошедших пользователей (до релиза в сторах)
+// Публичная страница скачивания Android-приложения (ссылка для шаринга)
 router.get(["/app", "/download", "/get-app"], (req, res) => {
-  const next = encodeURIComponent("/cabinet/app");
-  if (!req.user) {
-    return res.redirect(`/user/login?next=${next}`);
-  }
-  return res.redirect("/cabinet/app");
+  const isAuth = Boolean(req.user);
+  const userRole = req.user?.role || null;
+  res.render("app-download", {
+    activeTab: "app",
+    androidAppVersion: "2.1.0",
+    isAuth,
+    isAdmin: userRole === "admin",
+    isUser: userRole === "user",
+    userRole,
+    user: req.user || null,
+    csrfToken: res.locals.csrfToken || (req.csrfToken ? req.csrfToken() : "")
+  });
 });
 
 router.get(["/about", "/videos", "/videos/new"], (req, res) => {

@@ -48,7 +48,8 @@ function buildSitemapXml({
     urlEntry(`${base}/faq`, { changefreq: "monthly", priority: "0.6" }),
     urlEntry(`${base}/privacy`, { changefreq: "yearly", priority: "0.4" }),
     urlEntry(`${base}/terms`, { changefreq: "yearly", priority: "0.4" }),
-    urlEntry(`${base}/rules`, { changefreq: "monthly", priority: "0.5" })
+    urlEntry(`${base}/rules`, { changefreq: "monthly", priority: "0.5" }),
+    urlEntry(`${base}/app`, { changefreq: "monthly", priority: "0.5" })
   ];
 
   return [
@@ -69,9 +70,6 @@ function buildRobotsTxt(origin) {
     "Disallow: /admin/",
     "Disallow: /cabinet",
     "Disallow: /cabinet/",
-    "Disallow: /app",
-    "Disallow: /download",
-    "Disallow: /get-app",
     "Disallow: /api/",
     "Disallow: /login",
     "Disallow: /user/login",

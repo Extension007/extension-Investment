@@ -178,8 +178,7 @@ function requireUser(req, res, next) {
         if (wantsJsonResponse(req)) {
           return res.status(401).json({ success: false, error: "Unauthorized", message: "Требуется авторизация" });
         }
-        const nextPath = encodeURIComponent(req.originalUrl || "/cabinet");
-        return res.redirect(`/user/login?next=${nextPath}`);
+        return res.redirect("/user/login");
       }
       req.currentUser = user;
       req.user = user;
